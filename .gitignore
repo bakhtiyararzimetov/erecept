@@ -1,0 +1,5 @@
+.env
+/app
+mobile/node_modules/
+mobile/.expo/
+uploads/
