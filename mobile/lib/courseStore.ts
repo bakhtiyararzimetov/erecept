@@ -10,7 +10,11 @@ export async function claimAndStore(code: string): Promise<Course> {
   const claimed = await api.claim(code);
   const merged = mergeClaimed(await loadCourses(), claimed, await getPendingMarks());
   await saveCourses(merged);
-  await rescheduleAll();
+  try {
+    await rescheduleAll();
+  } catch (e) {
+    console.warn("courses: не удалось обновить напоминания", e);
+  }
   return merged.find((c) => c.prescription.id === claimed.prescription.id)!;
 }
 

@@ -1,7 +1,7 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ApiError } from "../lib/api";
@@ -53,8 +53,14 @@ export default function Scan() {
 
       {permission && !granted && (
         <Card style={{ gap: 16 }}>
-          <Text style={styles.body}>Камера нужна, чтобы отсканировать QR-код с рецепта врача.</Text>
-          <Button title="Разрешить камеру" onPress={() => requestPermission()} />
+          <Text style={styles.body}>
+            Камера нужна, чтобы отсканировать QR-код с рецепта врача
+            {permission.canAskAgain ? "." : " Разрешите доступ в настройках телефона или введите код вручную ниже."}
+          </Text>
+          <Button
+            title={permission.canAskAgain ? "Разрешить камеру" : "Открыть настройки"}
+            onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
+          />
         </Card>
       )}
 

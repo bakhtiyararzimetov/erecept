@@ -1,6 +1,6 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
@@ -13,7 +13,7 @@ import { colors, radius } from "../../lib/theme";
 import type { Course } from "../../lib/types";
 
 const STATUS: Record<DoseStatus, { label: string; color: string } | null> = {
-  taken: { label: "Выпито", color: colors.accent },
+  taken: { label: "Выпито", color: colors.muted },
   missed: { label: "Пропущено", color: colors.error },
   due: { label: "Пора принять", color: colors.text },
   upcoming: null,
@@ -33,6 +33,8 @@ export default function Today() {
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [online, setOnline] = useState(true);
   const [now, setNow] = useState(new Date());
+  const [actionError, setActionError] = useState<string | null>(null);
+  const inFlight = useRef(new Set<number>());
 
   const refresh = useCallback(async () => {
     setCourses(await loadCourses()); // сразу показываем сохранённое
@@ -53,18 +55,33 @@ export default function Today() {
     return NetInfo.addEventListener((s) => {
       const isOnline = s.isConnected !== false && s.isInternetReachable !== false;
       setOnline(isOnline);
-      if (isOnline && !wasOnline) flushMarks().catch(() => undefined);
+      if (isOnline && !wasOnline) {
+        flushMarks()
+          .then(() => refreshCourses())
+          .then((c) => setCourses(c))
+          .catch(() => undefined);
+      }
       wasOnline = isOnline;
     });
   }, []);
 
   async function onTaken(doseId: number) {
-    const at = new Date();
-    await markTaken(doseId, at);
-    setCourses(await loadCourses());
-    setNow(at);
-    rescheduleAll().catch(() => undefined);
-    flushMarks().catch(() => undefined);
+    if (inFlight.current.has(doseId)) return;
+    inFlight.current.add(doseId);
+    setActionError(null);
+    try {
+      const at = new Date();
+      await markTaken(doseId, at);
+      setCourses(await loadCourses());
+      setNow(at);
+      rescheduleAll().catch(() => undefined);
+      flushMarks().catch(() => undefined);
+    } catch (e) {
+      console.warn("today: не удалось сохранить отметку", e);
+      setActionError("Не удалось сохранить отметку. Попробуйте ещё раз");
+    } finally {
+      inFlight.current.delete(doseId);
+    }
   }
 
   if (courses === null) return <View style={styles.screen} />;
@@ -77,6 +94,11 @@ export default function Today() {
       {!online && (
         <View style={styles.offline}>
           <Text style={styles.offlineText}>Нет интернета. Отметки сохранятся и отправятся позже</Text>
+        </View>
+      )}
+      {actionError && (
+        <View style={styles.offline}>
+          <Text style={[styles.offlineText, { color: colors.error }]}>{actionError}</Text>
         </View>
       )}
       {courses.length === 0 ? (
@@ -100,7 +122,7 @@ export default function Today() {
               <Card key={dose.id} style={{ gap: 8 }}>
                 <View style={styles.row}>
                   <Text style={styles.time}>{timeOf(dose.scheduled_at)}</Text>
-                  {badge && <Text style={[styles.badge, { color: badge.color, borderColor: badge.color }]}>{badge.label}</Text>}
+                  {badge && <Text style={[styles.badge, { color: badge.color, borderColor: colors.border, backgroundColor: status === "taken" ? "#F3F4F6" : colors.card }]}>{badge.label}</Text>}
                 </View>
                 <Text style={styles.name}>{item.medicine_name}</Text>
                 <Text style={styles.body}>
