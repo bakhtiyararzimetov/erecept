@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../components/Button";
@@ -14,6 +15,7 @@ function when(iso: string): string {
 }
 
 export default function Relative() {
+  const router = useRouter();
   const [data, setData] = useState<RelativeOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,7 @@ export default function Relative() {
 
   async function leave() {
     await setRole("patient");
+    router.replace("/");
   }
 
   return (
