@@ -48,6 +48,13 @@ describe("markTaken / flushMarks", () => {
     expect(await storage.getPendingMarks()).toHaveLength(1);
   });
 
+  it("параллельные markTaken разных доз не теряются", async () => {
+    await Promise.all([markTaken(1, new Date()), markTaken(2, new Date())]);
+    expect((await storage.getPendingMarks()).map((m: any) => m.dose_id).sort()).toEqual([1, 2]);
+    const doses = (await storage.loadCourses())[0].doses;
+    expect(doses.every((d: any) => d.taken_at)).toBe(true);
+  });
+
   it("успех очищает очередь", async () => {
     syncMock.mockResolvedValue({ updated: 2 });
     await markTaken(1, new Date());

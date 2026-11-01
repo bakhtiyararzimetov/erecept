@@ -168,8 +168,17 @@ describe("courseProgress", () => {
     ];
     expect(courseProgress(course(doses), now)).toEqual({ taken: 3, missed: 1, total: 5, percent: 75 });
   });
-  it("нет прошедших доз — 0", () => {
+  it("нет прошедших доз — 100", () => {
     const now = new Date("2026-10-01T12:00:00+05:00");
-    expect(courseProgress(course([dose(1, "2026-11-02T08:00:00+05:00")]), now).percent).toBe(0);
+    expect(courseProgress(course([dose(1, "2026-11-02T08:00:00+05:00")]), now).percent).toBe(100);
+  });
+  it("2 принято, 1 пропущено — 66", () => {
+    const now = new Date("2026-11-01T12:00:00+05:00");
+    const doses = [
+      dose(1, "2026-10-30T08:00:00+05:00", { taken_at: "2026-10-30T08:01:00+05:00" }),
+      dose(2, "2026-10-30T20:00:00+05:00", { taken_at: "2026-10-30T20:01:00+05:00" }),
+      dose(3, "2026-10-31T08:00:00+05:00"),
+    ];
+    expect(courseProgress(course(doses), now).percent).toBe(66);
   });
 });

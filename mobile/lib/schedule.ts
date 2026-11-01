@@ -135,7 +135,7 @@ export function todayList(courses: Course[], now: Date): TodayEntry[] {
   return out;
 }
 
-// percent = принято / (принято + пропущено), как на сервере; будущие дозы не считаются.
+// percent = floor(принято*100 / (принято + пропущено)), 100 если приёмов ещё не было — как на сервере.
 export function courseProgress(
   course: Course,
   now: Date,
@@ -151,6 +151,6 @@ export function courseProgress(
     taken,
     missed,
     total: course.doses.length,
-    percent: due === 0 ? 0 : Math.round((taken / due) * 100),
+    percent: due === 0 ? 100 : Math.floor((taken * 100) / due),
   };
 }
