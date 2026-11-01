@@ -39,7 +39,7 @@ code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; 
 .menu a { color: var(--text); text-decoration: none; padding: 10px 12px; border-radius: 8px; white-space: nowrap; }
 .menu a:hover { background: var(--bg); }
 .menu form { margin: 0; }
-.menu .btn { min-height: 40px; padding: 0 14px; }
+.menu .btn { padding: 0 14px; }
 .menu-user { padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
@@ -123,8 +123,15 @@ p.error { margin-bottom: 16px; }
   .table td::before { content: attr(data-label); color: var(--muted); text-align: left; flex-shrink: 0; }
 }
 
-@media (max-width: 460px) {
-  .menu a { font-size: 14px; padding: 10px 6px; }
+/* Узкие экраны: логотип и «Выйти» в шапке 64px, ссылки меню второй строкой */
+@media (max-width: 560px) {
+  .topbar { height: auto; }
+  .topbar-inner { height: auto; flex-wrap: wrap; row-gap: 0; padding-bottom: 8px; }
+  .topbar-inner .logo { height: 56px; flex: 1 0 calc(100% - 120px); }
+  .menu { display: contents; }
+  .menu form { order: 2; margin-left: auto; }
+  .menu a { order: 3; padding: 10px 8px; }
+  .menu a:first-child { margin-left: -8px; }
 }
 
 /* Печать: только содержимое, без шапки и кнопок */

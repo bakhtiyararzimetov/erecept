@@ -77,12 +77,18 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 		return err
 	}
 
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) // после Commit ничего не делает
+
 	doctors := []struct{ login, name, clinic string }{
 		{"doctor1", "Ахметова Динара Сериковна", "Поликлиника №5"},
 		{"doctor2", "Ким Александр Петрович", "Городская поликлиника №12"},
 	}
 	for _, d := range doctors {
-		_, err := pool.Exec(ctx, `INSERT INTO doctors (login, password_hash, full_name, clinic)
+		_, err := tx.Exec(ctx, `INSERT INTO doctors (login, password_hash, full_name, clinic)
 			VALUES ($1, $2, $3, $4) ON CONFLICT (login) DO NOTHING`, d.login, doctorHash, d.name, d.clinic)
 		if err != nil {
 			return fmt.Errorf("сид врачей: %w", err)
@@ -90,7 +96,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 
 	for _, m := range medicines {
-		_, err := pool.Exec(ctx, `INSERT INTO medicines (name, active_substance, form)
+		_, err := tx.Exec(ctx, `INSERT INTO medicines (name, active_substance, form)
 			VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING`, m.name, m.substance, m.form)
 		if err != nil {
 			return fmt.Errorf("сид лекарств: %w", err)
@@ -99,7 +105,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 	ids := map[string]int64{}
 	for _, m := range medicines {
 		var id int64
-		if err := pool.QueryRow(ctx, `SELECT id FROM medicines WHERE name = $1`, m.name).Scan(&id); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT id FROM medicines WHERE name = $1`, m.name).Scan(&id); err != nil {
 			return err
 		}
 		ids[m.name] = id
@@ -108,7 +114,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 	for i, p := range pharmacies {
 		login := fmt.Sprintf("apteka%d", i+1)
 		var pharmacyID int64
-		err := pool.QueryRow(ctx, `INSERT INTO pharmacies (login, password_hash, name, address, phone, work_hours, lat, lng)
+		err := tx.QueryRow(ctx, `INSERT INTO pharmacies (login, password_hash, name, address, phone, work_hours, lat, lng)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (login) DO UPDATE SET login = EXCLUDED.login RETURNING id`,
 			login, pharmHash, p.name, "Алматы, "+p.address, p.phone, p.hours, p.lat, p.lng).Scan(&pharmacyID)
@@ -123,13 +129,16 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 			spread := float64((i*7+j*13)%11-5) / 100 // от -5% до +5%
 			price := int(math.Round(float64(m.price)*p.coef*(1+spread)/10)) * 10
 			inStock := !(j == 3 || (i%2 == 0 && j == 11))
-			_, err := pool.Exec(ctx, `INSERT INTO pharmacy_items (pharmacy_id, medicine_id, price, in_stock)
+			_, err := tx.Exec(ctx, `INSERT INTO pharmacy_items (pharmacy_id, medicine_id, price, in_stock)
 				VALUES ($1, $2, $3, $4) ON CONFLICT (pharmacy_id, medicine_id) DO NOTHING`,
 				pharmacyID, ids[m.name], price, inStock)
 			if err != nil {
 				return fmt.Errorf("сид цен: %w", err)
 			}
 		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("сид: фиксация: %w", err)
 	}
 	return nil
 }
