@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "еРецепт",
+    "slug": "erecept",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kz.erecept.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "kz.erecept.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Камера нужна, чтобы отсканировать QR-код рецепта"
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Геопозиция нужна, чтобы найти ближайшие аптеки с нужным лекарством"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Доступ к фото нужен, чтобы приложить снимок упаковки лекарства",
+          "cameraPermission": "Камера нужна, чтобы сфотографировать упаковку лекарства"
+        }
+      ]
+    ],
+    "scheme": "erecept"
+  }
+}
