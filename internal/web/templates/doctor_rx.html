@@ -16,10 +16,23 @@
       {{if .WaterText}}<p style="margin-top:12px">{{.WaterText}}</p>{{end}}
       {{if .Comment}}<p><strong>Комментарий:</strong> {{.Comment}}</p>{{end}}
     </div>
-    {{/* A7: статистика соблюдения лечения заменяет эту карточку */}}
     <div class="card" id="adherence">
       <h2>Соблюдение лечения</h2>
-      {{if not .StartDate}}<p class="muted">Пациент ещё не отсканировал рецепт</p>{{end}}
+      {{if not .StartDate}}<p class="muted">Пациент ещё не отсканировал рецепт</p>
+      {{else}}{{with $.Stats}}
+      <div class="stats">
+        <div class="stat"><span class="stat-value">{{.Percent}}%</span><span class="stat-label">Выполнено</span></div>
+        <div class="stat"><span class="stat-value">{{.Taken}}</span><span class="stat-label">Отмечено</span></div>
+        <div class="stat"><span class="stat-value">{{.Missed}}</span><span class="stat-label">Пропущено</span></div>
+        <div class="stat"><span class="stat-value">{{.Upcoming}}</span><span class="stat-label">Впереди</span></div>
+      </div>
+      <table class="table" style="margin-top:16px">
+        <thead><tr><th>Лекарство</th><th>Отмечено</th><th>Пропущено</th><th>Всего</th></tr></thead>
+        <tbody>{{range .Items}}
+          <tr><td data-label="Лекарство">{{.MedicineName}}</td><td data-label="Отмечено">{{.Taken}}</td><td data-label="Пропущено">{{.Missed}}</td><td data-label="Всего">{{.Total}}</td></tr>
+        {{end}}</tbody>
+      </table>
+      {{end}}{{end}}
     </div>
   </div>
   <aside class="card">

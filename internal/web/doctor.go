@@ -346,9 +346,21 @@ func (w *Web) ownRx(rw http.ResponseWriter, r *http.Request) (RxView, bool) {
 }
 
 func (w *Web) prescriptionPage(rw http.ResponseWriter, r *http.Request) {
-	if v, ok := w.ownRx(rw, r); ok {
-		w.render(rw, r, "doctor_rx", map[string]any{"Rx": v})
+	v, ok := w.ownRx(rw, r)
+	if !ok {
+		return
 	}
+	data := map[string]any{"Rx": v}
+	if v.StartDate != nil {
+		st, err := w.prescriptionStats(r.Context(), v.ID, time.Now())
+		if err != nil {
+			log.Printf("статистика рецепта %d: %v", v.ID, err)
+			http.Error(rw, "Не удалось посчитать статистику, попробуйте ещё раз", http.StatusInternalServerError)
+			return
+		}
+		data["Stats"] = st
+	}
+	w.render(rw, r, "doctor_rx", data)
 }
 
 func (w *Web) prescriptionPrint(rw http.ResponseWriter, r *http.Request) {
@@ -368,8 +380,8 @@ type listRow struct {
 func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 	rows, err := w.DB.Query(r.Context(), `
 		SELECT p.id, p.patient_name, p.created_at, p.start_date IS NOT NULL,
-		       count(d.id) FILTER (WHERE d.scheduled_at <= now()),
-		       count(d.id) FILTER (WHERE d.scheduled_at <= now() AND d.taken_at IS NOT NULL)
+		       count(d.id) FILTER (WHERE d.taken_at IS NOT NULL OR d.scheduled_at <= now() - interval '60 minutes'),
+		       count(d.id) FILTER (WHERE d.taken_at IS NOT NULL)
 		FROM prescriptions p LEFT JOIN doses d ON d.prescription_id = p.id
 		WHERE p.doctor_id = $1
 		GROUP BY p.id ORDER BY p.created_at DESC, p.id DESC`, currentUser(r).ID)
@@ -391,8 +403,11 @@ func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 		}
 		lr.Date = created.In(time.Local).Format("02.01.2006")
 		lr.Percent = "—"
-		if due > 0 {
-			lr.Percent = fmt.Sprintf("%d%%", (taken*100+due/2)/due)
+		if lr.Started { // due = отмечено + пропущено
+			lr.Percent = "100%"
+			if due > 0 {
+				lr.Percent = fmt.Sprintf("%d%%", taken*100/due)
+			}
 		}
 		list = append(list, lr)
 	}

@@ -88,6 +88,8 @@ p.error { margin-bottom: 16px; }
 .stat { display: flex; flex-direction: column; gap: 2px; }
 .stat-value { font-size: 24px; font-weight: 600; line-height: 1.2; }
 .stat-label { color: var(--muted); font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 16px; }
+.table td, .table th { overflow-wrap: normal; word-break: normal; hyphens: none; }
 
 /* Две колонки: форма слева, карточка справа */
 .grid-2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
