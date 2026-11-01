@@ -6,14 +6,14 @@
 </div>
 {{if .Rows}}
 <table class="table">
-  <thead><tr><th>Пациент</th><th>Дата</th><th>Статус</th><th>Выполнение</th><th></th></tr></thead>
+  <thead><tr><th>Пациент</th><th>Дата</th><th>Статус</th><th>%</th><th></th></tr></thead>
   <tbody>
   {{range .Rows}}
   <tr>
     <td data-label="Пациент">{{.PatientName}}</td>
     <td data-label="Дата">{{.Date}}</td>
     <td data-label="Статус">{{if .Started}}<span class="badge badge-accent">Курс идёт</span>{{else}}<span class="badge">Ожидает сканирования</span>{{end}}</td>
-    <td data-label="Выполнение">{{.Percent}}</td>
+    <td data-label="%">{{.Percent}}</td>
     <td><a class="btn btn-secondary" href="/doctor/prescriptions/{{.ID}}">Открыть</a></td>
   </tr>
   {{end}}

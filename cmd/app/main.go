@@ -15,6 +15,7 @@ import (
 
 	"erecept/internal/api"
 	"erecept/internal/db"
+	"erecept/internal/notifier"
 	"erecept/internal/seed"
 	"erecept/internal/web"
 )
@@ -47,6 +48,8 @@ func main() {
 	}
 
 	autoSeed(ctx, pool)
+
+	go notifier.New(pool).Run(ctx)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
