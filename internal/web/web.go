@@ -30,10 +30,10 @@ func New(pool *pgxpool.Pool) *Web {
 	}
 	for _, f := range files {
 		name := f[len("templates/") : len(f)-len(".html")]
-		if name == "layout" || name == "item_row" {
+		if name == "layout" || name == "item_row" || name == "pharmacy_row" {
 			continue
 		}
-		t, err := template.ParseFS(assets, "templates/layout.html", "templates/item_row.html", f)
+		t, err := template.New(name).Funcs(template.FuncMap{"money": money}).ParseFS(assets, "templates/layout.html", "templates/item_row.html", "templates/pharmacy_row.html", f)
 		if err != nil {
 			log.Fatalf("шаблон %s: %v", f, err)
 		}
@@ -66,7 +66,15 @@ func (w *Web) Routes() http.Handler {
 		r.Get("/prescriptions/{id}", w.prescriptionPage)
 		r.Get("/prescriptions/{id}/print", w.prescriptionPrint)
 	})
-	r.With(requireRole("pharmacy")).Get("/pharmacy", w.pharmacyHome)
+	r.Route("/pharmacy", func(r chi.Router) {
+		r.Use(requireRole(rolePharmacy))
+		r.Get("/", w.pharmacyHome)
+		r.Get("/sample.csv", w.pharmacySample)
+		r.Post("/items", w.pharmacyAdd)
+		r.Post("/items/{id}", w.pharmacyUpdate)
+		r.Post("/items/{id}/delete", w.pharmacyDelete)
+		r.Post("/csv", w.pharmacyCSV)
+	})
 	return r
 }
 
@@ -115,9 +123,4 @@ func (w *Web) renderPlain(rw http.ResponseWriter, page string, data map[string]a
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	rw.Write(buf.Bytes())
-}
-
-// Временная страница: A5 заменяет её настоящей.
-func (w *Web) pharmacyHome(rw http.ResponseWriter, r *http.Request) {
-	w.render(rw, r, "placeholder", map[string]any{"Title": "Мои лекарства", "Text": "Здесь будет кабинет аптеки: цены и наличие лекарств."})
 }
