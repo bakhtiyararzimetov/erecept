@@ -137,6 +137,15 @@ func TestPharmacyCabinet(t *testing.T) {
 		if count(`SELECT count(*) FROM pharmacy_items pi JOIN medicines m ON m.id=pi.medicine_id WHERE m.name LIKE 'CSV-%'`) != 2 {
 			t.Fatal("ожидали 2 позиции")
 		}
+		var many strings.Builder
+		many.WriteString("название;цена\n")
+		for i := 0; i < 60; i++ {
+			many.WriteString("Плохой;abc\n")
+		}
+		w = postCSV(h, many.String(), c1)
+		if !strings.Contains(w.Body.String(), "Загружено 0, ошибок 60") || !strings.Contains(w.Body.String(), "ещё 10") {
+			t.Fatalf("60 битых строк: код %d", w.Code)
+		}
 		w = postCSV(h, "название;форма\nА;б\n", c1)
 		if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "цена") {
 			t.Fatalf("без цены: код %d", w.Code)

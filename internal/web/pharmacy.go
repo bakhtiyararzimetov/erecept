@@ -52,6 +52,7 @@ type pageExtra struct {
 	CSVOK             int
 	CSVErrors         []string
 	CSVMoreErrors     int
+	CSVTotalErrors    int
 }
 
 func (w *Web) pharmacyPage(rw http.ResponseWriter, r *http.Request, status int, x pageExtra) {
@@ -61,7 +62,7 @@ func (w *Web) pharmacyPage(rw http.ResponseWriter, r *http.Request, status int, 
 	data := map[string]any{
 		"Q": q, "Medicines": w.medicineNames(ctx),
 		"Notice": x.Notice, "FormTitle": x.FormTitle, "Errors": x.Errors, "Form": x.Form,
-		"CSVDone": x.CSVDone, "CSVOK": x.CSVOK, "CSVErrors": x.CSVErrors, "CSVMoreErrors": x.CSVMoreErrors,
+		"CSVDone": x.CSVDone, "CSVOK": x.CSVOK, "CSVErrors": x.CSVErrors, "CSVMoreErrors": x.CSVMoreErrors, "CSVTotalErrors": x.CSVTotalErrors,
 	}
 	var p PharmacyInfo
 	if err := w.DB.QueryRow(ctx, `SELECT name, address, phone, work_hours FROM pharmacies WHERE id=$1`, pid).Scan(&p.Name, &p.Address, &p.Phone, &p.WorkHours); err != nil {
@@ -86,9 +87,15 @@ func (w *Web) pharmacyPage(rw http.ResponseWriter, r *http.Request, status int, 
 		var it PharmacyRow
 		if err := rows.Scan(&it.ID, &it.Name, &it.Substance, &it.Form, &it.Price, &it.InStock); err != nil {
 			log.Printf("позиции аптеки %d: %v", pid, err)
-			continue
+			http.Error(rw, "Не удалось загрузить позиции, попробуйте ещё раз", http.StatusInternalServerError)
+			return
 		}
 		items = append(items, it)
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("позиции аптеки %d: %v", pid, err)
+		http.Error(rw, "Не удалось загрузить позиции, попробуйте ещё раз", http.StatusInternalServerError)
+		return
 	}
 	data["Items"] = items
 	var total int
@@ -252,7 +259,14 @@ func (w *Web) pharmacyDelete(rw http.ResponseWriter, r *http.Request) {
 func (w *Web) pharmacyCSV(rw http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(rw, r.Body, maxCSVBytes+1<<20)
 	if err := r.ParseMultipartForm(1 << 20); err != nil {
-		w.pharmacyPage(rw, r, http.StatusRequestEntityTooLarge, pageExtra{Form: ItemInput{InStock: true}, FormTitle: "Файл не загружен.", Errors: []string{errTooBig}})
+		status, msg := http.StatusBadRequest, "Не удалось прочитать файл"
+		var mbe *http.MaxBytesError
+		if errors.As(err, &mbe) {
+			status, msg = http.StatusRequestEntityTooLarge, errTooBig
+		} else {
+			log.Printf("загрузка CSV: разбор формы: %v", err)
+		}
+		w.pharmacyPage(rw, r, status, pageExtra{Form: ItemInput{InStock: true}, FormTitle: "Файл не загружен.", Errors: []string{msg}})
 		return
 	}
 	f, hdr, err := r.FormFile("file")
@@ -265,10 +279,10 @@ func (w *Web) pharmacyCSV(rw http.ResponseWriter, r *http.Request) {
 		w.pharmacyPage(rw, r, http.StatusRequestEntityTooLarge, pageExtra{Form: ItemInput{InStock: true}, FormTitle: "Файл не загружен.", Errors: []string{errTooBig}})
 		return
 	}
-	rows, errs := ParseCSV(f)
-	if len(rows) == 0 && len(errs) > 0 && (errs[0] == errTooBig || len(errs) == 1 && strings.Contains(errs[0], "заголовк")) {
+	rows, errs, fatal := parseCSV(f)
+	if fatal != nil {
 		status := http.StatusUnprocessableEntity
-		if errs[0] == errTooBig {
+		if errors.Is(fatal, errCSVTooBig) {
 			status = http.StatusRequestEntityTooLarge
 		}
 		w.pharmacyPage(rw, r, status, pageExtra{Form: ItemInput{InStock: true}, FormTitle: "Файл не загружен.", Errors: errs})
@@ -288,7 +302,7 @@ func (w *Web) pharmacyCSV(rw http.ResponseWriter, r *http.Request) {
 		w.pharmacyPage(rw, r, http.StatusInternalServerError, pageExtra{Form: ItemInput{InStock: true}, FormTitle: "Ошибка.", Errors: []string{"Не удалось сохранить данные, ничего не загружено. Попробуйте ещё раз"}})
 		return
 	}
-	x := pageExtra{Form: ItemInput{InStock: true}, CSVDone: true, CSVOK: len(rows), CSVErrors: errs}
+	x := pageExtra{Form: ItemInput{InStock: true}, CSVDone: true, CSVOK: len(rows), CSVErrors: errs, CSVTotalErrors: len(errs)}
 	if len(errs) > 50 {
 		x.CSVErrors, x.CSVMoreErrors = errs[:50], len(errs)-50
 	}

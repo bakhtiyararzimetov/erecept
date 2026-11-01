@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -8,13 +9,21 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
+
+	"golang.org/x/text/encoding/charmap"
 )
+
+// ErrCSVHeader — файл нельзя разобрать из-за заголовка (нет строки или нет нужных колонок).
+var ErrCSVHeader = errors.New("проблема с заголовком CSV")
 
 const (
 	maxCSVBytes = 2 << 20
 	maxCSVRows  = 5000
 	errTooBig   = "Файл слишком большой: не больше 2 МБ и 5000 строк"
 )
+
+var errCSVTooBig = errors.New(errTooBig)
 
 // CSVRow — одна валидная строка файла аптеки.
 type CSVRow struct {
@@ -64,11 +73,23 @@ func parseStock(s string) (bool, bool) {
 
 // ParseCSV читает файл аптеки. Валидные строки возвращаются, по битым — ошибки с номерами строк.
 func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
+	rows, errs, _ = parseCSV(r)
+	return rows, errs
+}
+
+// parseCSV — как ParseCSV, но фатальную ошибку (ErrCSVHeader, слишком большой файл) отдаёт отдельно.
+func parseCSV(r io.Reader) (rows []CSVRow, errs []string, fatal error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return nil, []string{"Не удалось прочитать файл"}
+		return nil, []string{"Не удалось прочитать файл"}, err
 	}
-	text := strings.TrimPrefix(string(data), "\ufeff")
+	data = bytes.TrimPrefix(data, []byte("\ufeff"))
+	if !utf8.Valid(data) { // русский Excel часто сохраняет в Windows-1251
+		if dec, err := charmap.Windows1251.NewDecoder().Bytes(data); err == nil {
+			data = dec
+		}
+	}
+	text := strings.TrimLeft(string(data), "\r\n\t ")
 	header, _, _ := strings.Cut(text, "\n")
 	comma := ','
 	if strings.Count(header, ";") >= 1 {
@@ -82,7 +103,7 @@ func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
 
 	head, err := cr.Read()
 	if err != nil {
-		return nil, []string{"В файле нет строки-заголовка: название;действующее вещество;форма;цена;наличие"}
+		return nil, []string{"В файле нет строки-заголовка: название;действующее вещество;форма;цена;наличие"}, ErrCSVHeader
 	}
 	col := map[string]int{}
 	for i, h := range head {
@@ -97,7 +118,7 @@ func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
 		}
 	}
 	if len(missing) > 0 {
-		return nil, []string{"В заголовке нет колонки " + strings.Join(missing, ", ") + ". Нужны: название;действующее вещество;форма;цена;наличие"}
+		return nil, []string{"В заголовке нет колонки " + strings.Join(missing, ", ") + ". Нужны: название;действующее вещество;форма;цена;наличие"}, ErrCSVHeader
 	}
 	cell := func(rec []string, name string) string {
 		i, ok := col[name]
@@ -123,7 +144,7 @@ func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
 			continue
 		}
 		if n++; n > maxCSVRows {
-			return nil, []string{errTooBig}
+			return nil, []string{errTooBig}, errCSVTooBig
 		}
 		empty := true
 		for _, c := range rec {
@@ -132,6 +153,10 @@ func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
 			}
 		}
 		if empty {
+			continue
+		}
+		if strings.ContainsRune(strings.Join(rec, ""), 0) {
+			errs = append(errs, fmt.Sprintf("строка %d: недопустимые символы", line))
 			continue
 		}
 		row := CSVRow{Name: cell(rec, "название"), Substance: cell(rec, "действующее вещество"), Form: cell(rec, "форма")}
@@ -156,5 +181,5 @@ func ParseCSV(r io.Reader) (rows []CSVRow, errs []string) {
 		}
 		rows = append(rows, row)
 	}
-	return rows, errs
+	return rows, errs, nil
 }

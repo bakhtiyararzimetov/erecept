@@ -9,7 +9,7 @@
 </div>
 {{if .Notice}}<div class="card" role="status"><p>{{.Notice}}</p></div>{{end}}
 {{if .Errors}}<div class="card" role="alert"><p class="error">{{.FormTitle}}</p><ul class="error-list">{{range .Errors}}<li class="error">{{.}}</li>{{end}}</ul></div>{{end}}
-{{if .CSVDone}}<div class="card" role="status"><h2>Загружено {{.CSVOK}}, ошибок {{len .CSVErrors}}</h2>
+{{if .CSVDone}}<div class="card" role="status"><h2>Загружено {{.CSVOK}}, ошибок {{.CSVTotalErrors}}</h2>
   {{if .CSVErrors}}<ul class="error-list">{{range .CSVErrors}}<li class="error">{{.}}</li>{{end}}</ul>{{if gt .CSVMoreErrors 0}}<p class="muted">…и ещё {{.CSVMoreErrors}}</p>{{end}}{{end}}
 </div>{{end}}
 

@@ -2,6 +2,6 @@
   <td data-label="Лекарство"><form id="f{{.ID}}" method="post" action="/pharmacy/items/{{.ID}}" hx-post="/pharmacy/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML"></form><strong>{{.Name}}</strong>{{if .Substance}}<br><span class="muted">{{.Substance}}</span>{{end}}{{if .Err}}<br><span class="error">{{.Err}}</span>{{end}}</td>
   <td data-label="Форма">{{if .Form}}{{.Form}}{{else}}<span class="muted">—</span>{{end}}</td>
   <td data-label="Цена, ₸"><input form="f{{.ID}}" class="price-input" name="price" type="number" min="0" step="1" inputmode="numeric" value="{{.Price}}" aria-label="Цена, ₸ ({{.Name}})" required></td>
-  <td data-label="В наличии"><input form="f{{.ID}}" class="stock-input" name="in_stock" type="checkbox" value="1"{{if .InStock}} checked{{end}} aria-label="В наличии ({{.Name}})"></td>
+  <td data-label="В наличии"><label class="stock-label"><input form="f{{.ID}}" class="stock-input" name="in_stock" type="checkbox" value="1"{{if .InStock}} checked{{end}} aria-label="В наличии ({{.Name}})"></label></td>
   <td data-label="Действия"><div class="row"><button form="f{{.ID}}" class="btn btn-primary" type="submit">Сохранить</button><button form="f{{.ID}}" class="btn btn-secondary" type="submit" formaction="/pharmacy/items/{{.ID}}/delete" hx-post="/pharmacy/items/{{.ID}}/delete" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-confirm="Удалить «{{.Name}}» ({{money .Price}})?">Удалить</button></div></td>
 </tr>{{end}}

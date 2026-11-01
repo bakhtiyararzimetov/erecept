@@ -1,8 +1,11 @@
 package web
 
 import (
+	"errors"
 	"strings"
 	"testing"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 func TestParseCSV(t *testing.T) {
@@ -60,5 +63,27 @@ func TestParseCSVTooManyRows(t *testing.T) {
 	rows, errs := ParseCSV(strings.NewReader(b.String()))
 	if len(rows) != 0 || len(errs) != 1 || !strings.Contains(errs[0], "Файл слишком большой") {
 		t.Fatalf("rows=%d errs=%v", len(rows), errs)
+	}
+}
+
+func TestParseCSVWindows1251AndOddInput(t *testing.T) {
+	enc, err := charmap.Windows1251.NewEncoder().String("название;цена\nПарацетамол;350\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, errs := ParseCSV(strings.NewReader(enc))
+	if len(errs) != 0 || len(rows) != 1 || rows[0].Name != "Парацетамол" || rows[0].Price != 350 {
+		t.Fatalf("cp1251: rows=%+v errs=%v", rows, errs)
+	}
+	rows, errs = ParseCSV(strings.NewReader("\n\r\n  \nназвание;цена\nА;1\n"))
+	if len(rows) != 1 || len(errs) != 0 {
+		t.Fatalf("пустые строки в начале: %+v %v", rows, errs)
+	}
+	rows, errs = ParseCSV(strings.NewReader("название;цена\nА\x00;1\nБ;2\n"))
+	if len(rows) != 1 || len(errs) != 1 || !strings.Contains(errs[0], "строка 2: недопустимые символы") {
+		t.Fatalf("NUL: %+v %v", rows, errs)
+	}
+	if _, _, fatal := parseCSV(strings.NewReader("название;форма\nА;б\n")); !errors.Is(fatal, ErrCSVHeader) {
+		t.Fatalf("ждали ErrCSVHeader, получили %v", fatal)
 	}
 }
