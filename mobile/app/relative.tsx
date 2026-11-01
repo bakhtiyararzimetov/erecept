@@ -62,7 +62,7 @@ export default function Relative() {
         <Card key={`${p.patient_name}-${i}`} style={{ gap: 8 }}>
           <Text style={styles.name}>{p.patient_name}</Text>
           <Text style={styles.text}>
-            Сегодня: выпито {p.taken}, пропущено {p.missed}
+            Всего: выпито {p.taken}, пропущено {p.missed}
           </Text>
           {p.recent_missed.length > 0 && (
             <View style={{ gap: 4 }}>

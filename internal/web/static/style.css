@@ -73,6 +73,9 @@ code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; 
   background: var(--card); color: var(--text);
   font-family: inherit; font-size: 15px;
 }
+.field input[type=checkbox] { display: inline-block; width: 22px; height: 22px; min-height: 0; padding: 0; flex-shrink: 0; accent-color: var(--accent); }
+.field label.check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.med-cell { min-width: 0; overflow-wrap: anywhere; }
 .field textarea { min-height: 88px; resize: vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); outline: none; }
 .field .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }

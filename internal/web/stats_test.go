@@ -87,7 +87,7 @@ func TestAdherencePageRenders(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := get(loc)
-	for _, want := range []string{"Выполнено", "Пропущено", "Впереди", `data-label="Всего"`, "100%"} {
+	for _, want := range []string{"Выполнено", "Пропущено", "Впереди", `data-label="Приёмов всего"`, "100%"} {
 		if !strings.Contains(b, want) {
 			t.Errorf("страница без %q", want)
 		}

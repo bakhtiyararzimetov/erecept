@@ -48,7 +48,7 @@ func postForm(h http.Handler, path string, form url.Values, cookies []*http.Cook
 func validForm() url.Values {
 	return url.Values{
 		"patient_name":           {"Иванов Иван Иванович"},
-		"patient_birth":          {"1985-03-12"},
+		"patient_birth":          {"12.03.1985"},
 		"comment":                {"Больше пить воды"},
 		"water_every_hours":      {"2"},
 		"water_from":             {"09:00"},
@@ -160,6 +160,7 @@ func TestCreatePrescriptionInvalid(t *testing.T) {
 	}{
 		{"пустое имя пациента", func(v url.Values) { v.Set("patient_name", " ") }, "Укажите ФИО пациента"},
 		{"дата рождения в будущем", func(v url.Values) { v.Set("patient_birth", "2999-01-01") }, "Дата рождения не может быть в будущем"},
+		{"дата рождения не в формате", func(v url.Values) { v.Set("patient_birth", "31.02.1985") }, "введите в формате ДД.ММ.ГГГГ"},
 		{"раз в день не совпадает с числом времён", func(v url.Values) { v.Set("items[0].times", "08:00") }, "число времён приёма должно совпадать"},
 		{"время 25:00", func(v url.Values) { v.Set("items[1].times", "25:00") }, "«25:00» — время нужно в формате ЧЧ:ММ"},
 		{"пустое название лекарства", func(v url.Values) { v.Set("items[0].name", "") }, "Укажите название лекарства"},
@@ -304,4 +305,18 @@ func createRxWith(t *testing.T, pool *pgxpool.Pool, h http.Handler, cookies []*h
 		t.Fatal(err)
 	}
 	return id, code
+}
+
+func TestParseBirthBothFormats(t *testing.T) {
+	for _, in := range []string{"12.03.1985", "1985-03-12"} {
+		b, ok := parseBirth(in)
+		if !ok || b.Format("2006-01-02") != "1985-03-12" {
+			t.Fatalf("%q -> %v %v", in, b, ok)
+		}
+	}
+	for _, in := range []string{"", "03/12/1985", "31.02.1985", "abc"} {
+		if _, ok := parseBirth(in); ok {
+			t.Fatalf("%q не должна приниматься", in)
+		}
+	}
 }

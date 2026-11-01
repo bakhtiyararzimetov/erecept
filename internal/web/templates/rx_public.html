@@ -16,7 +16,7 @@
 <h1>Рецепт</h1>
 <div class="card">
   <p><strong>Врач:</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
-     <strong>Пациент:</strong> {{.PatientName}}, {{.Birth}} г. р.<br>
+     <strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
      <strong>Дата:</strong> {{.Date}}</p>
 </div>
 {{range .Items}}

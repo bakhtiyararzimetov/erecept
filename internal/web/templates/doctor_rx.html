@@ -5,7 +5,7 @@
 <div class="grid-2">
   <div>
     <div class="card">
-      <p><strong>Пациент:</strong> {{.PatientName}}, {{.Birth}} г. р.<br>
+      <p><strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
          <strong>Дата:</strong> {{.Date}}</p>
       <table class="table">
         <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
@@ -27,9 +27,9 @@
         <div class="stat"><span class="stat-value">{{.Upcoming}}</span><span class="stat-label">Впереди</span></div>
       </div>
       <table class="table" style="margin-top:16px">
-        <thead><tr><th>Лекарство</th><th>Отмечено</th><th>Пропущено</th><th>Всего</th></tr></thead>
+        <thead><tr><th>Лекарство</th><th>Отмечено</th><th>Пропущено</th><th>Приёмов всего</th></tr></thead>
         <tbody>{{range .Items}}
-          <tr><td data-label="Лекарство">{{.MedicineName}}</td><td data-label="Отмечено">{{.Taken}}</td><td data-label="Пропущено">{{.Missed}}</td><td data-label="Всего">{{.Total}}</td></tr>
+          <tr><td data-label="Лекарство">{{.MedicineName}}</td><td data-label="Отмечено">{{.Taken}}</td><td data-label="Пропущено">{{.Missed}}</td><td data-label="Приёмов всего">{{.Total}}</td></tr>
         {{end}}</tbody>
       </table>
       {{end}}{{end}}
@@ -37,7 +37,7 @@
   </div>
   <aside class="card">
     <h2>QR-код рецепта</h2>
-    <p><img src="{{.QRPath}}" alt="QR-код рецепта" width="240" height="240" style="max-width:100%;height:auto"></p>
+    <p style="text-align:center"><img src="{{.QRPath}}" alt="QR-код рецепта" width="240" height="240" style="max-width:100%;height:auto"></p>
     <p class="muted">Код: <code>{{.Code}}</code></p>
     <p class="muted"><a href="{{.Link}}">{{.Link}}</a></p>
     <div class="row">

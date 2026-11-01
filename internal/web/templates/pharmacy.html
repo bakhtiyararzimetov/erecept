@@ -21,7 +21,7 @@
     <div class="field"><label for="substance">Действующее вещество</label><input id="substance" name="substance" value="{{.Form.Substance}}"></div>
     <div class="field"><label for="form">Форма</label><input id="form" name="form" value="{{.Form.Form}}" placeholder="таблетки 500 мг"></div>
     <div class="field{{if .Form.BadPrice}} has-error{{end}}"><label for="price">Цена, ₸</label><input id="price" name="price" value="{{.Form.Price}}" inputmode="numeric" required></div>
-    <div class="field"><label><input type="checkbox" name="in_stock" value="1"{{if .Form.InStock}} checked{{end}}> В наличии</label></div>
+    <div class="field"><label class="check-label"><input type="checkbox" name="in_stock" value="1"{{if .Form.InStock}} checked{{end}}> В наличии</label></div>
     <button class="btn btn-primary" type="submit">Сохранить</button>
     <p class="muted">Если такое лекарство уже есть в вашем прайсе, цена и наличие обновятся.</p>
   </form>

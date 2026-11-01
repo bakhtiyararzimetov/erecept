@@ -40,16 +40,26 @@ func (n *Notifier) Run(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
-		if sent, err := n.CheckOnce(ctx); err != nil {
-			log.Printf("уведомления: %v", err)
-		} else if sent > 0 {
-			log.Printf("уведомления: отправлено %d", sent)
-		}
+		n.tick(ctx)
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
 		}
+	}
+}
+
+// tick — одна проверка; паника в ней пишется в лог и не останавливает цикл.
+func (n *Notifier) tick(ctx context.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("уведомления: паника: %v", r)
+		}
+	}()
+	if sent, err := n.CheckOnce(ctx); err != nil {
+		log.Printf("уведомления: %v", err)
+	} else if sent > 0 {
+		log.Printf("уведомления: отправлено %d", sent)
 	}
 }
 

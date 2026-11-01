@@ -48,10 +48,10 @@ func (a *API) claim(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().In(time.Local)
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	var rxID int64
-	var start time.Time
+	var start, claimedAt time.Time
 	err = tx.QueryRow(ctx, `UPDATE prescriptions SET patient_id = $1,
 			start_date = COALESCE(start_date, $2::date), claimed_at = COALESCE(claimed_at, now())
-		WHERE code = $3 RETURNING id, start_date`, pid, today, code).Scan(&rxID, &start)
+		WHERE code = $3 RETURNING id, start_date, claimed_at`, pid, today, code).Scan(&rxID, &start, &claimedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "Рецепт не найден")
 		return
@@ -84,6 +84,10 @@ func (a *API) claim(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, it := range items {
 		for _, d := range models.GenerateDoses(it, startLocal) {
+			// приём, время которого прошло больше часа до скана, не создаём: он не «пропущен»
+			if d.ScheduledAt.Before(claimedAt.Add(-time.Hour)) {
+				continue
+			}
 			if _, err := tx.Exec(ctx, `INSERT INTO doses (prescription_id, item_id, scheduled_at, day_number)
 				VALUES ($1, $2, $3, $4) ON CONFLICT (item_id, scheduled_at) DO NOTHING`,
 				rxID, it.ID, d.ScheduledAt, d.DayNumber); err != nil {
@@ -173,7 +177,14 @@ func (a *API) syncDoses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	updated := 0
+	now := time.Now()
 	for _, m := range req.Marks {
+		if m.TakenAt.IsZero() {
+			continue
+		}
+		if m.TakenAt.After(now) {
+			m.TakenAt = now
+		}
 		tag, err := a.DB.Exec(ctx, `UPDATE doses d SET taken_at = $1
 			FROM prescriptions p WHERE d.id = $2 AND p.id = d.prescription_id
 			AND p.patient_id = $3 AND d.taken_at IS NULL`, m.TakenAt, m.DoseID, pid)

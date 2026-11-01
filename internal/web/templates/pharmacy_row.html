@@ -1,5 +1,5 @@
 {{define "pharmacy_row"}}<tr id="item-{{.ID}}"{{if .Err}} class="has-error"{{end}}>
-  <td data-label="Лекарство"><form id="f{{.ID}}" method="post" action="/pharmacy/items/{{.ID}}" hx-post="/pharmacy/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML"></form><strong>{{.Name}}</strong>{{if .Substance}}<br><span class="muted">{{.Substance}}</span>{{end}}{{if .Err}}<br><span class="error">{{.Err}}</span>{{end}}</td>
+  <td data-label="Лекарство"><form id="f{{.ID}}" method="post" action="/pharmacy/items/{{.ID}}" hx-post="/pharmacy/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML"></form><div class="med-cell"><strong>{{.Name}}</strong>{{if .Substance}}<br><span class="muted">{{.Substance}}</span>{{end}}{{if .Err}}<br><span class="error">{{.Err}}</span>{{end}}</div></td>
   <td data-label="Форма">{{if .Form}}{{.Form}}{{else}}<span class="muted">—</span>{{end}}</td>
   <td data-label="Цена, ₸"><input form="f{{.ID}}" class="price-input" name="price" type="number" min="0" step="1" inputmode="numeric" value="{{.Price}}" aria-label="Цена, ₸ ({{.Name}})" required></td>
   <td data-label="В наличии"><label class="stock-label"><input form="f{{.ID}}" class="stock-input" name="in_stock" type="checkbox" value="1"{{if .InStock}} checked{{end}} aria-label="В наличии ({{.Name}})"></label></td>

@@ -16,7 +16,7 @@
     </div>
     <div class="field{{if .Form.BadFields.patient_birth}} has-error{{end}}">
       <label for="patient_birth">Дата рождения</label>
-      <input id="patient_birth" name="patient_birth" type="date" value="{{.Form.PatientBirth}}" required>
+      <input id="patient_birth" name="patient_birth" type="text" value="{{.Form.PatientBirth}}" placeholder="ДД.ММ.ГГГГ" inputmode="numeric" autocomplete="off" required>
     </div>
 
     <h2>Лекарства</h2>
@@ -37,11 +37,11 @@
     </div>
     <div class="field{{if .Form.BadFields.water_from}} has-error{{end}}">
       <label for="water_from">С</label>
-      <input id="water_from" name="water_from" type="time" value="{{.Form.WaterFrom}}">
+      <input id="water_from" name="water_from" type="text" value="{{.Form.WaterFrom}}" placeholder="09:00" inputmode="numeric" pattern="[0-2][0-9]:[0-5][0-9]">
     </div>
     <div class="field{{if .Form.BadFields.water_from}} has-error{{end}}">
       <label for="water_to">До</label>
-      <input id="water_to" name="water_to" type="time" value="{{.Form.WaterTo}}">
+      <input id="water_to" name="water_to" type="text" value="{{.Form.WaterTo}}" placeholder="21:00" inputmode="numeric" pattern="[0-2][0-9]:[0-5][0-9]">
     </div>
 
     <div class="field">

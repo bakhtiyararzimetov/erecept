@@ -60,6 +60,12 @@ func decode[T any](t *testing.T, w *httptest.ResponseRecorder) T {
 
 // newPrescription: рецепт с 1 лекарством, 2 раза в день, 3 дня. Возвращает code и id позиции.
 func (e *env) newPrescription(code string) int64 {
+	return e.newPrescriptionClaimedAt(code, 0)
+}
+
+// newPrescriptionClaimedAt закрепляет claimed_at на сегодня в hour:00 по местному времени,
+// чтобы число приёмов в первый день не зависело от часа запуска теста (0 — полночь, все приёмы остаются).
+func (e *env) newPrescriptionClaimedAt(code string, hour int) int64 {
 	ctx := context.Background()
 	var docID, rxID, itemID int64
 	err := e.pool.QueryRow(ctx, `INSERT INTO doctors (login, password_hash, full_name, clinic)
@@ -76,6 +82,11 @@ func (e *env) newPrescription(code string) int64 {
 	err = e.pool.QueryRow(ctx, `INSERT INTO prescription_items (prescription_id, medicine_name, dosage, times_per_day, days, meal, times)
 		VALUES ($1, 'Парацетамол', '1 таблетка', 2, 3, 'after', '{08:00,20:00}') RETURNING id`, rxID).Scan(&itemID)
 	if err != nil {
+		e.t.Fatal(err)
+	}
+	now := time.Now().In(time.Local)
+	at := time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, time.Local)
+	if _, err := e.pool.Exec(ctx, `UPDATE prescriptions SET claimed_at = $1 WHERE id = $2`, at, rxID); err != nil {
 		e.t.Fatal(err)
 	}
 	return itemID
@@ -153,6 +164,26 @@ func TestAPI(t *testing.T) {
 		}
 	})
 
+	t.Run("ClaimSkipsPastDosesOfDayOne", func(t *testing.T) {
+		e.t = t
+		e.newPrescriptionClaimedAt("code-late", 13)
+		r := e.claim("code-late", "secret-late-00000001")
+		if len(r.Doses) != 5 {
+			t.Fatalf("doses = %d, ждали 5", len(r.Doses))
+		}
+		if !strings.Contains(r.Doses[0].ScheduledAt, "T20:00:00") || r.Doses[0].DayNumber != 1 || r.Doses[0].TotalDays != 3 {
+			t.Fatalf("первый приём: %+v", r.Doses[0])
+		}
+		for i, d := range r.Doses[1:] {
+			if d.DayNumber != i/2+2 || d.TotalDays != 3 {
+				t.Fatalf("dose %d: %+v", i+1, d)
+			}
+		}
+		if again := e.claim("code-late", "secret-late-00000001"); len(again.Doses) != 5 {
+			t.Fatalf("после второго claim %d", len(again.Doses))
+		}
+	})
+
 	t.Run("ClaimTwiceNoDuplicates", func(t *testing.T) {
 		e.t = t
 		e.newPrescription("code-twice")
@@ -196,10 +227,21 @@ func TestAPI(t *testing.T) {
 			{"dose_id": r.Doses[1].ID, "taken_at": "2026-11-01T20:05:00+05:00"},
 			{"dose_id": other, "taken_at": "2026-11-01T20:05:00+05:00"},
 			{"dose_id": 999999, "taken_at": "2026-11-01T20:05:00+05:00"},
+			{"dose_id": r.Doses[2].ID},
+			{"dose_id": r.Doses[3].ID, "taken_at": "2999-01-01T00:00:00+05:00"},
 		}}
 		got := decode[map[string]int](t, e.do("POST", "/doses/sync", "secret-sync-a-0000001", marks))
-		if got["updated"] != 2 {
+		if got["updated"] != 3 {
 			t.Fatalf("updated = %d", got["updated"])
+		}
+		var zero, future *time.Time
+		pool.QueryRow(context.Background(), `SELECT taken_at FROM doses WHERE id=$1`, r.Doses[2].ID).Scan(&zero)
+		pool.QueryRow(context.Background(), `SELECT taken_at FROM doses WHERE id=$1`, r.Doses[3].ID).Scan(&future)
+		if zero != nil {
+			t.Fatal("отметка без taken_at не должна сохраняться")
+		}
+		if future == nil || future.After(time.Now().Add(time.Minute)) {
+			t.Fatalf("будущее taken_at не обрезано: %v", future)
 		}
 		marks2 := map[string]any{"marks": []map[string]any{
 			{"dose_id": r.Doses[0].ID, "taken_at": "2026-11-02T10:00:00+05:00"},

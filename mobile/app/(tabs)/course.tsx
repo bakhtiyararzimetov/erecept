@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
-import { API_URL, api } from "../../lib/api";
+import { API_URL, ApiError, api } from "../../lib/api";
 import { refreshCourses } from "../../lib/courseStore";
 import { courseProgress } from "../../lib/schedule";
 import { loadCourses, saveCourses } from "../../lib/storage";
@@ -77,7 +77,7 @@ export default function CourseScreen() {
       setCourses(saved);
     } catch (e) {
       console.warn("course: фото не загружено", e);
-      setPhotoError({ itemId: item.id, text: "Не удалось загрузить фото. Попробуйте ещё раз" });
+      setPhotoError({ itemId: item.id, text: e instanceof ApiError ? e.message : "Не удалось загрузить фото. Попробуйте ещё раз" });
     } finally {
       setBusyItem(null);
     }

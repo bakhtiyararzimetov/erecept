@@ -128,6 +128,9 @@ export default function Today() {
                 <Text style={styles.body}>
                   {item.dosage}, {item.meal_label}
                 </Text>
+                <Text style={styles.body}>
+                  день {dose.day_number} из {dose.total_days}
+                </Text>
                 {status !== "taken" && <Button title="Выпил" onPress={() => onTaken(dose.id)} />}
                 <Button
                   title="Где купить"

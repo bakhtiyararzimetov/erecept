@@ -146,8 +146,8 @@ func parseForm(r *http.Request) (RxForm, []string) {
 	if f.PatientName == "" {
 		bad("patient_name", "Укажите ФИО пациента")
 	}
-	if b, err := time.ParseInLocation("2006-01-02", f.PatientBirth, time.Local); err != nil {
-		bad("patient_birth", "Укажите дату рождения пациента")
+	if b, ok := parseBirth(f.PatientBirth); !ok {
+		bad("patient_birth", "Дата рождения: введите в формате ДД.ММ.ГГГГ, например 14.03.1956")
 	} else if b.After(time.Now()) {
 		bad("patient_birth", "Дата рождения не может быть в будущем")
 	} else if b.Year() < 1900 {
@@ -277,9 +277,19 @@ func (w *Web) createPrescription(rw http.ResponseWriter, r *http.Request) {
 	http.Redirect(rw, r, fmt.Sprintf("/doctor/prescriptions/%d", id), http.StatusSeeOther)
 }
 
+// parseBirth принимает дату как ДД.ММ.ГГГГ (ввод врача) или ГГГГ-ММ-ДД.
+func parseBirth(s string) (time.Time, bool) {
+	for _, layout := range []string{"02.01.2006", "2006-01-02"} {
+		if b, err := time.ParseInLocation(layout, s, time.Local); err == nil {
+			return b, true
+		}
+	}
+	return time.Time{}, false
+}
+
 // insertPrescription сохраняет рецепт и все его лекарства в одной транзакции.
 func (w *Web) insertPrescription(ctx context.Context, doctorID int64, f RxForm) (int64, error) {
-	birth, _ := time.Parse("2006-01-02", f.PatientBirth)
+	birth, _ := parseBirth(f.PatientBirth)
 	for attempt := 0; ; attempt++ {
 		id, err := w.tryInsert(ctx, doctorID, f, birth, newCode())
 		var pg *pgconn.PgError
