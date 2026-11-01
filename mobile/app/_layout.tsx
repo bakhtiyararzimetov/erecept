@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { flushMarks } from "../lib/sync";
 import { rescheduleAll, setupNotifications } from "../lib/notifications";
-import { getRole, onRoleChange } from "../lib/storage";
+import { getRole, markRoleCommitted, onRoleChange } from "../lib/storage";
 import type { Role } from "../lib/types";
 import { colors } from "../lib/theme";
 
@@ -27,6 +27,9 @@ export default function RootLayout() {
   }, []);
   const ready = (loaded || !!error) && role !== undefined; // без шрифта лучше системный, чем вечная заставка
   const relative = role === "relative";
+  useEffect(() => {
+    if (role !== undefined) markRoleCommitted(role); // эффект идёт после коммита, когда guard уже обновлён
+  }, [role]);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

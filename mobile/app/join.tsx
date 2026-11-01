@@ -5,7 +5,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ApiError, api } from "../lib/api";
 import { registerPush } from "../lib/push";
-import { setRole } from "../lib/storage";
+import { setRole, waitForRole } from "../lib/storage";
 import { colors, radius } from "../lib/theme";
 
 export default function Join() {
@@ -26,6 +26,7 @@ export default function Join() {
       await api.joinRelative(c, n);
       await setRole("relative");
       registerPush().catch(() => undefined);
+      await waitForRole("relative");
       router.replace("/relative");
     } catch (e) {
       console.warn("join: не удалось подключиться", e);

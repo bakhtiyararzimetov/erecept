@@ -46,6 +46,28 @@ export function onRoleChange(fn: (r: Role) => void): () => void {
   };
 }
 
+let committedRole: Role | null = null;
+const commitWaiters = new Set<() => void>();
+
+// Вызывается из _layout после того, как роль применена в дереве (guard Stack.Protected уже новый).
+export function markRoleCommitted(role: Role | null): void {
+  committedRole = role;
+  commitWaiters.forEach((fn) => fn());
+}
+
+// Ждёт, пока _layout применит роль: навигация до этого была бы отклонена старым guard.
+export function waitForRole(role: Role): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (committedRole !== role) return;
+      commitWaiters.delete(check);
+      resolve();
+    };
+    commitWaiters.add(check);
+    check();
+  });
+}
+
 export async function setRole(role: Role): Promise<void> {
   await AsyncStorage.setItem(K.role, role);
   roleListeners.forEach((fn) => fn(role));

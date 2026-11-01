@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ApiError, api } from "../lib/api";
-import { setRole } from "../lib/storage";
+import { setRole, waitForRole } from "../lib/storage";
 import { colors } from "../lib/theme";
 import type { RelativeOverview } from "../lib/types";
 
@@ -39,6 +39,7 @@ export default function Relative() {
 
   async function leave() {
     await setRole("patient");
+    await waitForRole("patient");
     router.replace("/");
   }
 
