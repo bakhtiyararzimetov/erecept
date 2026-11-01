@@ -1,0 +1,35 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{template "title" .}} — еРецепт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&subset=cyrillic&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="/"><span class="logo-mark"></span><span>еРецепт</span></a>
+    {{if .User}}
+    <nav class="menu">
+      {{if eq .User.Role "doctor"}}
+      <a href="/doctor">Новый рецепт</a>
+      <a href="/doctor/prescriptions">Мои рецепты</a>
+      {{else}}
+      <a href="/pharmacy">Мои лекарства</a>
+      {{end}}
+      <span class="menu-user muted">{{.User.Name}}</span>
+      <form method="post" action="/logout"><button class="btn btn-secondary" type="submit">Выйти</button></form>
+    </nav>
+    {{end}}
+  </div>
+</header>
+<main class="container">
+{{template "content" .}}
+</main>
+</body>
+</html>{{end}}

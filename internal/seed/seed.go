@@ -1,0 +1,140 @@
+// Package seed: тестовые данные для демо (врачи, аптеки, лекарства, цены).
+package seed
+
+import (
+	"context"
+	"fmt"
+	"math"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type medicine struct {
+	name, substance, form string
+	price                 int // базовая цена, тенге
+}
+
+// 30 лекарств; у восьми веществ есть пара «оригинал/дженерик».
+var medicines = []medicine{
+	{"Парацетамол", "парацетамол", "таблетки 500 мг №10", 300},
+	{"Панадол", "парацетамол", "таблетки 500 мг №12", 1300},
+	{"Ибупрофен", "ибупрофен", "таблетки 400 мг №20", 550},
+	{"Нурофен", "ибупрофен", "таблетки 200 мг №24", 1900},
+	{"Амоксициллин", "амоксициллин", "капсулы 500 мг №16", 1100},
+	{"Флемоксин Солютаб", "амоксициллин", "таблетки 500 мг №20", 3200},
+	{"Азитромицин", "азитромицин", "таблетки 500 мг №3", 1500},
+	{"Сумамед", "азитромицин", "таблетки 500 мг №3", 4300},
+	{"Омепразол", "омепразол", "капсулы 20 мг №30", 900},
+	{"Омез", "омепразол", "капсулы 20 мг №30", 2300},
+	{"Метформин", "метформин", "таблетки 850 мг №60", 1200},
+	{"Глюкофаж", "метформин", "таблетки 850 мг №60", 2800},
+	{"Лизиноприл", "лизиноприл", "таблетки 10 мг №30", 800},
+	{"Амлодипин", "амлодипин", "таблетки 5 мг №30", 700},
+	{"Аторвастатин", "аторвастатин", "таблетки 20 мг №30", 1700},
+	{"Цетиризин", "цетиризин", "таблетки 10 мг №20", 600},
+	{"Зодак", "цетиризин", "таблетки 10 мг №30", 2100},
+	{"Лоратадин", "лоратадин", "таблетки 10 мг №10", 450},
+	{"Амброксол", "амброксол", "сироп 30 мг/5 мл 100 мл", 900},
+	{"Ацетилцистеин", "ацетилцистеин", "шипучие таблетки 600 мг №10", 1800},
+	{"Метронидазол", "метронидазол", "таблетки 250 мг №20", 500},
+	{"Ципрофлоксацин", "ципрофлоксацин", "таблетки 500 мг №10", 850},
+	{"Дротаверин", "дротаверин", "таблетки 40 мг №20", 400},
+	{"Но-шпа", "дротаверин", "таблетки 40 мг №24", 1600},
+	{"Панкреатин", "панкреатин", "таблетки 25 ЕД №50", 700},
+	{"Лоперамид", "лоперамид", "капсулы 2 мг №10", 500},
+	{"Нимесулид", "нимесулид", "таблетки 100 мг №20", 950},
+	{"Диклофенак", "диклофенак", "таблетки 50 мг №20", 650},
+	{"Валсартан", "валсартан", "таблетки 80 мг №28", 2400},
+	{"Бисопролол", "бисопролол", "таблетки 5 мг №30", 1300},
+}
+
+type pharmacy struct {
+	name, address, phone, hours string
+	lat, lng                    float64
+	coef                        float64 // множитель цены
+}
+
+var pharmacies = []pharmacy{
+	{"Аптека «Здоровье плюс»", "пр. Абая, 52", "+7 727 250-11-01", "08:00–22:00", 43.2412, 76.9031, 1.00},
+	{"Аптека «Айболит»", "ул. Достык, 91", "+7 727 250-11-02", "09:00–21:00", 43.2358, 76.9569, 1.10},
+	{"Аптека «Тау Фарм»", "ул. Тимирязева, 42", "+7 727 250-11-03", "08:00–23:00", 43.2189, 76.9123, 0.90},
+	{"Аптека «Нур Мед»", "пр. Аль-Фараби, 77", "+7 727 250-11-04", "Круглосуточно", 43.2231, 76.9287, 1.20},
+	{"Аптека «Береке»", "ул. Жандосова, 58", "+7 727 250-11-05", "09:00–20:00", 43.2064, 76.8689, 0.85},
+	{"Аптека «Дәрі-Дәрмек»", "ул. Сатпаева, 30", "+7 727 250-11-06", "08:00–21:00", 43.2377, 76.9254, 0.95},
+	{"Аптека «Алма Фарм»", "ул. Райымбека, 212", "+7 727 250-11-07", "08:30–22:00", 43.2701, 76.9602, 1.05},
+	{"Аптека «Жеті Қазына»", "мкр. Орбита-2, 15", "+7 727 250-11-08", "09:00–22:00", 43.2272, 76.8561, 1.15},
+}
+
+// Run заполняет базу демо-данными. Можно запускать повторно: готовое не меняется.
+func Run(ctx context.Context, pool *pgxpool.Pool) error {
+	doctorHash, err := hash("doctor123")
+	if err != nil {
+		return err
+	}
+	pharmHash, err := hash("apteka123")
+	if err != nil {
+		return err
+	}
+
+	doctors := []struct{ login, name, clinic string }{
+		{"doctor1", "Ахметова Динара Сериковна", "Поликлиника №5"},
+		{"doctor2", "Ким Александр Петрович", "Городская поликлиника №12"},
+	}
+	for _, d := range doctors {
+		_, err := pool.Exec(ctx, `INSERT INTO doctors (login, password_hash, full_name, clinic)
+			VALUES ($1, $2, $3, $4) ON CONFLICT (login) DO NOTHING`, d.login, doctorHash, d.name, d.clinic)
+		if err != nil {
+			return fmt.Errorf("сид врачей: %w", err)
+		}
+	}
+
+	for _, m := range medicines {
+		_, err := pool.Exec(ctx, `INSERT INTO medicines (name, active_substance, form)
+			VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING`, m.name, m.substance, m.form)
+		if err != nil {
+			return fmt.Errorf("сид лекарств: %w", err)
+		}
+	}
+	ids := map[string]int64{}
+	for _, m := range medicines {
+		var id int64
+		if err := pool.QueryRow(ctx, `SELECT id FROM medicines WHERE name = $1`, m.name).Scan(&id); err != nil {
+			return err
+		}
+		ids[m.name] = id
+	}
+
+	for i, p := range pharmacies {
+		login := fmt.Sprintf("apteka%d", i+1)
+		var pharmacyID int64
+		err := pool.QueryRow(ctx, `INSERT INTO pharmacies (login, password_hash, name, address, phone, work_hours, lat, lng)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (login) DO UPDATE SET login = EXCLUDED.login RETURNING id`,
+			login, pharmHash, p.name, "Алматы, "+p.address, p.phone, p.hours, p.lat, p.lng).Scan(&pharmacyID)
+		if err != nil {
+			return fmt.Errorf("сид аптек: %w", err)
+		}
+
+		// В аптеке 18, 21 или 24 лекарства, набор сдвигается от аптеки к аптеке.
+		n := 18 + (i*3)%9
+		for j := 0; j < n; j++ {
+			m := medicines[(i*3+j)%len(medicines)]
+			spread := float64((i*7+j*13)%11-5) / 100 // от -5% до +5%
+			price := int(math.Round(float64(m.price)*p.coef*(1+spread)/10)) * 10
+			inStock := !(j == 3 || (i%2 == 0 && j == 11))
+			_, err := pool.Exec(ctx, `INSERT INTO pharmacy_items (pharmacy_id, medicine_id, price, in_stock)
+				VALUES ($1, $2, $3, $4) ON CONFLICT (pharmacy_id, medicine_id) DO NOTHING`,
+				pharmacyID, ids[m.name], price, inStock)
+			if err != nil {
+				return fmt.Errorf("сид цен: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+func hash(password string) (string, error) {
+	h, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	return string(h), err
+}

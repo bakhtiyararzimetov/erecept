@@ -10,10 +10,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
 	"erecept/internal/api"
 	"erecept/internal/db"
+	"erecept/internal/seed"
+	"erecept/internal/web"
 )
 
 func main() {
@@ -43,18 +46,41 @@ func main() {
 		log.Fatal(err)
 	}
 
+	autoSeed(ctx, pool)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	a := &api.API{DB: pool}
 	r.Mount("/api", a.Routes())
+	r.Mount("/", web.New(pool).Routes())
 
 	go keepAwake()
 
 	addr := ":" + env("PORT", "8080")
 	log.Printf("сервер запущен на %s (часовой пояс %s)", addr, tz)
 	log.Fatal(http.ListenAndServe(addr, r))
+}
+
+// autoSeed загружает демо-данные в пустую базу (отключается SEED_DEMO=0).
+func autoSeed(ctx context.Context, pool *pgxpool.Pool) {
+	if os.Getenv("SEED_DEMO") == "0" {
+		return
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM doctors`).Scan(&n); err != nil {
+		log.Printf("проверка тестовых данных: %v", err)
+		return
+	}
+	if n > 0 {
+		return
+	}
+	if err := seed.Run(ctx, pool); err != nil {
+		log.Printf("не удалось загрузить тестовые данные: %v", err)
+		return
+	}
+	log.Println("загружены тестовые данные")
 }
 
 func env(key, def string) string {

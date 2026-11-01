@@ -1,0 +1,137 @@
+/* еРецепт: общий стиль веба. Без теней, градиентов и анимаций. */
+:root {
+  --bg: #F6F8FA;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --text: #1F2937;
+  --muted: #5B6472;
+  --accent: #0F766E;
+  --error: #B42318;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; font-weight: 600; }
+h2 { font-size: 18px; line-height: 1.3; margin: 0 0 12px; font-weight: 600; }
+h3 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
+p { margin: 0 0 12px; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+
+/* Шапка */
+.topbar { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); }
+.topbar-inner { max-width: 1200px; height: 100%; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 600; font-size: 18px; flex-shrink: 0; }
+.logo-mark { width: 28px; height: 28px; border-radius: 6px; background: var(--accent); display: inline-block; }
+.menu { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.menu a { color: var(--text); text-decoration: none; padding: 10px 12px; border-radius: 8px; white-space: nowrap; }
+.menu a:hover { background: var(--bg); }
+.menu form { margin: 0; }
+.menu .btn { min-height: 40px; padding: 0 14px; }
+.menu-user { padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+
+/* Карточка */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card > :last-child { margin-bottom: 0; }
+
+/* Кнопки */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 20px;
+  border-radius: 8px; border: 1px solid var(--border);
+  font-family: inherit; font-size: 15px; font-weight: 500; line-height: 1;
+  text-decoration: none; cursor: pointer;
+  background: var(--card); color: var(--text);
+}
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+.btn-primary:hover { background: #0B5E57; border-color: #0B5E57; }
+.btn-secondary { background: var(--card); border-color: var(--border); color: var(--text); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-block { width: 100%; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .menu a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Поля */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-weight: 500; margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  display: block; width: 100%; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--text);
+  font-family: inherit; font-size: 15px;
+}
+.field textarea { min-height: 88px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); outline: none; }
+.field .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.field.has-error input, .field.has-error select, .field.has-error textarea { border-color: var(--error); }
+
+/* Служебные */
+.muted { color: var(--muted); }
+.error { color: var(--error); font-weight: 500; }
+p.error { margin-bottom: 16px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.badge-accent { border-color: var(--accent); color: var(--accent); background: var(--card); }
+.badge-error { border-color: var(--error); color: var(--error); background: var(--card); }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat-value { font-size: 24px; font-weight: 600; line-height: 1.2; }
+.stat-label { color: var(--muted); font-size: 13px; }
+
+/* Две колонки: форма слева, карточка справа */
+.grid-2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* Таблица */
+.table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.table th, .table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table th { color: var(--muted); font-weight: 500; font-size: 13px; background: var(--bg); }
+.table tr:last-child td { border-bottom: none; }
+
+/* Вход */
+.login-wrap { max-width: 400px; margin: 32px auto 0; }
+.login-hint h2 { font-size: 15px; }
+.login-hint p:last-child { margin-bottom: 0; }
+
+@media (max-width: 900px) {
+  .grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .menu-user { display: none; }
+  .menu a { padding: 10px 8px; }
+  .logo span:last-child { font-size: 17px; }
+  .container { padding-top: 16px; }
+  .card { padding: 16px; }
+
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table { border: none; background: none; }
+  .table thead { display: none; }
+  .table tr { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; padding: 8px 16px; }
+  .table td { border: none; padding: 6px 0; display: flex; justify-content: space-between; gap: 12px; text-align: right; }
+  .table td::before { content: attr(data-label); color: var(--muted); text-align: left; flex-shrink: 0; }
+}
+
+@media (max-width: 460px) {
+  .menu a { font-size: 14px; padding: 10px 6px; }
+}
+
+/* Печать: только содержимое, без шапки и кнопок */
+@media print {
+  body { background: #FFFFFF; font-size: 12pt; }
+  .topbar, .btn, .no-print, form button { display: none !important; }
+  .container { max-width: none; padding: 0; }
+  .card { border: 1px solid #999; break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}
