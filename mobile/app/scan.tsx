@@ -6,6 +6,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ApiError } from "../lib/api";
 import { claimAndStore } from "../lib/courseStore";
+import { ensureNotificationPermission } from "../lib/notifications";
 import { extractCode } from "../lib/schedule";
 import { colors, radius } from "../lib/theme";
 
@@ -29,6 +30,7 @@ export default function Scan() {
     setError(null);
     try {
       await claimAndStore(code);
+      await ensureNotificationPermission(); // отказ не блокирует
       router.back();
     } catch (e) {
       console.warn("scan: не удалось загрузить рецепт", e);

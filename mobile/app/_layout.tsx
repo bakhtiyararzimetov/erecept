@@ -2,9 +2,13 @@ import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@e
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { AppState } from "react-native";
+import { flushMarks } from "../lib/sync";
+import { rescheduleAll, setupNotifications } from "../lib/notifications";
 import { colors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
+setupNotifications(); // на верхнем уровне: фоновые кнопки на Android требуют слушателя при загрузке модуля
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
@@ -13,6 +17,16 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+
+  useEffect(() => {
+    const refresh = () => {
+      flushMarks().catch(() => undefined);
+      rescheduleAll().catch((e) => console.warn("notifications: перепланирование", e));
+    };
+    refresh();
+    const sub = AppState.addEventListener("change", (s) => s === "active" && refresh());
+    return () => sub.remove();
+  }, []);
 
   if (!ready) return null;
   return (

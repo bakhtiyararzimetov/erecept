@@ -154,3 +154,22 @@ export function courseProgress(
     percent: due === 0 ? 100 : Math.floor((taken * 100) / due),
   };
 }
+
+export const SNOOZE_MIN = 15;
+
+export function snoozeTime(now: Date): Date {
+  return new Date(now.getTime() + SNOOZE_MIN * MIN);
+}
+
+// Содержимое локального уведомления: у доз есть категория с кнопками и doseId, у воды — нет.
+export function notificationContent(p: PlannedNotification): {
+  title: string;
+  body: string;
+  categoryIdentifier?: string;
+  data: { doseId?: number };
+} {
+  if (p.kind === "dose" && p.doseId !== undefined) {
+    return { title: p.title, body: p.body, categoryIdentifier: "dose", data: { doseId: p.doseId } };
+  }
+  return { title: p.title, body: p.body, data: {} };
+}

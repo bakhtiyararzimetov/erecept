@@ -182,3 +182,20 @@ describe("courseProgress", () => {
     expect(courseProgress(course(doses), now).percent).toBe(66);
   });
 });
+
+import { notificationContent, snoozeTime } from "../schedule";
+
+describe("snoozeTime / notificationContent", () => {
+  test("snoozeTime = now + 15 минут", () => {
+    const now = new Date("2026-11-01T10:00:00+05:00");
+    expect(snoozeTime(now).getTime() - now.getTime()).toBe(15 * 60_000);
+  });
+  test("доза получает категорию и doseId, вода — нет", () => {
+    const at = new Date();
+    const dose = notificationContent({ key: "dose-7", at, title: "Т", body: "Б", kind: "dose", doseId: 7 });
+    expect(dose).toEqual({ title: "Т", body: "Б", categoryIdentifier: "dose", data: { doseId: 7 } });
+    const water = notificationContent({ key: "w", at, title: "Время выпить воды", body: "Стакан воды", kind: "water" });
+    expect(water.categoryIdentifier).toBeUndefined();
+    expect(water.data).toEqual({});
+  });
+});
