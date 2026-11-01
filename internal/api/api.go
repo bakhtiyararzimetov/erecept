@@ -25,6 +25,8 @@ func (a *API) Routes() http.Handler {
 	r.Use(cors)
 	r.Get("/health", a.health)
 	r.Get("/photos/{id}", a.getPhoto)
+	r.Get("/medicines/search", a.searchMedicines)
+	r.Get("/offers", a.offers)
 
 	r.Group(func(r chi.Router) {
 		r.Use(deviceSecret)
