@@ -199,3 +199,10 @@ describe("snoozeTime / notificationContent", () => {
     expect(water.data).toEqual({});
   });
 });
+
+import { responseKey } from "../schedule";
+
+test("responseKey различает повторную доставку того же уведомления", () => {
+  expect(responseKey("snooze-1", "SNOOZE", 100)).toBe(responseKey("snooze-1", "SNOOZE", 100));
+  expect(responseKey("snooze-1", "SNOOZE", 100)).not.toBe(responseKey("snooze-1", "SNOOZE", 200));
+});

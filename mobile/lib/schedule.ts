@@ -173,3 +173,9 @@ export function notificationContent(p: PlannedNotification): {
   }
   return { title: p.title, body: p.body, data: {} };
 }
+
+// Ключ для отсева дублей ответа на уведомление: слушатель и getLastNotificationResponseAsync
+// отдают один и тот же ответ, а повторная отложка того же уведомления (другая дата доставки) — новый.
+export function responseKey(requestId: string, actionId: string, deliveredAt: number): string {
+  return `${requestId}|${actionId}|${deliveredAt}`;
+}

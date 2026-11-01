@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { Platform } from "react-native";
 import { loadCourses } from "./storage";
-import { notificationContent, snoozeTime, upcomingNotifications } from "./schedule";
+import { notificationContent, responseKey, snoozeTime, upcomingNotifications } from "./schedule";
 import { flushMarks, markTaken } from "./sync";
 
 const CHANNEL = "reminders";
@@ -11,6 +11,8 @@ const SNOOZE_PREFIX = "snooze-";
 let ready = false;
 let listenerAdded = false;
 const handled = new Set<string>();
+const HANDLED_MAX = 50;
+let channelReady: Promise<unknown> = Promise.resolve();
 
 // Вызывается на верхнем уровне _layout.tsx (при загрузке модуля), чтобы кнопки
 // без открытия приложения обрабатывались в фоне на Android.
@@ -26,7 +28,7 @@ export function setupNotifications(): void {
     }),
   });
   if (Platform.OS === "android") {
-    Notifications.setNotificationChannelAsync(CHANNEL, {
+    channelReady = Notifications.setNotificationChannelAsync(CHANNEL, {
       name: "Напоминания",
       importance: Notifications.AndroidImportance.HIGH,
     }).catch((e) => console.warn("notifications: канал", e));
@@ -69,13 +71,18 @@ export function rescheduleAll(): Promise<void> {
 
 async function rescheduleNow(): Promise<void> {
   const now = new Date();
+  await channelReady;
+  const courses = await loadCourses();
+  const takenSnoozes = new Set(
+    courses.flatMap((c) => c.doses.filter((d) => d.taken_at).map((d) => SNOOZE_PREFIX + d.id)),
+  );
   const existing = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     existing
-      .filter((n) => !n.identifier.startsWith(SNOOZE_PREFIX))
+      .filter((n) => !n.identifier.startsWith(SNOOZE_PREFIX) || takenSnoozes.has(n.identifier))
       .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
   );
-  const planned = upcomingNotifications(await loadCourses(), now, 60);
+  const planned = upcomingNotifications(courses, now, 60);
   for (const p of planned) {
     try {
       await Notifications.scheduleNotificationAsync({
@@ -91,9 +98,10 @@ async function rescheduleNow(): Promise<void> {
 
 export async function handleResponse(resp: Notifications.NotificationResponse): Promise<void> {
   const req = resp.notification.request;
-  const id = `${req.identifier}|${resp.actionIdentifier}`;
+  const id = responseKey(req.identifier, resp.actionIdentifier, resp.notification.date);
   if (handled.has(id)) return; // тот же ответ мог прийти и из слушателя, и из getLastNotificationResponseAsync
   handled.add(id);
+  if (handled.size > HANDLED_MAX) handled.delete(handled.values().next().value as string);
 
   const doseId = (req.content.data as { doseId?: number } | null)?.doseId;
   if (resp.actionIdentifier === "TAKEN" && doseId !== undefined) {
@@ -102,6 +110,7 @@ export async function handleResponse(resp: Notifications.NotificationResponse): 
     await flushMarks();
     await rescheduleAll();
   } else if (resp.actionIdentifier === "SNOOZE" && doseId !== undefined) {
+    await channelReady;
     await Notifications.scheduleNotificationAsync({
       identifier: SNOOZE_PREFIX + doseId,
       content: {
