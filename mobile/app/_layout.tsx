@@ -1,10 +1,11 @@
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import { flushMarks } from "../lib/sync";
 import { rescheduleAll, setupNotifications } from "../lib/notifications";
+import { getRole } from "../lib/storage";
 import { colors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -28,12 +29,28 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
+  // Родственник видит только relative.tsx (и join), пациент — вкладки.
+  const router = useRouter();
+  const segments = useSegments() as string[];
+  const first = segments[0];
+  useEffect(() => {
+    if (!ready) return;
+    getRole()
+      .then((role) => {
+        if (role === "relative" && first !== "relative" && first !== "join") router.replace("/relative");
+        else if (role !== "relative" && first === "relative") router.replace("/");
+      })
+      .catch((e) => console.warn("layout: роль", e));
+  }, [ready, first, router]);
+
   if (!ready) return null;
   return (
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="relative" />
+        <Stack.Screen name="join" />
         <Stack.Screen name="scan" options={{ presentation: "modal" }} />
       </Stack>
     </>
