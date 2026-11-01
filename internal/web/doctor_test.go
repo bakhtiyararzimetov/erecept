@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -230,4 +231,77 @@ func TestOtherDoctorGets404(t *testing.T) {
 			t.Errorf("чужой рецепт %q: код %d", p, w.Code)
 		}
 	}
+}
+
+func TestFormRoundTripFixes(t *testing.T) {
+	pool, h := newTestEnv(t)
+	cookies := doctorCookies(t, h, "doctor1")
+
+	t.Run("индекс новой строки после удаления", func(t *testing.T) {
+		v := validForm()
+		for _, k := range []string{"name", "dosage", "times_per_day", "days", "meal", "times"} {
+			v.Set("items[2]."+k, v.Get("items[1]."+k))
+			v.Del("items[1]." + k)
+		}
+		v.Set("patient_name", "")
+		w := postForm(h, "/doctor/prescriptions", v, cookies)
+		if w.Code != http.StatusUnprocessableEntity || !regexp.MustCompile(`window\.rowN = \s*3\s*;`).MatchString(w.Body.String()) {
+			t.Fatalf("код %d, rowN не 3", w.Code)
+		}
+	})
+
+	t.Run("не больше 20 лекарств", func(t *testing.T) {
+		v := validForm()
+		for i := 2; i < 21; i++ {
+			for _, k := range []string{"name", "dosage", "times_per_day", "days", "meal", "times"} {
+				v.Set("items["+itoa(int64(i))+"]."+k, v.Get("items[1]."+k))
+			}
+		}
+		w := postForm(h, "/doctor/prescriptions", v, cookies)
+		if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "Не больше 20 лекарств в одном рецепте") {
+			t.Fatalf("код %d", w.Code)
+		}
+	})
+
+	t.Run("раз в день вне списка остаётся выбранным", func(t *testing.T) {
+		v := validForm()
+		v.Set("items[0].times_per_day", "8")
+		w := postForm(h, "/doctor/prescriptions", v, cookies)
+		if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), `<option value="8" selected>8</option>`) {
+			t.Fatalf("код %d, значение 8 сброшено", w.Code)
+		}
+	})
+
+	t.Run("время сортируется", func(t *testing.T) {
+		v := validForm()
+		v.Set("items[0].times", "20:00, 08:00")
+		id, _ := createRxWith(t, pool, h, cookies, v)
+		var times []string
+		if err := pool.QueryRow(context.Background(), `SELECT times FROM prescription_items WHERE prescription_id=$1 AND position=0`, id).Scan(&times); err != nil || strings.Join(times, ",") != "08:00,20:00" {
+			t.Errorf("times %v, ошибка %v", times, err)
+		}
+	})
+
+	t.Run("заголовки публичных страниц", func(t *testing.T) {
+		_, code := createRx(t, pool, h, cookies)
+		for _, p := range []string{"/r/" + code, "/qr/" + code + ".png"} {
+			w := get(h, p, nil)
+			if w.Header().Get("X-Robots-Tag") != "noindex" || w.Header().Get("Cache-Control") != "private, max-age=300" {
+				t.Errorf("%s: заголовки %v", p, w.Header())
+			}
+		}
+	})
+}
+
+func createRxWith(t *testing.T, pool *pgxpool.Pool, h http.Handler, cookies []*http.Cookie, v url.Values) (int64, string) {
+	t.Helper()
+	if w := postForm(h, "/doctor/prescriptions", v, cookies); w.Code != http.StatusSeeOther {
+		t.Fatalf("создание: код %d", w.Code)
+	}
+	var id int64
+	var code string
+	if err := pool.QueryRow(context.Background(), `SELECT id, code FROM prescriptions ORDER BY id DESC LIMIT 1`).Scan(&id, &code); err != nil {
+		t.Fatal(err)
+	}
+	return id, code
 }

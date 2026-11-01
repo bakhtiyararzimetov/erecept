@@ -43,7 +43,32 @@ type RxForm struct {
 	BadFields    map[string]bool
 }
 
+const (
+	maxItemIndex = 999 // индекс строки лекарства в форме: 0..maxItemIndex
+	maxItems     = 20
+)
+
 var defaultTimes = map[int]string{1: "08:00", 2: "08:00, 20:00", 3: "08:00, 14:00, 20:00", 4: "08:00, 12:00, 16:00, 20:00"}
+
+// NextIndex — свободный индекс для новой строки (после удалений индексы идут с пропусками).
+func (f RxForm) NextIndex() int {
+	n := 0
+	for _, it := range f.Items {
+		if it.I >= n {
+			n = it.I + 1
+		}
+	}
+	return n
+}
+
+// TPDOptions — варианты «раз в день»; введённое значение вне списка добавляется, чтобы не сбрасываться.
+func (it ItemForm) TPDOptions() []int {
+	opts := []int{1, 2, 3, 4, 5, 6}
+	if it.TimesPerDay > 6 && it.TimesPerDay <= 12 {
+		opts = append(opts, it.TimesPerDay)
+	}
+	return opts
+}
 
 func newItemForm(i int) ItemForm {
 	return ItemForm{I: i, TimesPerDay: 1, Days: "7", Meal: models.MealAfter, Times: defaultTimes[1]}
@@ -83,7 +108,7 @@ func (w *Web) doctorNew(rw http.ResponseWriter, r *http.Request) {
 // itemRow — htmx: одна новая строка таблицы лекарств, без шапки страницы.
 func (w *Web) itemRow(rw http.ResponseWriter, r *http.Request) {
 	i, err := strconv.Atoi(r.URL.Query().Get("i"))
-	if err != nil || i < 0 || i > 1000 {
+	if err != nil || i < 0 || i > maxItemIndex {
 		i = 0
 	}
 	t := w.pages["doctor_new"]
@@ -144,13 +169,17 @@ func parseForm(r *http.Request) (RxForm, []string) {
 	var idx []int
 	for k := range r.PostForm {
 		if m := itemKey.FindStringSubmatch(k); m != nil {
-			if n, err := strconv.Atoi(m[1]); err == nil && n < 1000 && !seen[n] {
+			if n, err := strconv.Atoi(m[1]); err == nil && n <= maxItemIndex && !seen[n] {
 				seen[n] = true
 				idx = append(idx, n)
 			}
 		}
 	}
 	sort.Ints(idx)
+	if len(idx) > maxItems {
+		bad("items", fmt.Sprintf("Не больше %d лекарств в одном рецепте", maxItems))
+		idx = idx[:maxItems]
+	}
 	for pos, i := range idx {
 		get := func(field string) string {
 			return strings.TrimSpace(r.PostFormValue(fmt.Sprintf("items[%d].%s", i, field)))
@@ -205,6 +234,7 @@ func parseTimes(s string) []string {
 			out = append(out, p)
 		}
 	}
+	sort.Strings(out) // «20:00, 08:00» → «08:00, 20:00»
 	return out
 }
 

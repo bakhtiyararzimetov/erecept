@@ -135,6 +135,7 @@ func (w *Web) notFound(rw http.ResponseWriter, r *http.Request) {
 
 // publicPage — читаемая страница рецепта без входа: то, что открывает любой сканер QR.
 func (w *Web) publicPage(rw http.ResponseWriter, r *http.Request) {
+	noIndex(rw)
 	p, err := w.loadPrescriptionByCode(r.Context(), chi.URLParam(r, "code"))
 	if errors.Is(err, pgx.ErrNoRows) {
 		w.notFound(rw, r)
@@ -156,6 +157,7 @@ func (w *Web) publicPage(rw http.ResponseWriter, r *http.Request) {
 
 // qrPNG — PNG 512px со ссылкой на публичную страницу рецепта.
 func (w *Web) qrPNG(rw http.ResponseWriter, r *http.Request) {
+	noIndex(rw)
 	code, ok := strings.CutSuffix(chi.URLParam(r, "file"), ".png")
 	if !ok {
 		http.NotFound(rw, r)
@@ -179,4 +181,10 @@ func (w *Web) qrPNG(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.Header().Set("Content-Type", "image/png")
 	rw.Write(png)
+}
+
+// noIndex: публичные страницы показывают ФИО и дату рождения, поисковикам они не нужны.
+func noIndex(rw http.ResponseWriter) {
+	rw.Header().Set("X-Robots-Tag", "noindex")
+	rw.Header().Set("Cache-Control", "private, max-age=300")
 }

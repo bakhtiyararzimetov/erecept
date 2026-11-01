@@ -143,20 +143,23 @@ p.error { margin-bottom: 16px; }
   a { color: inherit; text-decoration: none; }
 }
 
-/* Форма рецепта: таблица лекарств; на телефоне каждая строка — карточка с подписанными полями */
+/* Форма рецепта: строка лекарства — два ряда сеткой; на телефоне поля друг под другом */
 .error-list { margin: 0; padding-left: 20px; }
-.rx-table input, .rx-table select { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-family: inherit; font-size: 15px; }
-.rx-table input:focus, .rx-table select:focus { border-color: var(--accent); outline: none; }
+.rx-list { margin-bottom: 12px; }
+.rx-row { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.rx-row.has-error { border-color: var(--error); }
+.rx-f { min-width: 0; }
+.rx-f label { display: block; color: var(--muted); font-size: 13px; }
+.rx-f input, .rx-f select { display: block; width: 100%; min-height: 44px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-family: inherit; font-size: 15px; }
+.rx-f input:focus, .rx-f select:focus { border-color: var(--accent); outline: none; }
 .rx-row.has-error input, .rx-row.has-error select { border-color: var(--error); }
-#rows tr:only-child .row-delete { display: none; }
-.rx-table .times { min-width: 140px; }
+.rx-name { grid-column: span 7; } .rx-dosage { grid-column: span 5; }
+.rx-tpd { grid-column: span 2; } .rx-times { grid-column: span 3; } .rx-meal { grid-column: span 3; }
+.rx-days { grid-column: span 2; } .rx-del { grid-column: span 2; align-self: end; }
+.rx-del .btn { width: 100%; padding: 0 8px; }
+.rx-row:only-child .rx-del { visibility: hidden; }
 @media (max-width: 640px) {
-  .rx-table td { flex-direction: column; align-items: stretch; text-align: left; gap: 4px; }
-  .rx-table td.row-actions { align-items: flex-start; }
-  .rx-table td.row-actions:has(.row-delete) { padding-top: 8px; }
-  .rx-table .row-delete { width: 100%; }
-}
-@media (min-width: 641px) {
-  .rx-wrap { overflow-x: auto; }
-  .rx-table { min-width: 820px; }
+  .rx-row { grid-template-columns: minmax(0, 1fr); }
+  .rx-row > .rx-f { grid-column: auto; }
+  .rx-row:only-child .rx-del { display: none; }
 }
