@@ -1,0 +1,25 @@
+{{define "title"}}Мои рецепты{{end}}
+{{define "content"}}
+<div class="row" style="justify-content:space-between;margin-bottom:16px">
+  <h1 style="margin:0">Мои рецепты</h1>
+  <a class="btn btn-primary" href="/doctor">Новый рецепт</a>
+</div>
+{{if .Rows}}
+<table class="table">
+  <thead><tr><th>Пациент</th><th>Дата</th><th>Статус</th><th>Выполнение</th><th></th></tr></thead>
+  <tbody>
+  {{range .Rows}}
+  <tr>
+    <td data-label="Пациент">{{.PatientName}}</td>
+    <td data-label="Дата">{{.Date}}</td>
+    <td data-label="Статус">{{if .Started}}<span class="badge badge-accent">Курс идёт</span>{{else}}<span class="badge">Ожидает сканирования</span>{{end}}</td>
+    <td data-label="Выполнение">{{.Percent}}</td>
+    <td><a class="btn btn-secondary" href="/doctor/prescriptions/{{.ID}}">Открыть</a></td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<div class="card"><p class="muted">Рецептов пока нет. Создайте первый.</p></div>
+{{end}}
+{{end}}

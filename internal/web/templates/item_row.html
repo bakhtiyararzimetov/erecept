@@ -1,0 +1,23 @@
+{{define "item_row"}}<tr class="rx-row{{if .Bad}} has-error{{end}}">
+  <td data-label="Лекарство"><input name="items[{{.I}}].name" list="medicines" value="{{.Name}}" placeholder="Начните вводить название" autocomplete="off" required aria-label="Лекарство"></td>
+  <td data-label="Дозировка"><input name="items[{{.I}}].dosage" value="{{.Dosage}}" placeholder="1 таблетка 500 мг" required aria-label="Дозировка"></td>
+  <td data-label="Раз в день">
+    <select name="items[{{.I}}].times_per_day" class="tpd" aria-label="Раз в день">
+      <option value="1"{{if eq .TimesPerDay 1}} selected{{end}}>1</option>
+      <option value="2"{{if eq .TimesPerDay 2}} selected{{end}}>2</option>
+      <option value="3"{{if eq .TimesPerDay 3}} selected{{end}}>3</option>
+      <option value="4"{{if eq .TimesPerDay 4}} selected{{end}}>4</option>
+    </select>
+  </td>
+  <td data-label="Время приёма"><input name="items[{{.I}}].times" class="times" value="{{.Times}}" placeholder="08:00, 20:00" inputmode="numeric" aria-label="Время приёма"></td>
+  <td data-label="Когда">
+    <select name="items[{{.I}}].meal" aria-label="Когда принимать">
+      <option value="before"{{if eq .Meal "before"}} selected{{end}}>до еды</option>
+      <option value="after"{{if eq .Meal "after"}} selected{{end}}>после еды</option>
+      <option value="during"{{if eq .Meal "during"}} selected{{end}}>во время еды</option>
+      <option value="any"{{if eq .Meal "any"}} selected{{end}}>независимо от еды</option>
+    </select>
+  </td>
+  <td data-label="Дней"><input name="items[{{.I}}].days" type="number" min="1" max="365" value="{{.Days}}" inputmode="numeric" aria-label="Дней" required></td>
+  <td class="row-actions"><button type="button" class="btn btn-secondary row-delete" onclick="this.closest('tr').remove()">Удалить</button></td>
+</tr>{{end}}

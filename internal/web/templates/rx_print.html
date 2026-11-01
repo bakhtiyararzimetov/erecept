@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Рецепт — еРецепт</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@page { size: A4; margin: 15mm; }
+body { background: #FFFFFF; }
+.sheet { max-width: 794px; margin: 0 auto; padding: 24px 16px 48px; }
+.sheet h1 { text-align: center; font-size: 24px; }
+.sheet .meta { margin-bottom: 16px; }
+.sheet table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.sheet th, .sheet td { border: 1px solid #999; padding: 8px 10px; text-align: left; vertical-align: top; }
+.sheet th { background: #F6F8FA; font-weight: 500; }
+.sheet-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 32px; flex-wrap: wrap; }
+.qr { text-align: center; width: 160px; }
+.qr img { display: block; width: 160px; height: 160px; }
+.qr p { font-size: 12px; margin: 4px 0 0; }
+.sign { flex: 1; min-width: 200px; }
+.sign-line { border-bottom: 1px solid #000; height: 32px; margin-bottom: 4px; }
+.toolbar { margin-bottom: 16px; }
+@media print { .sheet { padding: 0; max-width: none; } }
+</style>
+</head>
+<body>
+{{with .Rx}}
+<div class="sheet">
+  <div class="toolbar no-print"><button class="btn btn-primary" type="button" onclick="window.print()">Печать</button></div>
+  <h1>Рецепт</h1>
+  <p class="meta"><strong>Врач:</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
+     <strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
+     <strong>Дата:</strong> {{.Date}}</p>
+  <table>
+    <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
+    <tbody>{{range .Items}}<tr><td>{{.Medicine}}</td><td>{{.Dosage}}</td><td>{{.How}}</td><td>{{.Days}}</td></tr>{{end}}</tbody>
+  </table>
+  {{if .WaterText}}<p>{{.WaterText}}</p>{{end}}
+  {{if .Comment}}<p><strong>Комментарий врача:</strong> {{.Comment}}</p>{{end}}
+  <div class="sheet-bottom">
+    <div class="qr"><img src="{{.QRPath}}" alt="QR-код рецепта" width="160" height="160"><p>Отсканируйте в приложении еРецепт</p></div>
+    <div class="sign"><div class="sign-line"></div><p class="muted" style="font-size:12px">Подпись врача: {{.DoctorName}}</p></div>
+  </div>
+</div>
+{{end}}
+</body>
+</html>

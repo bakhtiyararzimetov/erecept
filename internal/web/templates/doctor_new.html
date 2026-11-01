@@ -1,0 +1,73 @@
+{{define "title"}}Новый рецепт{{end}}
+{{define "content"}}
+<h1>Новый рецепт</h1>
+{{if .Errors}}
+<div class="card" role="alert">
+  <p class="error">Рецепт не сохранён. Исправьте:</p>
+  <ul class="error-list">{{range .Errors}}<li class="error">{{.}}</li>{{end}}</ul>
+</div>
+{{end}}
+<div class="grid-2">
+  <form class="card" method="post" action="/doctor/prescriptions">
+    <h2>Пациент</h2>
+    <div class="field{{if .Form.BadFields.patient_name}} has-error{{end}}">
+      <label for="patient_name">ФИО пациента</label>
+      <input id="patient_name" name="patient_name" value="{{.Form.PatientName}}" required>
+    </div>
+    <div class="field{{if .Form.BadFields.patient_birth}} has-error{{end}}">
+      <label for="patient_birth">Дата рождения</label>
+      <input id="patient_birth" name="patient_birth" type="date" value="{{.Form.PatientBirth}}" required>
+    </div>
+
+    <h2>Лекарства</h2>
+    <datalist id="medicines">{{range .Medicines}}<option value="{{.}}">{{end}}</datalist>
+    <div class="rx-wrap"><table class="table rx-table">
+      <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Раз в день</th><th>Время приёма</th><th>Когда</th><th>Дней</th><th></th></tr></thead>
+      <tbody id="rows">{{range .Form.Items}}{{template "item_row" .}}{{end}}</tbody>
+    </table></div>
+    <p><button type="button" class="btn btn-secondary" hx-get="/doctor/item-row" hx-vals='js:{i: window.rowN++}' hx-target="#rows" hx-swap="beforeend">+ Добавить лекарство</button></p>
+
+    <h2>Напоминание о воде</h2>
+    <div class="field{{if .Form.BadFields.water_every_hours}} has-error{{end}}">
+      <label for="water_every_hours">Как часто</label>
+      <select id="water_every_hours" name="water_every_hours">
+        <option value="0"{{if eq .Form.WaterEvery 0}} selected{{end}}>Не напоминать</option>
+        <option value="1"{{if eq .Form.WaterEvery 1}} selected{{end}}>Каждый час</option>
+        <option value="2"{{if eq .Form.WaterEvery 2}} selected{{end}}>Каждые 2 часа</option>
+        <option value="3"{{if eq .Form.WaterEvery 3}} selected{{end}}>Каждые 3 часа</option>
+        <option value="4"{{if eq .Form.WaterEvery 4}} selected{{end}}>Каждые 4 часа</option>
+      </select>
+    </div>
+    <div class="field{{if .Form.BadFields.water_from}} has-error{{end}}">
+      <label for="water_from">С</label>
+      <input id="water_from" name="water_from" type="time" value="{{.Form.WaterFrom}}">
+    </div>
+    <div class="field{{if .Form.BadFields.water_from}} has-error{{end}}">
+      <label for="water_to">До</label>
+      <input id="water_to" name="water_to" type="time" value="{{.Form.WaterTo}}">
+    </div>
+
+    <div class="field">
+      <label for="comment">Комментарий врача</label>
+      <textarea id="comment" name="comment">{{.Form.Comment}}</textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Сохранить рецепт</button>
+  </form>
+  <aside class="card">
+    <h2>QR-код рецепта</h2>
+    <p class="muted">QR появится после сохранения.</p>
+    <p class="muted">Пациент отсканирует его в приложении еРецепт, и напоминания о приёме лекарств заработают на его телефоне.</p>
+  </aside>
+</div>
+<script>
+window.rowN = {{len .Form.Items}};
+(function () {
+  var defaults = {1: "08:00", 2: "08:00, 20:00", 3: "08:00, 14:00, 20:00", 4: "08:00, 12:00, 16:00, 20:00"};
+  document.addEventListener("change", function (e) {
+    if (!e.target.classList.contains("tpd")) return;
+    var times = e.target.closest("tr").querySelector(".times");
+    if (times) times.value = defaults[e.target.value] || "";
+  });
+})();
+</script>
+{{end}}

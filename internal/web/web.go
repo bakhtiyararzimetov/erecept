@@ -30,10 +30,10 @@ func New(pool *pgxpool.Pool) *Web {
 	}
 	for _, f := range files {
 		name := f[len("templates/") : len(f)-len(".html")]
-		if name == "layout" {
+		if name == "layout" || name == "item_row" {
 			continue
 		}
-		t, err := template.ParseFS(assets, "templates/layout.html", f)
+		t, err := template.ParseFS(assets, "templates/layout.html", "templates/item_row.html", f)
 		if err != nil {
 			log.Fatalf("шаблон %s: %v", f, err)
 		}
@@ -54,13 +54,29 @@ func (w *Web) Routes() http.Handler {
 	r.Post("/login", w.loginSubmit)
 	r.Post("/logout", w.logout)
 
-	r.With(requireRole("doctor")).Get("/doctor", w.doctorHome)
+	r.Get("/r/{code}", w.publicPage)
+	r.Get("/qr/{file}", w.qrPNG)
+
+	r.Route("/doctor", func(r chi.Router) {
+		r.Use(requireRole(roleDoctor))
+		r.Get("/", w.doctorNew)
+		r.Get("/item-row", w.itemRow)
+		r.Post("/prescriptions", w.createPrescription)
+		r.Get("/prescriptions", w.prescriptionList)
+		r.Get("/prescriptions/{id}", w.prescriptionPage)
+		r.Get("/prescriptions/{id}/print", w.prescriptionPrint)
+	})
 	r.With(requireRole("pharmacy")).Get("/pharmacy", w.pharmacyHome)
 	return r
 }
 
 // render выводит layout.html + <page>.html. В data всегда есть User.
 func (w *Web) render(rw http.ResponseWriter, r *http.Request, page string, data map[string]any) {
+	w.renderStatus(rw, r, http.StatusOK, page, data)
+}
+
+// renderStatus — как render, но с нужным кодом ответа (например, 422 для формы с ошибками).
+func (w *Web) renderStatus(rw http.ResponseWriter, r *http.Request, status int, page string, data map[string]any) {
 	t, ok := w.pages[page]
 	if !ok {
 		log.Printf("нет шаблона %q", page)
@@ -78,14 +94,30 @@ func (w *Web) render(rw http.ResponseWriter, r *http.Request, page string, data 
 		return
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+	rw.WriteHeader(status)
 	rw.Write(buf.Bytes())
 }
 
-// Временные страницы: A3 и A5 заменяют их настоящими.
-func (w *Web) doctorHome(rw http.ResponseWriter, r *http.Request) {
-	w.render(rw, r, "placeholder", map[string]any{"Title": "Мои рецепты", "Text": "Здесь будет форма нового рецепта и список ваших рецептов."})
+// renderPlain выводит страницу без шапки (печать, публичная страница):
+// шаблон страницы сам определяет полный HTML и называется как файл.
+func (w *Web) renderPlain(rw http.ResponseWriter, page string, data map[string]any) {
+	t, ok := w.pages[page]
+	if !ok {
+		log.Printf("нет шаблона %q", page)
+		http.Error(rw, "Страница не найдена", http.StatusInternalServerError)
+		return
+	}
+	var buf bytes.Buffer
+	if err := t.ExecuteTemplate(&buf, page+".html", data); err != nil {
+		log.Printf("шаблон %s: %v", page, err)
+		http.Error(rw, "Не удалось показать страницу, попробуйте ещё раз", http.StatusInternalServerError)
+		return
+	}
+	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+	rw.Write(buf.Bytes())
 }
 
+// Временная страница: A5 заменяет её настоящей.
 func (w *Web) pharmacyHome(rw http.ResponseWriter, r *http.Request) {
 	w.render(rw, r, "placeholder", map[string]any{"Title": "Мои лекарства", "Text": "Здесь будет кабинет аптеки: цены и наличие лекарств."})
 }

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Рецепт — еРецепт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&subset=cyrillic&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><a class="logo" href="/"><span class="logo-mark"></span><span>еРецепт</span></a></div></header>
+<main class="container" style="max-width:720px">
+{{with .Rx}}
+<h1>Рецепт</h1>
+<div class="card">
+  <p><strong>Врач:</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
+     <strong>Пациент:</strong> {{.PatientName}}, {{.Birth}} г. р.<br>
+     <strong>Дата:</strong> {{.Date}}</p>
+</div>
+{{range .Items}}
+<div class="card">
+  <h2>{{.Medicine}}</h2>
+  <p>{{.Dosage}}</p>
+  <p>{{.How}}</p>
+  <p class="muted">Курс: {{.Days}} дн.</p>
+</div>
+{{end}}
+{{if or .WaterText .Comment}}
+<div class="card">
+  {{if .WaterText}}<p>{{.WaterText}}</p>{{end}}
+  {{if .Comment}}<p><strong>Комментарий врача:</strong> {{.Comment}}</p>{{end}}
+</div>
+{{end}}
+<div class="card">
+  <p>Чтобы получать напоминания о приёме лекарств, откройте приложение еРецепт и отсканируйте QR-код с рецепта.</p>
+  <p class="muted">Напоминания работают в приложении на телефоне.</p>
+</div>
+{{end}}
+</main>
+</body>
+</html>

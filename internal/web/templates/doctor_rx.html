@@ -1,0 +1,37 @@
+{{define "title"}}Рецепт{{end}}
+{{define "content"}}
+{{with .Rx}}
+<h1>Рецепт: {{.PatientName}}</h1>
+<div class="grid-2">
+  <div>
+    <div class="card">
+      <p><strong>Пациент:</strong> {{.PatientName}}, {{.Birth}} г. р.<br>
+         <strong>Дата:</strong> {{.Date}}</p>
+      <table class="table">
+        <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
+        <tbody>{{range .Items}}
+          <tr><td data-label="Лекарство">{{.Medicine}}</td><td data-label="Дозировка">{{.Dosage}}</td><td data-label="Как принимать">{{.How}}</td><td data-label="Дней">{{.Days}}</td></tr>
+        {{end}}</tbody>
+      </table>
+      {{if .WaterText}}<p style="margin-top:12px">{{.WaterText}}</p>{{end}}
+      {{if .Comment}}<p><strong>Комментарий:</strong> {{.Comment}}</p>{{end}}
+    </div>
+    {{/* A7: статистика соблюдения лечения заменяет эту карточку */}}
+    <div class="card" id="adherence">
+      <h2>Соблюдение лечения</h2>
+      {{if not .StartDate}}<p class="muted">Пациент ещё не отсканировал рецепт</p>{{end}}
+    </div>
+  </div>
+  <aside class="card">
+    <h2>QR-код рецепта</h2>
+    <p><img src="{{.QRPath}}" alt="QR-код рецепта" width="240" height="240" style="max-width:100%;height:auto"></p>
+    <p class="muted">Код: <code>{{.Code}}</code></p>
+    <p class="muted"><a href="{{.Link}}">{{.Link}}</a></p>
+    <div class="row">
+      <a class="btn btn-primary" href="/doctor/prescriptions/{{.ID}}/print" target="_blank" rel="noopener">Распечатать рецепт</a>
+      <a class="btn btn-secondary" href="/doctor">Новый рецепт</a>
+    </div>
+  </aside>
+</div>
+{{end}}
+{{end}}
