@@ -1,11 +1,12 @@
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
-import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { flushMarks } from "../lib/sync";
 import { rescheduleAll, setupNotifications } from "../lib/notifications";
-import { getRole } from "../lib/storage";
+import { getRole, onRoleChange } from "../lib/storage";
+import type { Role } from "../lib/types";
 import { colors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -13,7 +14,19 @@ setupNotifications(); // на верхнем уровне: фоновые кно
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
-  const ready = loaded || !!error; // без шрифта лучше системный, чем вечная заставка
+  // undefined — роль ещё читается; пока не прочитана, ничего не рисуем (заставка остаётся)
+  const [role, setRoleState] = useState<Role | null | undefined>(undefined);
+  useEffect(() => {
+    getRole()
+      .then(setRoleState)
+      .catch((e) => {
+        console.warn("layout: роль", e);
+        setRoleState(null);
+      });
+    return onRoleChange(setRoleState);
+  }, []);
+  const ready = (loaded || !!error) && role !== undefined; // без шрифта лучше системный, чем вечная заставка
+  const relative = role === "relative";
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -29,29 +42,19 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  // Родственник видит только relative.tsx (и join), пациент — вкладки.
-  const router = useRouter();
-  const segments = useSegments() as string[];
-  const first = segments[0];
-  useEffect(() => {
-    if (!ready) return;
-    getRole()
-      .then((role) => {
-        if (role === "relative" && first !== "relative" && first !== "join") router.replace("/relative");
-        else if (role !== "relative" && first === "relative") router.replace("/");
-      })
-      .catch((e) => console.warn("layout: роль", e));
-  }, [ready, first, router]);
-
   if (!ready) return null;
   return (
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="relative" />
+        <Stack.Protected guard={!relative}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="scan" options={{ presentation: "modal" }} />
+        </Stack.Protected>
+        <Stack.Protected guard={relative}>
+          <Stack.Screen name="relative" />
+        </Stack.Protected>
         <Stack.Screen name="join" />
-        <Stack.Screen name="scan" options={{ presentation: "modal" }} />
       </Stack>
     </>
   );

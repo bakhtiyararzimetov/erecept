@@ -5,6 +5,7 @@ import { ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { API_URL, ApiError, api } from "../../lib/api";
+import { ensureNotificationPermission } from "../../lib/notifications";
 import { pushProjectId, registerPush } from "../../lib/push";
 import { colors } from "../../lib/theme";
 
@@ -14,14 +15,18 @@ export default function Settings() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notif, setNotif] = useState<string>("");
+  const [granted, setGranted] = useState(true);
   const pushAvailable = !!pushProjectId();
 
   useFocusEffect(
     useCallback(() => {
       Notifications.getPermissionsAsync()
-        .then((p) => setNotif(p.granted ? "Уведомления включены" : "Уведомления выключены. Включите их в настройках телефона"))
+        .then((p) => {
+          setGranted(p.granted);
+          setNotif(p.granted ? "Уведомления включены" : "Уведомления выключены");
+          if (p.granted) registerPush().catch(() => undefined); // разрешение уже есть, окно не появится
+        })
         .catch(() => setNotif("Состояние уведомлений неизвестно"));
-      registerPush().catch(() => undefined);
     }, []),
   );
 
@@ -76,6 +81,18 @@ export default function Settings() {
       <Card style={{ gap: 8 }}>
         <Text style={styles.name}>Уведомления</Text>
         <Text style={styles.body}>{notif}</Text>
+        {!granted && (
+          <Button
+            title="Включить уведомления"
+            variant="secondary"
+            onPress={async () => {
+              const ok = await ensureNotificationPermission();
+              setGranted(ok);
+              setNotif(ok ? "Уведомления включены" : "Уведомления выключены. Включите их в настройках телефона");
+              if (ok) registerPush().catch(() => undefined);
+            }}
+          />
+        )}
         {!pushAvailable && <Text style={styles.body}>Push недоступен: нужна сборка с EAS (см. README)</Text>}
       </Card>
 

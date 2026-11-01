@@ -37,8 +37,18 @@ export async function getRole(): Promise<Role | null> {
   return r === "patient" || r === "relative" ? r : null;
 }
 
+const roleListeners = new Set<(r: Role) => void>();
+
+export function onRoleChange(fn: (r: Role) => void): () => void {
+  roleListeners.add(fn);
+  return () => {
+    roleListeners.delete(fn);
+  };
+}
+
 export async function setRole(role: Role): Promise<void> {
   await AsyncStorage.setItem(K.role, role);
+  roleListeners.forEach((fn) => fn(role));
 }
 
 async function readJson<T>(key: string, fallback: T): Promise<T> {

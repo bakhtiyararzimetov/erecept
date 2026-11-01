@@ -26,7 +26,6 @@ export default function Join() {
       await api.joinRelative(c, n);
       await setRole("relative");
       registerPush().catch(() => undefined);
-      router.replace("/relative");
     } catch (e) {
       console.warn("join: не удалось подключиться", e);
       setError(e instanceof ApiError ? e.message : "Не удалось подключиться");

@@ -7,7 +7,7 @@ import { Card } from "../../components/Card";
 import { ApiError, api } from "../../lib/api";
 import { formatKm, formatPrice } from "../../lib/format";
 import { loadCourses } from "../../lib/storage";
-import { colors, radius } from "../../lib/theme";
+import { colors, radius, sizes } from "../../lib/theme";
 import type { OffersResponse } from "../../lib/types";
 
 type Sort = "price" | "distance";
@@ -45,6 +45,7 @@ export default function Shops() {
   const load = useCallback(async () => {
     if (!name) return;
     const id = ++reqId.current;
+    setData(null);
     setLoading(true);
     setError(null);
     try {
@@ -111,7 +112,7 @@ export default function Shops() {
                 }}
                 style={[styles.chip, active && styles.chipActive]}
               >
-                <Text style={[styles.chipText, active && { color: "#FFFFFF" }]}>{n}</Text>
+                <Text style={[styles.chipText, active && { color: colors.card }]}>{n}</Text>
               </Pressable>
             );
           })}
@@ -139,7 +140,7 @@ export default function Shops() {
               onPress={() => chooseSort(s)}
               style={[styles.segment, active && styles.segmentActive]}
             >
-              <Text style={[styles.chipText, active && { color: "#FFFFFF" }]}>
+              <Text style={[styles.chipText, active && { color: colors.card }]}>
                 {s === "price" ? "По цене" : "По расстоянию"}
               </Text>
             </Pressable>
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.error },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    minHeight: 48, justifyContent: "center", paddingHorizontal: 16, borderRadius: radius.control,
+    minHeight: sizes.button, justifyContent: "center", paddingHorizontal: 16, borderRadius: radius.control,
     borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
   },
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
@@ -241,10 +242,10 @@ const styles = StyleSheet.create({
   },
   segments: { flexDirection: "row", gap: 8 },
   segment: {
-    flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.control,
+    flex: 1, minHeight: sizes.button, alignItems: "center", justifyContent: "center", borderRadius: radius.control,
     borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
   },
   segmentActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  notice: { backgroundColor: "#E5E7EB", borderRadius: radius.control, padding: 12 },
+  notice: { backgroundColor: colors.border, borderRadius: radius.control, padding: 12 },
   noticeText: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
 });
