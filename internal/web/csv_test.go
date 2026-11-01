@@ -79,6 +79,10 @@ func TestParseCSVWindows1251AndOddInput(t *testing.T) {
 	if len(rows) != 1 || len(errs) != 0 {
 		t.Fatalf("пустые строки в начале: %+v %v", rows, errs)
 	}
+	rows, errs = ParseCSV(strings.NewReader("\n\r\n  \nназвание;цена\nА;1\nБ;abc\n"))
+	if len(rows) != 1 || len(errs) != 1 || !strings.HasPrefix(errs[0], "строка 6:") {
+		t.Fatalf("номер строки после пустых: %+v %v", rows, errs)
+	}
 	rows, errs = ParseCSV(strings.NewReader("название;цена\nА\x00;1\nБ;2\n"))
 	if len(rows) != 1 || len(errs) != 1 || !strings.Contains(errs[0], "строка 2: недопустимые символы") {
 		t.Fatalf("NUL: %+v %v", rows, errs)

@@ -89,7 +89,9 @@ func parseCSV(r io.Reader) (rows []CSVRow, errs []string, fatal error) {
 			data = dec
 		}
 	}
-	text := strings.TrimLeft(string(data), "\r\n\t ")
+	full := string(data)
+	text := strings.TrimLeft(full, "\r\n\t ")
+	skipped := strings.Count(full[:len(full)-len(text)], "\n") // чтобы номера строк совпадали с файлом
 	header, _, _ := strings.Cut(text, "\n")
 	comma := ','
 	if strings.Count(header, ";") >= 1 {
@@ -135,10 +137,11 @@ func parseCSV(r io.Reader) (rows []CSVRow, errs []string, fatal error) {
 			break
 		}
 		line, _ := cr.FieldPos(0)
+		line += skipped
 		if err != nil {
 			var pe *csv.ParseError
 			if errors.As(err, &pe) {
-				line = pe.StartLine
+				line = pe.StartLine + skipped
 			}
 			errs = append(errs, fmt.Sprintf("строка %d: не удалось разобрать строку", line))
 			continue
