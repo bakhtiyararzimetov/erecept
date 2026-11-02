@@ -18,6 +18,7 @@ export type TodayEntry = { dose: Dose; item: Item; status: DoseStatus };
 const MIN = 60_000;
 const MISSED_AFTER_MIN = 60;
 const DUE_BEFORE_MIN = 30;
+const REPEAT_MIN = 30;
 
 export function extractCode(scanned: string): string | null {
   const s = scanned.trim();
@@ -87,10 +88,20 @@ export function upcomingNotifications(courses: Course[], now: Date, limit = 60):
     for (const dose of c.doses) {
       if (dose.taken_at) continue;
       const at = new Date(dose.scheduled_at);
-      if (at <= now) continue;
+      const repeatAt = new Date(at.getTime() + REPEAT_MIN * MIN);
+      if (repeatAt <= now) continue;
       const item = itemOf(c, dose);
       if (!item) continue;
-      out.push({ key: `dose-${dose.id}`, at, ...reminderText(item, dose), kind: "dose", doseId: dose.id });
+      const text = reminderText(item, dose);
+      if (at > now) out.push({ key: `dose-${dose.id}`, at, ...text, kind: "dose", doseId: dose.id });
+      out.push({
+        key: `dose-${dose.id}-repeat`,
+        at: repeatAt,
+        title: text.title,
+        body: "Напоминание: " + text.body,
+        kind: "dose",
+        doseId: dose.id,
+      });
     }
     const range = courseDays(c.prescription);
     if (range && c.prescription.water_every_hours > 0) {

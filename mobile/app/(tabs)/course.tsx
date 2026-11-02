@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -27,6 +27,7 @@ function period(c: Course): string {
 }
 
 export default function CourseScreen() {
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [now, setNow] = useState(new Date());
   const [localPhotos, setLocalPhotos] = useState<Record<number, string>>({});
@@ -128,6 +129,13 @@ export default function CourseScreen() {
                   <Text style={styles.body}>
                     {item.dosage}, {item.meal_label}
                   </Text>
+                  {item.explanation && (
+                    <Button
+                      title="Коротко о лекарстве"
+                      variant="secondary"
+                      onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
+                    />
+                  )}
                   <View style={styles.photoRow}>
                     {photo && <Image source={{ uri: photo }} style={styles.thumb} accessibilityLabel="Фото таблетки" />}
                     <View style={{ flex: 1 }}>

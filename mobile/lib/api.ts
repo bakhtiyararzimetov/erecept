@@ -64,6 +64,7 @@ export const api = {
   myPrescriptions: () => request<Course[]>("GET", "/api/me/prescriptions"),
   sync: (marks: Mark[]) => request<{ updated: number }>("POST", "/api/doses/sync", { marks }),
   pushToken: (token: string) => request<{ ok: boolean }>("POST", "/api/push-token", { token }),
+  sos: () => request<{ notified: number; throttled?: boolean }>("POST", "/api/sos"),
   createInvite: () => request<{ code: string; expires_at: string }>("POST", "/api/invites"),
   joinRelative: (code: string, name: string) =>
     request<{ patient_name: string }>("POST", "/api/relatives/join", { code, name }),
