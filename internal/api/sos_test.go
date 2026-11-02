@@ -1,13 +1,16 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"erecept/internal/db/dbtest"
 	"erecept/internal/notifier"
@@ -135,5 +138,32 @@ func TestSOSPushFailureResetsThrottle(t *testing.T) {
 	f.mu.Unlock()
 	if w := e.do("POST", "/sos", sosSecret, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"notified":1`) {
 		t.Fatalf("повтор: %d %s", w.Code, w.Body.String())
+	}
+}
+
+// Приложение ушло в фон во время звонка 103 и оборвало запрос — push всё равно доходит.
+func TestSOSPushSurvivesClientCancel(t *testing.T) {
+	pool := dbtest.New(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var got atomic.Int32
+	expo := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cancel() // клиент оборвал запрос, пока push в пути
+		time.Sleep(100 * time.Millisecond)
+		got.Add(1)
+		w.Write([]byte(`{"data":[]}`))
+	}))
+	t.Cleanup(expo.Close)
+	e := &env{t: t, pool: pool, h: (&API{DB: pool, PushURL: expo.URL}).Routes()}
+	e.newPrescription("code-sos-cancel")
+	e.claim("code-sos-cancel", sosSecret)
+	e.addRelative(sosSecret, "secret-sos-rel-0000009", "ExponentPushToken[c]")
+
+	req := httptest.NewRequest("POST", "/sos", nil).WithContext(ctx)
+	req.Header.Set("X-Device-Secret", sosSecret)
+	w := httptest.NewRecorder()
+	e.h.ServeHTTP(w, req)
+	if w.Code != 200 || got.Load() != 1 {
+		t.Fatalf("push должен уйти несмотря на отмену: %d %s", w.Code, w.Body.String())
 	}
 }

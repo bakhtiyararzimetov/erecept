@@ -38,8 +38,12 @@ const DoseByDoctor = "Дозу назначил врач — принимайт�
 // NoDoubleDose дописывается к missed_dose, когда в инструкции про пропуск ничего нет.
 const NoDoubleDose = "Не принимайте двойную дозу, чтобы восполнить пропущенную."
 
-// errNoAccess: неверный ключ или нет доступа — фоновый проход останавливается.
+// errNoAccess: неверный ключ или нет доступа (401/403) — фоновый проход останавливается, повтор через 1 ч.
 var errNoAccess = errors.New("нет доступа к Claude API, проверьте ключ")
+
+// errRejected: Claude API отклонил запрос (400/404: модель, схема, баланс) — проход
+// останавливается, повтор через 24 ч: само по себе это не пройдёт.
+var errRejected = errors.New("Claude API отклонил запрос")
 
 // badOutputError — модель ответила, но памятку из ответа сделать нельзя (повтор через 24 ч).
 type badOutputError string
@@ -178,8 +182,11 @@ func (s *Service) Generate(ctx context.Context, medicineName, instructionText st
 	if err != nil {
 		var apiErr *anthropic.Error
 		if errors.As(err, &apiErr) {
-			if apiErr.StatusCode == 401 || apiErr.StatusCode == 403 {
+			switch apiErr.StatusCode {
+			case 401, 403:
 				return Explanation{}, errNoAccess
+			case 400, 404:
+				return Explanation{}, fmt.Errorf("%w (%d)", errRejected, apiErr.StatusCode)
 			}
 			return Explanation{}, fmt.Errorf("Claude API ответил %d", apiErr.StatusCode)
 		}
@@ -217,7 +224,7 @@ func (s *Service) Generate(ctx context.Context, medicineName, instructionText st
 		return Explanation{}, badOutputError("в ответе модели пустые поля")
 	}
 	ex.HowToTake += " " + DoseByDoctor
-	ApplyRules(&ex, IsHighRisk(e.MNN, "") || IsHighRisk(medicineName, ""))
+	ApplyRules(&ex, IsHighRisk(e.MNN, e.AtcCode) || IsHighRisk(medicineName, ""))
 	return ex, nil
 }
 
@@ -235,8 +242,8 @@ func cleanList(in []string) []string {
 // retryDelay: через сколько повторять после ошибки.
 func retryDelay(err error) time.Duration {
 	var bad badOutputError
-	if errors.Is(err, leaflet.ErrNotFound) || errors.Is(err, leaflet.ErrWrongMNN) ||
-		errors.Is(err, leaflet.ErrNoInstruction) || errors.As(err, &bad) {
+	if errors.Is(err, leaflet.ErrNotFound) || errors.Is(err, leaflet.ErrWrongMNN) || errors.Is(err, leaflet.ErrWrongForm) ||
+		errors.Is(err, leaflet.ErrNoInstruction) || errors.Is(err, errRejected) || errors.As(err, &bad) {
 		return retryLong
 	}
 	return retryShort
@@ -257,11 +264,11 @@ func (s *Service) ensure(ctx context.Context, medicineID int64) (int64, error) {
 	if exists {
 		return 0, nil
 	}
-	var name, substance string
-	if err := s.DB.QueryRow(ctx, `SELECT name, active_substance FROM medicines WHERE id = $1`, medicineID).Scan(&name, &substance); err != nil {
+	var name, substance, form string
+	if err := s.DB.QueryRow(ctx, `SELECT name, active_substance, form FROM medicines WHERE id = $1`, medicineID).Scan(&name, &substance, &form); err != nil {
 		return 0, err
 	}
-	ex, err := s.build(ctx, name, substance)
+	ex, err := s.build(ctx, name, substance, form)
 	if err != nil {
 		reason := err.Error()
 		if r := []rune(reason); len(r) > 300 {
@@ -285,26 +292,17 @@ func (s *Service) ensure(ctx context.Context, medicineID int64) (int64, error) {
 	return ex.OutputTokens, err
 }
 
-// build: реестр (с проверкой МНН из справочника) → первая запись с инструкцией → Claude.
-func (s *Service) build(ctx context.Context, name, substance string) (Explanation, error) {
+// build: реестр (запись с тем же МНН и формой, что в справочнике) → первая запись
+// с инструкцией → Claude. Без МНН или формы реестр не вызывается (leaflet вернёт ошибку).
+func (s *Service) build(ctx context.Context, name, substance, form string) (Explanation, error) {
 	ctx, cancel := context.WithTimeout(ctx, ensureTimeout)
 	defer cancel()
-	var list []leaflet.Entry
-	if strings.TrimSpace(substance) == "" {
-		e, err := s.Leaflet.Find(ctx, name)
-		if err != nil {
-			return Explanation{}, err
-		}
-		list = []leaflet.Entry{e}
-	} else {
-		var err error
-		if list, err = s.Leaflet.CandidatesFor(ctx, name, substance); err != nil {
-			return Explanation{}, err
-		}
+	list, err := s.Leaflet.CandidatesFor(ctx, name, substance, form)
+	if err != nil {
+		return Explanation{}, err
 	}
 	var e leaflet.Entry
 	var text string
-	var err error
 	for i := 0; i < len(list) && i < maxCandidates; i++ {
 		e = list[i]
 		if text, err = s.Leaflet.Instruction(ctx, e.RegisterID); !errors.Is(err, leaflet.ErrNoInstruction) {
@@ -381,8 +379,8 @@ func (s *Service) backfill(ctx context.Context) {
 			continue
 		}
 		log.Printf("памятка не создана: %s: %v", m.name, err)
-		// Неверный ключ или нет доступа — остальные лекарства не пробуем до следующего прохода.
-		if errors.Is(err, errNoAccess) {
+		// Неверный ключ, нет доступа или запрос отклонён — остальные лекарства не пробуем до следующего прохода.
+		if errors.Is(err, errNoAccess) || errors.Is(err, errRejected) {
 			return
 		}
 	}

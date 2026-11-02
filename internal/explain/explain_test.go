@@ -218,7 +218,7 @@ func fakeRegistryMNN(t *testing.T, found bool, mnn string, calls *atomic.Int32) 
 				w.Write([]byte(`[]`))
 				return
 			}
-			w.Write([]byte(`[{"id":42,"drugTradeName":"Парацетамол","regNumber":"РК-ЛС-5№000042","mnn":"` + mnn + `"}]`))
+			w.Write([]byte(`[{"id":42,"drugTradeName":"Парацетамол","regNumber":"РК-ЛС-5№000042","mnn":"` + mnn + `","lekFormName":"Таблетки","atcCode":"N02BE01"}]`))
 		case "/getRegisterInstructionFile":
 			w.Write(makeDocx(t, "Показания: боль и температура."))
 		default:
@@ -231,9 +231,14 @@ func fakeRegistryMNN(t *testing.T, found bool, mnn string, calls *atomic.Int32) 
 
 func insertMedicine(t *testing.T, pool *pgxpool.Pool, name, substance string) int64 {
 	t.Helper()
+	return insertMedicineForm(t, pool, name, substance, "таблетки 500 мг №10")
+}
+
+func insertMedicineForm(t *testing.T, pool *pgxpool.Pool, name, substance, form string) int64 {
+	t.Helper()
 	var id int64
-	if err := pool.QueryRow(context.Background(), `INSERT INTO medicines (name, active_substance) VALUES ($1, $2) RETURNING id`,
-		name, substance).Scan(&id); err != nil {
+	if err := pool.QueryRow(context.Background(), `INSERT INTO medicines (name, active_substance, form) VALUES ($1, $2, $3) RETURNING id`,
+		name, substance, form).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	return id
@@ -401,7 +406,7 @@ func TestEnsureNotFoundRecordsFailure(t *testing.T) {
 	lc := fakeRegistry(t, false, &regCalls)
 	srv := fakeClaude(t, "end_turn", modelJSON, &claudeCalls, nil)
 	s := newService(pool, lc, srv.URL)
-	id := insertMedicine(t, pool, "Нет такого", "")
+	id := insertMedicine(t, pool, "Нет такого", "нет такого")
 
 	if err := s.Ensure(ctx, id); err == nil {
 		t.Fatal("ожидалась ошибка")
@@ -463,8 +468,8 @@ func TestEnsureSkipsEntryWithoutInstruction(t *testing.T) {
 	srvReg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/list":
-			w.Write([]byte(`[{"id":1,"drugTradeName":"ПАРАЦЕТАМОЛ","regNumber":"ЛП-1","mnn":"парацетамол"},
-				{"id":2,"drugTradeName":"Парацетамол","regNumber":"РК-ЛС-5№2","mnn":"Парацетамол"}]`))
+			w.Write([]byte(`[{"id":1,"drugTradeName":"ПАРАЦЕТАМОЛ","regNumber":"ЛП-1","mnn":"парацетамол","lekFormName":"Таблетки"},
+				{"id":2,"drugTradeName":"Парацетамол","regNumber":"РК-ЛС-5№2","mnn":"Парацетамол","lekFormName":"Таблетки"}]`))
 		case "/getRegisterInstructionFile":
 			if r.URL.Query().Get("registerId") == "1" {
 				w.Write([]byte(`<html>нет файла</html>`))
@@ -488,4 +493,77 @@ func TestEnsureSkipsEntryWithoutInstruction(t *testing.T) {
 	if ex.Source.RegNumber != "РК-ЛС-5№2" {
 		t.Fatalf("ожидалась вторая запись, источник %+v", ex.Source)
 	}
+}
+
+// Без МНН или формы в справочнике реестр не вызывается: неудача на 24 ч.
+func TestEnsureNoSubstanceOrFormSkipsRegistry(t *testing.T) {
+	pool := dbtest.New(t)
+	var regCalls, claudeCalls atomic.Int32
+	lc := fakeRegistry(t, true, &regCalls)
+	srv := fakeClaude(t, "end_turn", modelJSON, &claudeCalls, nil)
+	s := newService(pool, lc, srv.URL)
+	noMNN := insertMedicineForm(t, pool, "Парацетамол", "", "таблетки 500 мг №10")
+	noForm := insertMedicineForm(t, pool, "Панадол", "парацетамол", "")
+	if err := s.Ensure(context.Background(), noMNN); !errors.Is(err, leaflet.ErrWrongMNN) {
+		t.Fatalf("пустое МНН: %v", err)
+	}
+	if err := s.Ensure(context.Background(), noForm); !errors.Is(err, leaflet.ErrWrongForm) {
+		t.Fatalf("пустая форма: %v", err)
+	}
+	if regCalls.Load() != 0 || claudeCalls.Load() != 0 {
+		t.Fatalf("сеть не нужна: реестр %d, Claude %d", regCalls.Load(), claudeCalls.Load())
+	}
+	assertRetryIn(t, pool, noMNN, 24*time.Hour)
+	assertRetryIn(t, pool, noForm, 24*time.Hour)
+}
+
+// Форма в справочнике не совпала с формой в реестре — памятку не делаем.
+func TestEnsureWrongFormRecordsFailure(t *testing.T) {
+	pool := dbtest.New(t)
+	var regCalls, claudeCalls atomic.Int32
+	lc := fakeRegistry(t, true, &regCalls) // в реестре — таблетки
+	srv := fakeClaude(t, "end_turn", modelJSON, &claudeCalls, nil)
+	s := newService(pool, lc, srv.URL)
+	id := insertMedicineForm(t, pool, "Парацетамол", "парацетамол", "сироп 120 мг/5 мл")
+	if err := s.Ensure(context.Background(), id); !errors.Is(err, leaflet.ErrWrongForm) {
+		t.Fatalf("ожидался ErrWrongForm, получено %v", err)
+	}
+	if claudeCalls.Load() != 0 {
+		t.Error("Claude не вызывается")
+	}
+	assertRetryIn(t, pool, id, 24*time.Hour)
+}
+
+func TestGenerateHighRiskByATC(t *testing.T) {
+	srv := fakeClaude(t, "end_turn", modelJSON, nil, nil)
+	s := newService(nil, nil, srv.URL)
+	ex, err := s.Generate(context.Background(), "Новое средство", "Т", leaflet.Entry{MNN: "что-то новое", AtcCode: "B01AA03"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ex.HighRisk || ex.MissedDose != HighRiskMissedDose {
+		t.Fatalf("АТХ B01AA должен давать высокий риск: %+v", ex)
+	}
+}
+
+// 400 (схема, модель, баланс) — проход останавливается, лекарство ждёт 24 ч.
+func TestBackfillStopsOnBadRequest(t *testing.T) {
+	pool := dbtest.New(t)
+	var regCalls, claudeCalls atomic.Int32
+	lc := fakeRegistry(t, true, &regCalls)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claudeCalls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"type":"error","error":{"type":"invalid_request_error","message":"credit balance is too low"}}`))
+	}))
+	t.Cleanup(srv.Close)
+	s := newService(pool, lc, srv.URL)
+	first := insertMedicine(t, pool, "Парацетамол", "парацетамол")
+	insertMedicine(t, pool, "Панадол", "парацетамол")
+	s.backfill(context.Background())
+	if claudeCalls.Load() != 1 {
+		t.Fatalf("после 400 проход должен остановиться, вызовов Claude: %d", claudeCalls.Load())
+	}
+	assertRetryIn(t, pool, first, 24*time.Hour)
 }

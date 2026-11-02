@@ -119,55 +119,97 @@ func TestSourceURL(t *testing.T) {
 	}
 }
 
+const tablets = "таблетки 500 мг №10"
+
 func TestFindFor(t *testing.T) {
 	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`[
-			{"id":1,"drugTradeName":"Парацетамол-Плюс","regNumber":"A","mnn":"Парацетамол, Кофеин"},
-			{"id":2,"drugTradeName":"Парацетамол","regNumber":"B","mnn":"Парацетамол, Аскорбиновая кислота"},
-			{"id":3,"drugTradeName":"Парацетамол Детский","regNumber":"C","mnn":" Парацетамол "},
-			{"id":4,"drugTradeName":"Парацетамол®","regNumber":"D","mnn":"парацетамол"}]`))
+			{"id":1,"drugTradeName":"Парацетамол-Плюс","regNumber":"A","mnn":"Парацетамол, Кофеин","lekFormName":"Таблетки"},
+			{"id":2,"drugTradeName":"Парацетамол","regNumber":"B","mnn":"Парацетамол, Аскорбиновая кислота","lekFormName":"Таблетки"},
+			{"id":3,"drugTradeName":"Парацетамол Детский","regNumber":"C","mnn":" Парацетамол ","lekFormName":"Таблетки"},
+			{"id":4,"drugTradeName":"Парацетамол®","regNumber":"D","mnn":"парацетамол","lekFormName":"Таблетки","atcCode":"N02BE01"}]`))
 	})
 	defer stop()
 	ctx := context.Background()
 
 	// Точное название + совпадающее МНН важнее первого с тем же МНН.
-	e, err := c.FindFor(ctx, "парацетамол", "Парацетамол")
-	if err != nil || e.RegisterID != 4 {
+	e, err := c.FindFor(ctx, "парацетамол", "Парацетамол", tablets)
+	if err != nil || e.RegisterID != 4 || e.AtcCode != "N02BE01" || e.Form != "Таблетки" {
 		t.Fatalf("ожидалась запись 4: %+v, %v", e, err)
 	}
 	// Точного названия с этим МНН нет — первая запись с совпадающим МНН.
-	e, err = c.FindFor(ctx, "Панадол", "парацетамол")
+	e, err = c.FindFor(ctx, "Панадол", "парацетамол", tablets)
 	if err != nil || e.RegisterID != 3 {
 		t.Fatalf("ожидалась запись 3: %+v, %v", e, err)
 	}
 	// Нет записи с таким МНН — ошибка, а не чужой препарат.
-	if _, err := c.FindFor(ctx, "Парацетамол", "варфарин"); !errors.Is(err, ErrWrongMNN) {
+	if _, err := c.FindFor(ctx, "Парацетамол", "варфарин", tablets); !errors.Is(err, ErrWrongMNN) {
 		t.Fatalf("ожидался ErrWrongMNN, получено %v", err)
 	}
-	// Без МНН — как Find (точное название).
-	if e, err := c.FindFor(ctx, "Парацетамол", ""); err != nil || e.RegisterID != 2 {
-		t.Fatalf("без МНН ожидалась запись 2: %+v, %v", e, err)
+	// Нет записи в такой форме.
+	if _, err := c.FindFor(ctx, "Парацетамол", "парацетамол", "сироп 120 мг/5 мл"); !errors.Is(err, ErrWrongForm) {
+		t.Fatalf("ожидался ErrWrongForm, получено %v", err)
 	}
 }
 
 func TestFindForNotFound(t *testing.T) {
 	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`[]`)) })
 	defer stop()
-	if _, err := c.FindFor(context.Background(), "Нет", "нет"); !errors.Is(err, ErrNotFound) {
+	if _, err := c.FindFor(context.Background(), "Нет", "нет", tablets); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("ожидался ErrNotFound, получено %v", err)
 	}
 }
 
-func TestCandidatesForOrder(t *testing.T) {
+// Без МНН или формы в реестр не ходим: угадывать препарат нельзя.
+func TestCandidatesForNeedsSubstanceAndForm(t *testing.T) {
+	calls := 0
+	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) { calls++; w.Write([]byte(`[]`)) })
+	defer stop()
+	ctx := context.Background()
+	if _, err := c.CandidatesFor(ctx, "Парацетамол", "", tablets); !errors.Is(err, ErrWrongMNN) {
+		t.Fatalf("пустое МНН: %v", err)
+	}
+	if _, err := c.CandidatesFor(ctx, "Парацетамол", "парацетамол", " "); !errors.Is(err, ErrWrongForm) {
+		t.Fatalf("пустая форма: %v", err)
+	}
+	if calls != 0 {
+		t.Fatalf("реестр вызван %d раз", calls)
+	}
+}
+
+// Настоящий порядок ответа реестра для «Диклофенак»: свечи и пластырь раньше таблеток.
+func TestCandidatesForDiclofenacForm(t *testing.T) {
 	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`[
-			{"id":1,"drugTradeName":"Парацетамол Детский","mnn":"парацетамол"},
-			{"id":2,"drugTradeName":"Парацетамол-Плюс","mnn":"парацетамол, кофеин"},
-			{"id":3,"drugTradeName":"ПАРАЦЕТАМОЛ","mnn":"Парацетамол"},
-			{"id":4,"drugTradeName":"Парацетамол®","mnn":"парацетамол"}]`))
+			{"id":99001817,"drugTradeName":"Диклофенак","mnn":"диклофенак натрия","lekFormName":"","expirationDate":null},
+			{"id":99001794,"drugTradeName":"Диклофенак-Тева","mnn":"диклофенак","lekFormName":"пластырь","expirationDate":null},
+			{"id":182748,"drugTradeName":"Диклофенак","mnn":"Диклофенак","lekFormName":"Суппозитории ректальные","expirationDate":null},
+			{"id":179657,"drugTradeName":"Диклофенак-Тева","mnn":"Диклофенак","lekFormName":"Капсулы кишечнорастворимые","expirationDate":"2026-01-29T00:00:00"},
+			{"id":180423,"drugTradeName":"Диклофенак","mnn":"Диклофенак","lekFormName":"Раствор для внутримышечного введения","expirationDate":"2028-07-11T00:00:00"},
+			{"id":99000180,"drugTradeName":"Диклофенак-Тева","mnn":"диклофенак","lekFormName":"таблетки, покрытые кишечнорастворимой оболочкой","expirationDate":"2029-03-15T00:00:00"}]`))
 	})
 	defer stop()
-	list, err := c.CandidatesFor(context.Background(), "Парацетамол", "парацетамол")
+	list, err := c.CandidatesFor(context.Background(), "Диклофенак", "диклофенак", "таблетки 50 мг №20")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 || list[0].RegisterID != 99000180 {
+		t.Fatalf("ожидались только таблетки 99000180: %+v", list)
+	}
+}
+
+// Сначала действующие регистрации (без срока или со сроком в будущем), затем точное название.
+func TestCandidatesForPrefersValidRegistration(t *testing.T) {
+	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`[
+			{"id":1,"drugTradeName":"Парацетамол","mnn":"парацетамол","lekFormName":"Таблетки","expirationDate":"2020-05-01T00:00:00"},
+			{"id":2,"drugTradeName":"Парацетамол Детский","mnn":"парацетамол","lekFormName":"Таблетки","expirationDate":"2099-01-01T00:00:00"},
+			{"id":3,"drugTradeName":"ПАРАЦЕТАМОЛ","mnn":"Парацетамол","lekFormName":"Таблетки","expirationDate":null},
+			{"id":4,"drugTradeName":"Парацетамол-Д","mnn":"парацетамол","lekFormName":"Таблетки","expirationDate":"2099-01-01T00:00:00"},
+			{"id":5,"drugTradeName":"Парацетамол-Е","mnn":"парацетамол","lekFormName":"Таблетки","expirationDate":"2025-12-31T00:00:00"}]`))
+	})
+	defer stop()
+	list, err := c.CandidatesFor(context.Background(), "Парацетамол", "парацетамол", tablets)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,8 +217,23 @@ func TestCandidatesForOrder(t *testing.T) {
 	for _, e := range list {
 		ids = append(ids, e.RegisterID)
 	}
-	// Сначала точные названия с этим МНН, затем остальные с этим МНН; чужое МНН не попадает.
-	if len(ids) != 3 || ids[0] != 3 || ids[1] != 4 || ids[2] != 1 {
+	// 3 — действующая и точное название; 2, 4 — действующие; истёкшие в конце,
+	// сначала с более поздним сроком (у старых регистраций файла инструкции обычно нет).
+	if len(ids) != 5 || ids[0] != 3 || ids[1] != 2 || ids[2] != 4 || ids[3] != 5 || ids[4] != 1 {
 		t.Fatalf("порядок кандидатов: %v", ids)
+	}
+	if list[4].ExpiresAt == nil || list[4].ExpiresAt.Year() != 2020 || list[0].ExpiresAt != nil {
+		t.Fatalf("срок регистрации не разобран: %+v", list)
+	}
+}
+
+func TestFormRoot(t *testing.T) {
+	for in, want := range map[string]string{
+		"таблетки 500 мг №10": "таблет", "Таблетки, покрытые оболочкой": "таблет",
+		"капсулы 20 мг": "капсул", "сироп 30 мг/5 мл": "сироп", "Суспензия для приема внутрь": "суспен", "": "",
+	} {
+		if got := formRoot(in); got != want {
+			t.Errorf("formRoot(%q) = %q, ожидалось %q", in, got, want)
+		}
 	}
 }

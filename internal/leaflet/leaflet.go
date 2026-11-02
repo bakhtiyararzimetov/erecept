@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,9 @@ var ErrNotFound = errors.New("лекарство не найдено в реес
 
 // ErrWrongMNN: по названию что-то нашлось, но ни у одной записи нет нужного МНН.
 var ErrWrongMNN = errors.New("в реестре нет препарата с таким МНН")
+
+// ErrWrongForm: нет записи в той же лекарственной форме (или форма в справочнике не указана).
+var ErrWrongForm = errors.New("в реестре нет препарата в такой форме")
 
 // ErrNoInstruction: у записи нет файла инструкции, или это не DOCX, или в нём нет текста.
 var ErrNoInstruction = errors.New("у записи нет инструкции")
@@ -47,13 +51,19 @@ type Entry struct {
 	TradeName  string
 	RegNumber  string
 	MNN        string
+	Form       string     // лекарственная форма: «Таблетки, покрытые оболочкой»
+	ExpiresAt  *time.Time // срок регистрации; nil — бессрочно или не указан
+	AtcCode    string     // код АТХ, например «M01AB05»
 }
 
 type listItem struct {
-	ID            int64  `json:"id"`
-	DrugTradeName string `json:"drugTradeName"`
-	RegNumber     string `json:"regNumber"`
-	MNN           string `json:"mnn"`
+	ID             int64   `json:"id"`
+	DrugTradeName  string  `json:"drugTradeName"`
+	RegNumber      string  `json:"regNumber"`
+	MNN            string  `json:"mnn"`
+	LekFormName    string  `json:"lekFormName"`
+	ExpirationDate *string `json:"expirationDate"` // «2028-07-11T00:00:00» или null
+	AtcCode        string  `json:"atcCode"`
 }
 
 // norm приводит название или МНН к виду для сравнения: без «®», в нижнем регистре,
@@ -63,7 +73,29 @@ func norm(s string) string {
 }
 
 func (it listItem) entry() Entry {
-	return Entry{RegisterID: it.ID, TradeName: strings.TrimSpace(it.DrugTradeName), RegNumber: it.RegNumber, MNN: it.MNN}
+	e := Entry{RegisterID: it.ID, TradeName: strings.TrimSpace(it.DrugTradeName), RegNumber: it.RegNumber, MNN: it.MNN,
+		Form: strings.TrimSpace(it.LekFormName), AtcCode: strings.TrimSpace(it.AtcCode)}
+	if it.ExpirationDate != nil {
+		// Неразборчивая дата считается как «не указан».
+		if t, err := time.ParseInLocation("2006-01-02T15:04:05", *it.ExpirationDate, time.UTC); err == nil {
+			e.ExpiresAt = &t
+		}
+	}
+	return e
+}
+
+// formRoot — корень формы для сравнения: первые 6 букв первого слова в нижнем регистре
+// («таблетки 500 мг» → «таблет», «Капсулы кишечнорастворимые» → «капсул»).
+func formRoot(form string) string {
+	f := strings.Fields(strings.ToLower(form))
+	if len(f) == 0 {
+		return ""
+	}
+	r := []rune(strings.TrimRight(f[0], ",.;:"))
+	if len(r) > 6 {
+		r = r[:6]
+	}
+	return string(r)
 }
 
 // Find ищет запись по торговому названию: точное совпадение, иначе первая в ответе.
@@ -83,43 +115,74 @@ func (c *Client) Find(ctx context.Context, tradeName string) (Entry, error) {
 	return pick.entry(), nil
 }
 
-// FindFor ищет запись по названию с проверкой МНН (действующего вещества): точное название
-// с этим МНН, иначе первая запись с этим МНН; записей с этим МНН нет — ErrWrongMNN.
-// Пустой substance — как Find.
-func (c *Client) FindFor(ctx context.Context, tradeName, substance string) (Entry, error) {
-	if norm(substance) == "" {
-		return c.Find(ctx, tradeName)
-	}
-	list, err := c.CandidatesFor(ctx, tradeName, substance)
+// FindFor — лучшая запись из CandidatesFor.
+func (c *Client) FindFor(ctx context.Context, tradeName, substance, form string) (Entry, error) {
+	list, err := c.CandidatesFor(ctx, tradeName, substance, form)
 	if err != nil {
 		return Entry{}, err
 	}
 	return list[0], nil
 }
 
-// CandidatesFor — все записи с этим МНН по порядку предпочтения: сначала с точным
-// названием, затем остальные (в порядке ответа реестра). Пусто — ErrWrongMNN.
-// Нужен, чтобы взять следующую запись, если у первой нет файла инструкции.
-func (c *Client) CandidatesFor(ctx context.Context, tradeName, substance string) ([]Entry, error) {
+// CandidatesFor — записи реестра с тем же МНН (substance) и той же лекарственной формой (form
+// из справочника, сравнивается корень первого слова), по порядку предпочтения: сначала действующие
+// регистрации (без срока или срок в будущем) — точное торговое название, затем порядок реестра;
+// потом истёкшие — от самого позднего срока (у старых регистраций файла инструкции обычно нет).
+// Пустое МНН — ErrWrongMNN, пустая форма — ErrWrongForm, без запроса в реестр: угадывать нельзя.
+// Список нужен, чтобы взять следующую запись, если у первой нет файла инструкции.
+func (c *Client) CandidatesFor(ctx context.Context, tradeName, substance, form string) ([]Entry, error) {
+	mnn, root := norm(substance), formRoot(form)
+	if mnn == "" {
+		return nil, ErrWrongMNN
+	}
+	if root == "" {
+		return nil, ErrWrongForm
+	}
 	items, err := c.list(ctx, tradeName)
 	if err != nil {
 		return nil, err
 	}
-	mnn, want := norm(substance), norm(tradeName)
-	var exact, other []Entry
-	for _, it := range items {
-		switch {
-		case mnn != "" && norm(it.MNN) != mnn:
-		case norm(it.DrugTradeName) == want:
-			exact = append(exact, it.entry())
-		default:
-			other = append(other, it.entry())
-		}
+	want := norm(tradeName)
+	now := time.Now()
+	type ranked struct {
+		e       Entry
+		expired bool
+		exact   bool
 	}
-	if len(exact)+len(other) == 0 {
+	var list []ranked
+	sameMNN := false
+	for _, it := range items {
+		if norm(it.MNN) != mnn {
+			continue
+		}
+		sameMNN = true
+		if formRoot(it.LekFormName) != root {
+			continue
+		}
+		e := it.entry()
+		list = append(list, ranked{e: e, expired: e.ExpiresAt != nil && e.ExpiresAt.Before(now), exact: norm(it.DrugTradeName) == want})
+	}
+	if !sameMNN {
 		return nil, ErrWrongMNN
 	}
-	return append(exact, other...), nil
+	if len(list) == 0 {
+		return nil, ErrWrongForm
+	}
+	sort.SliceStable(list, func(i, j int) bool {
+		a, b := list[i], list[j]
+		if a.expired != b.expired {
+			return !a.expired
+		}
+		if a.expired && !a.e.ExpiresAt.Equal(*b.e.ExpiresAt) {
+			return a.e.ExpiresAt.After(*b.e.ExpiresAt)
+		}
+		return a.exact && !b.exact
+	})
+	out := make([]Entry, len(list))
+	for i, r := range list {
+		out[i] = r.e
+	}
+	return out, nil
 }
 
 // list — записи реестра по торговому названию; пустой ответ — ErrNotFound.

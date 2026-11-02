@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -70,7 +71,11 @@ func (a *API) sos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(msgs) > 0 {
-		if err := notifier.SendExpo(ctx, a.pushClient(), a.pushURL(), msgs); err != nil {
+		// Приложение может уйти в фон во время звонка 103 и оборвать запрос — push всё равно отправляем.
+		pushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
+		err := notifier.SendExpo(pushCtx, a.pushClient(), a.pushURL(), msgs)
+		cancel()
+		if err != nil {
 			logf("SOS push: %v", err)
 			a.resetSOS(r, pid)
 			writeError(w, http.StatusBadGateway, "Не удалось отправить уведомление родственникам")
