@@ -6,13 +6,34 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"erecept/internal/notifier"
 )
 
 type API struct {
-	DB *pgxpool.Pool
+	DB      *pgxpool.Pool
+	PushURL string       // Expo Push API; пусто — боевой адрес
+	Client  *http.Client // клиент для push; пусто — с таймаутом 15 с
+}
+
+var defaultPushClient = &http.Client{Timeout: 15 * time.Second}
+
+func (a *API) pushURL() string {
+	if a.PushURL != "" {
+		return a.PushURL
+	}
+	return notifier.DefaultPushURL
+}
+
+func (a *API) pushClient() *http.Client {
+	if a.Client != nil {
+		return a.Client
+	}
+	return defaultPushClient
 }
 
 type ctxKey struct{}
@@ -34,6 +55,7 @@ func (a *API) Routes() http.Handler {
 		r.Post("/prescriptions/{code}/claim", a.claim)
 		r.Get("/me/prescriptions", a.myPrescriptions)
 		r.Post("/doses/sync", a.syncDoses)
+		r.Post("/sos", a.sos)
 		r.Post("/push-token", a.pushToken)
 		r.Post("/invites", a.createInvite)
 		r.Post("/relatives/join", a.joinRelative)
