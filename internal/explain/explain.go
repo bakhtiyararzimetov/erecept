@@ -220,7 +220,14 @@ func (s *Service) Generate(ctx context.Context, medicineName, instructionText st
 		GeneratedAt:    time.Now().UTC().Truncate(time.Second),
 		OutputTokens:   resp.Usage.OutputTokens,
 	}
-	if ex.Purpose == "" || ex.HowToTake == "" || ex.MissedDose == "" || ex.IfStoppedEarly == "" {
+	// Модель иногда оставляет пустым поле, о котором в инструкции ничего нет.
+	if ex.MissedDose == "" {
+		ex.MissedDose = notInText
+	}
+	if ex.IfStoppedEarly == "" {
+		ex.IfStoppedEarly = notInText
+	}
+	if ex.Purpose == "" || ex.HowToTake == "" {
 		return Explanation{}, badOutputError("в ответе модели пустые поля")
 	}
 	ex.HowToTake += " " + DoseByDoctor

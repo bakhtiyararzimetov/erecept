@@ -190,6 +190,22 @@ func TestGenerateBadOutput(t *testing.T) {
 	}
 }
 
+// Пустые «если пропустили» и «если бросить» — это «в инструкции не указано», а не брак ответа.
+func TestGenerateEmptyOptionalFields(t *testing.T) {
+	srv := fakeClaude(t, "end_turn", `{"purpose":"Снижает жар","how_to_take":"После еды","do_not_take_if":[],"missed_dose":"","if_stopped_early":"  ","urgent_signs":[]}`, nil, nil)
+	s := newService(nil, nil, srv.URL)
+	ex, err := s.Generate(context.Background(), "Парацетамол", "Т", leaflet.Entry{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ex.IfStoppedEarly != notInText {
+		t.Fatalf("if_stopped_early = %q", ex.IfStoppedEarly)
+	}
+	if ex.MissedDose != notInText+" "+NoDoubleDose {
+		t.Fatalf("missed_dose = %q", ex.MissedDose)
+	}
+}
+
 func makeDocx(t *testing.T, text string) []byte {
 	t.Helper()
 	var buf bytes.Buffer
