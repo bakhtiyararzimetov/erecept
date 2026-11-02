@@ -368,3 +368,57 @@ func (e *env) claim2(code, secret string) int64 {
 }
 
 func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
+
+func TestPrescriptionDTOIncludesExplanation(t *testing.T) {
+	pool := dbtest.New(t)
+	e := &env{t: t, pool: pool, h: (&API{DB: pool}).Routes()}
+	ctx := context.Background()
+	itemID := e.newPrescription("explain1")
+	var withID, withoutID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO medicines (name, active_substance) VALUES ('Парацетамол', 'парацетамол') RETURNING id`).Scan(&withID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO medicines (name, active_substance) VALUES ('Нурофен', 'ибупрофен') RETURNING id`).Scan(&withoutID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE prescription_items SET medicine_id = $1 WHERE id = $2`, withID, itemID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO prescription_items (prescription_id, position, medicine_name, medicine_id, dosage, times_per_day, days, meal, times)
+		SELECT prescription_id, 1, 'Нурофен', $1, '1 таблетка', 1, 3, 'after', '{09:00}' FROM prescription_items WHERE id = $2`, withoutID, itemID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO medicine_explanations (medicine_id, data) VALUES ($1, $2)`, withID,
+		`{"purpose":"Снижает температуру.","high_risk":false,"source":{"reg_number":"РК-ЛС-5№1"}}`); err != nil {
+		t.Fatal(err)
+	}
+
+	w := e.do("POST", "/prescriptions/explain1/claim", "secret-explain-0123456789", nil)
+	if w.Code != 200 {
+		t.Fatalf("claim: %d %s", w.Code, w.Body.String())
+	}
+	var raw struct {
+		Prescription struct {
+			Items []map[string]json.RawMessage `json:"items"`
+		} `json:"prescription"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatal(err)
+	}
+	items := raw.Prescription.Items
+	if len(items) != 2 {
+		t.Fatalf("позиций %d", len(items))
+	}
+	var ex struct {
+		Purpose string `json:"purpose"`
+		Source  struct {
+			RegNumber string `json:"reg_number"`
+		} `json:"source"`
+	}
+	if err := json.Unmarshal(items[0]["explanation"], &ex); err != nil || ex.Purpose != "Снижает температуру." || ex.Source.RegNumber != "РК-ЛС-5№1" {
+		t.Fatalf("памятка у Парацетамола: %s", items[0]["explanation"])
+	}
+	if v, ok := items[1]["explanation"]; !ok || string(v) != "null" {
+		t.Fatalf("у Нурофена ожидался explanation: null, получено %q (есть поле: %v)", v, ok)
+	}
+}

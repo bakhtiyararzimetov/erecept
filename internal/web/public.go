@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"erecept/internal/explain"
 	"erecept/internal/models"
 
 	"github.com/go-chi/chi/v5"
@@ -78,6 +79,7 @@ func (w *Web) loadOne(ctx context.Context, query string, arg any) (models.Prescr
 type ItemView struct {
 	Medicine, Dosage, How string
 	Days                  int
+	Explanation           *explain.Explanation // ИИ-памятка, показывается только врачу; nil — нет
 }
 
 // RxView — рецепт, подготовленный к показу.
@@ -118,8 +120,13 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	}
 	v.Birth = p.PatientBirth.Format("02.01.2006")
 	v.Date = p.CreatedAt.In(time.Local).Format("02.01.2006")
+	expl := w.explanations(ctx, p.Items)
 	for _, it := range p.Items {
-		v.Items = append(v.Items, ItemView{Medicine: it.MedicineName, Dosage: it.Dosage, How: howText(it), Days: it.Days})
+		iv := ItemView{Medicine: it.MedicineName, Dosage: it.Dosage, How: howText(it), Days: it.Days}
+		if it.MedicineID != nil {
+			iv.Explanation = expl[*it.MedicineID]
+		}
+		v.Items = append(v.Items, iv)
 	}
 	if p.WaterEveryHours > 0 {
 		v.WaterText = fmt.Sprintf("Пейте воду: каждые %d ч, с %s до %s", p.WaterEveryHours, p.WaterFrom, p.WaterTo)
@@ -127,6 +134,40 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	v.Link = publicURL(r) + "/r/" + p.Code
 	v.QRPath = "/qr/" + p.Code + ".png"
 	return v, nil
+}
+
+// explanations — памятки к лекарствам рецепта по medicine_id. Памятка необязательна:
+// при ошибке страница показывается без неё.
+func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem) map[int64]*explain.Explanation {
+	var ids []int64
+	for _, it := range items {
+		if it.MedicineID != nil {
+			ids = append(ids, *it.MedicineID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	rows, err := w.DB.Query(ctx, `SELECT medicine_id, data FROM medicine_explanations WHERE medicine_id = ANY($1)`, ids)
+	if err != nil {
+		log.Printf("памятки рецепта: %v", err)
+		return nil
+	}
+	defer rows.Close()
+	out := map[int64]*explain.Explanation{}
+	for rows.Next() {
+		var id int64
+		var ex explain.Explanation
+		if err := rows.Scan(&id, &ex); err != nil {
+			log.Printf("памятки рецепта: %v", err)
+			continue
+		}
+		out[id] = &ex
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("памятки рецепта: %v", err)
+	}
+	return out
 }
 
 func (w *Web) notFound(rw http.ResponseWriter, r *http.Request) {

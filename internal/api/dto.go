@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"erecept/internal/models"
@@ -18,6 +19,8 @@ type ItemDTO struct {
 	MealLabel    string   `json:"meal_label"`
 	Times        []string `json:"times"`
 	PhotoURL     string   `json:"photo_url"`
+	// Explanation — ИИ-памятка о лекарстве (internal/explain) как есть; null, если её нет.
+	Explanation json.RawMessage `json:"explanation"`
 }
 
 type PrescriptionDTO struct {
@@ -68,8 +71,9 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 		s := start.Format("2006-01-02")
 		p.StartDate = &s
 	}
-	rows, err := a.DB.Query(ctx, `SELECT id, medicine_name, medicine_id, dosage, times_per_day, days, meal, times, photo_url
-		FROM prescription_items WHERE prescription_id = $1 ORDER BY position, id`, p.ID)
+	rows, err := a.DB.Query(ctx, `SELECT i.id, i.medicine_name, i.medicine_id, i.dosage, i.times_per_day, i.days, i.meal, i.times, i.photo_url, e.data
+		FROM prescription_items i LEFT JOIN medicine_explanations e ON e.medicine_id = i.medicine_id
+		WHERE i.prescription_id = $1 ORDER BY i.position, i.id`, p.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +82,7 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 	for rows.Next() {
 		var it ItemDTO
 		if err := rows.Scan(&it.ID, &it.MedicineName, &it.MedicineID, &it.Dosage, &it.TimesPerDay,
-			&it.Days, &it.Meal, &it.Times, &it.PhotoURL); err != nil {
+			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation); err != nil {
 			return nil, err
 		}
 		it.MealLabel = models.MealLabel(it.Meal)

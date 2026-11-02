@@ -104,6 +104,19 @@ p.error { margin-bottom: 16px; }
 .table th { color: var(--muted); font-weight: 500; font-size: 13px; background: var(--bg); }
 .table tr:last-child td { border-bottom: none; }
 
+/* ИИ-памятка под лекарством на странице рецепта */
+.table tr:has(+ tr.explain-row) td { border-bottom: none; }
+.table td.explain-cell { padding-top: 0; }
+.explain summary { cursor: pointer; color: var(--accent); font-weight: 500; padding: 4px 0; }
+.explain summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.explain dl { margin: 12px 0 0; }
+.explain dt { color: var(--muted); font-size: 13px; font-weight: 500; margin-top: 12px; }
+.explain dt:first-child { margin-top: 0; }
+.explain dd { margin: 4px 0 0; }
+.explain ul { margin: 0; padding-left: 20px; }
+.explain-note { margin: 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 3px solid var(--text); border-radius: 8px; font-weight: 500; }
+.explain-disclaimer { font-size: 13px; margin: 12px 0 0; }
+
 /* Вход */
 .login-wrap { max-width: 400px; margin: 32px auto 0; }
 .login-hint h2 { font-size: 15px; }
@@ -126,6 +139,10 @@ p.error { margin-bottom: 16px; }
   .table tr { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; padding: 8px 16px; }
   .table td { border: none; padding: 6px 0; display: flex; justify-content: space-between; gap: 12px; text-align: right; }
   .table td::before { content: attr(data-label); color: var(--muted); text-align: left; flex-shrink: 0; }
+  .table tr:has(+ tr.explain-row) { margin-bottom: 0; border-bottom: none; border-radius: 12px 12px 0 0; }
+  .table tr.explain-row { border-top: none; border-radius: 0 0 12px 12px; }
+  .table td.explain-cell { display: block; text-align: left; padding: 0 0 6px; }
+  .table td.explain-cell::before { content: none; }
 }
 
 /* Узкие экраны: логотип и «Выйти» в шапке 64px, ссылки меню второй строкой */

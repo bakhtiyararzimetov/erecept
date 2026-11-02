@@ -320,3 +320,49 @@ func TestParseBirthBothFormats(t *testing.T) {
 		}
 	}
 }
+
+func TestPrescriptionPageShowsExplanation(t *testing.T) {
+	pool, h := newTestEnv(t)
+	cookies := doctorCookies(t, h, "doctor1")
+	id, code := createRx(t, pool, h, cookies)
+
+	// Без памятки блока нет.
+	if body := get(h, "/doctor/prescriptions/"+itoa(id), cookies).Body.String(); strings.Contains(body, "Коротко о лекарстве") {
+		t.Fatal("блок без памятки не показывается")
+	}
+
+	_, err := pool.Exec(context.Background(), `INSERT INTO medicine_explanations (medicine_id, data)
+		SELECT id, $1 FROM medicines WHERE name = 'Парацетамол'`, `{
+		"purpose": "Снижает температуру и уменьшает боль.",
+		"how_to_take": "По 1 таблетке после еды.",
+		"do_not_take_if": ["Тяжёлые болезни печени"],
+		"missed_dose": "Не принимайте пропущенную дозу самостоятельно — позвоните врачу.",
+		"if_stopped_early": "Можно прекратить, когда симптомы прошли.",
+		"urgent_signs": ["Сыпь, отёк лица — вызовите 103"],
+		"high_risk": true,
+		"source": {"title": "Инструкция по медицинскому применению (НЦЭЛС)", "reg_number": "РК-ЛС-5№000042", "url": "https://register.ndda.kz/"},
+		"model": "claude-opus-5-5", "generated_at": "2026-11-02T10:00:00Z"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := get(h, "/doctor/prescriptions/"+itoa(id), cookies)
+	body := w.Body.String()
+	if w.Code != 200 {
+		t.Fatalf("код %d", w.Code)
+	}
+	for _, want := range []string{"Коротко о лекарстве (ИИ)", "Сгенерировано ИИ по инструкции НЦЭЛС, рег. № РК-ЛС-5№000042",
+		"Не заменяет совет врача", "Снижает температуру и уменьшает боль.", "Тяжёлые болезни печени",
+		"позвоните врачу", "Сыпь, отёк лица", `class="explain-note"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("на странице нет %q", want)
+		}
+	}
+	// Памятка только у Парацетамола, у «Неизвестного средства» её нет.
+	if n := strings.Count(body, "Коротко о лекарстве (ИИ)"); n != 1 {
+		t.Errorf("блоков памятки %d, ожидался 1", n)
+	}
+	// Публичная страница и печать памятку не показывают.
+	if strings.Contains(get(h, "/r/"+code, nil).Body.String(), "Коротко о лекарстве") {
+		t.Error("на публичной странице памятки быть не должно")
+	}
+}

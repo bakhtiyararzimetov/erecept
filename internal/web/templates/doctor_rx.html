@@ -11,6 +11,20 @@
         <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
         <tbody>{{range .Items}}
           <tr><td data-label="Лекарство">{{.Medicine}}</td><td data-label="Дозировка">{{.Dosage}}</td><td data-label="Как принимать">{{.How}}</td><td data-label="Дней">{{.Days}}</td></tr>
+          {{with .Explanation}}<tr class="explain-row"><td class="explain-cell" colspan="4">
+            <details class="explain">
+              <summary>Коротко о лекарстве (ИИ)</summary>
+              <dl>
+                <dt>Зачем</dt><dd>{{.Purpose}}</dd>
+                <dt>Как принимать</dt><dd>{{.HowToTake}}</dd>
+                {{if .DoNotTakeIf}}<dt>Нельзя принимать, если</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+                <dt>Если пропустили приём</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
+                <dt>Если бросить раньше</dt><dd>{{.IfStoppedEarly}}</dd>
+                {{if .UrgentSigns}}<dt>Срочно к врачу, если</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+              </dl>
+              <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС, рег. № {{.Source.RegNumber}}. Не заменяет совет врача</p>
+            </details>
+          </td></tr>{{end}}
         {{end}}</tbody>
       </table>
       {{if .WaterText}}<p style="margin-top:12px">{{.WaterText}}</p>{{end}}

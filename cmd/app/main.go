@@ -15,6 +15,8 @@ import (
 
 	"erecept/internal/api"
 	"erecept/internal/db"
+	"erecept/internal/explain"
+	"erecept/internal/leaflet"
 	"erecept/internal/notifier"
 	"erecept/internal/seed"
 	"erecept/internal/web"
@@ -50,6 +52,13 @@ func main() {
 	autoSeed(ctx, pool)
 
 	go notifier.New(pool).Run(ctx)
+
+	// ИИ-памятки о лекарствах: без ключа функция выключена.
+	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
+		go explain.New(pool, leaflet.New(), key).BackfillLoop(ctx)
+	} else {
+		log.Println("ANTHROPIC_API_KEY не задан: памятки о лекарствах не создаются")
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
