@@ -109,7 +109,7 @@ describe("upcomingNotifications", () => {
       dose(4, "2026-11-01T21:00:00+05:00", { taken_at: "2026-11-01T09:00:00+05:00" }),
     ]);
     const r = upcomingNotifications([c], now);
-    expect(r.map((n) => n.doseId)).toEqual([2, 3]);
+    expect(r.filter((n) => !n.key.endsWith("-repeat")).map((n) => n.doseId)).toEqual([2, 3]);
     expect(r[0]).toMatchObject({ kind: "dose", title: "Парацетамол" });
     expect(r[0].body).toBe("1 таблетка 500 мг, после еды · день 1 из 7");
   });
@@ -127,7 +127,33 @@ describe("upcomingNotifications", () => {
     const r = upcomingNotifications([course(doses)], now);
     expect(r).toHaveLength(60);
     expect(r[0].doseId).toBe(1);
+    expect(r[1].key).toBe("dose-1-repeat");
     expect(upcomingNotifications([course(doses)], now, 5)).toHaveLength(5);
+  });
+});
+
+describe("повтор напоминания через 30 минут", () => {
+  const now = new Date("2026-11-01T10:00:00+05:00");
+  it("создаётся на +30 мин для неотмеченной дозы", () => {
+    const r = upcomingNotifications([course([dose(7, "2026-11-01T20:00:00+05:00")])], now);
+    expect(r.map((n) => n.key)).toEqual(["dose-7", "dose-7-repeat"]);
+    expect(r[1].at.getTime()).toBe(new Date("2026-11-01T20:30:00+05:00").getTime());
+    expect(r[1]).toMatchObject({ kind: "dose", doseId: 7, title: "Парацетамол" });
+    expect(r[1].body).toBe("Напоминание: " + r[0].body);
+  });
+  it("нет повтора у отмеченной дозы", () => {
+    const r = upcomingNotifications(
+      [course([dose(7, "2026-11-01T20:00:00+05:00", { taken_at: "2026-11-01T09:00:00+05:00" })])],
+      now,
+    );
+    expect(r).toEqual([]);
+  });
+  it("основное прошло, повтор в будущем: остаётся только повтор", () => {
+    const r = upcomingNotifications([course([dose(7, "2026-11-01T09:45:00+05:00")])], now);
+    expect(r.map((n) => n.key)).toEqual(["dose-7-repeat"]);
+  });
+  it("оба прошли: пусто", () => {
+    expect(upcomingNotifications([course([dose(7, "2026-11-01T09:00:00+05:00")])], now)).toEqual([]);
   });
 });
 

@@ -3,6 +3,19 @@ export type Role = "patient" | "relative";
 
 export type Meal = "before" | "after" | "with" | "any" | string;
 
+export type Explanation = {
+  purpose: string;
+  how_to_take: string;
+  do_not_take_if: string[];
+  missed_dose: string;
+  if_stopped_early: string;
+  urgent_signs: string[];
+  high_risk: boolean;
+  source: { title: string; reg_number: string; url: string };
+  model: string;
+  generated_at: string;
+};
+
 export type Item = {
   id: number;
   medicine_name: string;
@@ -14,6 +27,7 @@ export type Item = {
   meal_label: string;
   times: string[]; // "HH:MM"
   photo_url: string;
+  explanation?: Explanation | null; // в старых сохранённых курсах поля нет
 };
 
 export type Prescription = {

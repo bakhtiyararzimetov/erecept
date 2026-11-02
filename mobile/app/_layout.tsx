@@ -53,6 +53,7 @@ export default function RootLayout() {
         <Stack.Protected guard={!relative}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="scan" options={{ presentation: "modal" }} />
+          <Stack.Screen name="explain" options={{ presentation: "modal" }} />
         </Stack.Protected>
         <Stack.Protected guard={relative}>
           <Stack.Screen name="relative" />

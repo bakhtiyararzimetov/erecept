@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
+import { SosButton } from "../../components/SosButton";
 import { Card } from "../../components/Card";
 import { refreshCourses } from "../../lib/courseStore";
 import { rescheduleAll } from "../../lib/notifications";
@@ -101,6 +102,7 @@ export default function Today() {
           <Text style={[styles.offlineText, { color: colors.error }]}>{actionError}</Text>
         </View>
       )}
+      <SosButton />
       {courses.length === 0 ? (
         <Card style={{ gap: 16 }}>
           <Text style={styles.title}>Сегодня</Text>
@@ -132,6 +134,13 @@ export default function Today() {
                   день {dose.day_number} из {dose.total_days}
                 </Text>
                 {status !== "taken" && <Button title="Выпил" onPress={() => onTaken(dose.id)} />}
+                {item.explanation && (
+                  <Button
+                    title="Коротко о лекарстве"
+                    variant="secondary"
+                    onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
+                  />
+                )}
                 <Button
                   title="Где купить"
                   variant="secondary"
