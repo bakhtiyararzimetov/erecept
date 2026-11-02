@@ -27,6 +27,12 @@ const (
 // ErrNotFound: в реестре нет лекарства с таким названием.
 var ErrNotFound = errors.New("лекарство не найдено в реестре")
 
+// ErrWrongMNN: по названию что-то нашлось, но ни у одной записи нет нужного МНН.
+var ErrWrongMNN = errors.New("в реестре нет препарата с таким МНН")
+
+// ErrNoInstruction: у записи нет файла инструкции, или это не DOCX, или в нём нет текста.
+var ErrNoInstruction = errors.New("у записи нет инструкции")
+
 type Client struct {
 	BaseURL string
 	HTTP    *http.Client
@@ -50,32 +56,21 @@ type listItem struct {
 	MNN           string `json:"mnn"`
 }
 
-// norm приводит название к виду для сравнения: без «®», пробелов по краям, в нижнем регистре.
+// norm приводит название или МНН к виду для сравнения: без «®», в нижнем регистре,
+// пробелы по краям убраны, внутри схлопнуты до одного.
 func norm(s string) string {
-	return strings.ToLower(strings.TrimSpace(strings.ReplaceAll(s, "®", "")))
+	return strings.Join(strings.Fields(strings.ToLower(strings.ReplaceAll(s, "®", ""))), " ")
+}
+
+func (it listItem) entry() Entry {
+	return Entry{RegisterID: it.ID, TradeName: strings.TrimSpace(it.DrugTradeName), RegNumber: it.RegNumber, MNN: it.MNN}
 }
 
 // Find ищет запись по торговому названию: точное совпадение, иначе первая в ответе.
 func (c *Client) Find(ctx context.Context, tradeName string) (Entry, error) {
-	body, err := json.Marshal(map[string]string{"tradeName": tradeName})
+	items, err := c.list(ctx, tradeName)
 	if err != nil {
 		return Entry{}, err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/list", bytes.NewReader(body))
-	if err != nil {
-		return Entry{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	data, err := c.do(req)
-	if err != nil {
-		return Entry{}, err
-	}
-	var items []listItem
-	if err := json.Unmarshal(data, &items); err != nil {
-		return Entry{}, fmt.Errorf("реестр вернул не список: %w", err)
-	}
-	if len(items) == 0 {
-		return Entry{}, ErrNotFound
 	}
 	pick := items[0]
 	want := norm(tradeName)
@@ -85,7 +80,71 @@ func (c *Client) Find(ctx context.Context, tradeName string) (Entry, error) {
 			break
 		}
 	}
-	return Entry{RegisterID: pick.ID, TradeName: strings.TrimSpace(pick.DrugTradeName), RegNumber: pick.RegNumber, MNN: pick.MNN}, nil
+	return pick.entry(), nil
+}
+
+// FindFor ищет запись по названию с проверкой МНН (действующего вещества): точное название
+// с этим МНН, иначе первая запись с этим МНН; записей с этим МНН нет — ErrWrongMNN.
+// Пустой substance — как Find.
+func (c *Client) FindFor(ctx context.Context, tradeName, substance string) (Entry, error) {
+	if norm(substance) == "" {
+		return c.Find(ctx, tradeName)
+	}
+	list, err := c.CandidatesFor(ctx, tradeName, substance)
+	if err != nil {
+		return Entry{}, err
+	}
+	return list[0], nil
+}
+
+// CandidatesFor — все записи с этим МНН по порядку предпочтения: сначала с точным
+// названием, затем остальные (в порядке ответа реестра). Пусто — ErrWrongMNN.
+// Нужен, чтобы взять следующую запись, если у первой нет файла инструкции.
+func (c *Client) CandidatesFor(ctx context.Context, tradeName, substance string) ([]Entry, error) {
+	items, err := c.list(ctx, tradeName)
+	if err != nil {
+		return nil, err
+	}
+	mnn, want := norm(substance), norm(tradeName)
+	var exact, other []Entry
+	for _, it := range items {
+		switch {
+		case mnn != "" && norm(it.MNN) != mnn:
+		case norm(it.DrugTradeName) == want:
+			exact = append(exact, it.entry())
+		default:
+			other = append(other, it.entry())
+		}
+	}
+	if len(exact)+len(other) == 0 {
+		return nil, ErrWrongMNN
+	}
+	return append(exact, other...), nil
+}
+
+// list — записи реестра по торговому названию; пустой ответ — ErrNotFound.
+func (c *Client) list(ctx context.Context, tradeName string) ([]listItem, error) {
+	body, err := json.Marshal(map[string]string{"tradeName": tradeName})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/list", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	data, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+	var items []listItem
+	if err := json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("реестр вернул не список: %w", err)
+	}
+	if len(items) == 0 {
+		return nil, ErrNotFound
+	}
+	return items, nil
 }
 
 // Instruction скачивает инструкцию (DOCX) и возвращает её текст, абзацы через перевод строки.
@@ -104,7 +163,7 @@ func (c *Client) Instruction(ctx context.Context, registerID int64) (string, err
 		return "", err
 	}
 	if text == "" {
-		return "", errors.New("в инструкции нет текста")
+		return "", fmt.Errorf("%w: в DOCX нет текста", ErrNoInstruction)
 	}
 	return text, nil
 }
@@ -135,7 +194,7 @@ func (c *Client) do(req *http.Request) ([]byte, error) {
 func docxText(data []byte) (string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return "", errors.New("ответ реестра не DOCX")
+		return "", fmt.Errorf("%w: ответ реестра не DOCX", ErrNoInstruction)
 	}
 	var doc *zip.File
 	for _, f := range zr.File {
@@ -145,7 +204,7 @@ func docxText(data []byte) (string, error) {
 		}
 	}
 	if doc == nil {
-		return "", errors.New("в DOCX нет word/document.xml")
+		return "", fmt.Errorf("%w: в DOCX нет word/document.xml", ErrNoInstruction)
 	}
 	rc, err := doc.Open()
 	if err != nil {
@@ -162,7 +221,7 @@ func docxText(data []byte) (string, error) {
 			break
 		}
 		if err != nil {
-			return "", fmt.Errorf("битый XML в DOCX: %w", err)
+			return "", fmt.Errorf("%w: битый XML в DOCX: %v", ErrNoInstruction, err)
 		}
 		switch t := tok.(type) {
 		case xml.StartElement:

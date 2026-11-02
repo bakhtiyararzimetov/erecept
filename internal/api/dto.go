@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"erecept/internal/explain"
 	"erecept/internal/models"
 )
 
@@ -19,7 +20,7 @@ type ItemDTO struct {
 	MealLabel    string   `json:"meal_label"`
 	Times        []string `json:"times"`
 	PhotoURL     string   `json:"photo_url"`
-	// Explanation — ИИ-памятка о лекарстве (internal/explain) как есть; null, если её нет.
+	// Explanation — ИИ-памятка о лекарстве (internal/explain) с правилами безопасности; null, если её нет.
 	Explanation json.RawMessage `json:"explanation"`
 }
 
@@ -71,8 +72,9 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 		s := start.Format("2006-01-02")
 		p.StartDate = &s
 	}
-	rows, err := a.DB.Query(ctx, `SELECT i.id, i.medicine_name, i.medicine_id, i.dosage, i.times_per_day, i.days, i.meal, i.times, i.photo_url, e.data
+	rows, err := a.DB.Query(ctx, `SELECT i.id, i.medicine_name, i.medicine_id, i.dosage, i.times_per_day, i.days, i.meal, i.times, i.photo_url, e.data, COALESCE(m.active_substance, '')
 		FROM prescription_items i LEFT JOIN medicine_explanations e ON e.medicine_id = i.medicine_id
+		LEFT JOIN medicines m ON m.id = i.medicine_id
 		WHERE i.prescription_id = $1 ORDER BY i.position, i.id`, p.ID)
 	if err != nil {
 		return nil, err
@@ -81,10 +83,12 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 	p.Items = []ItemDTO{}
 	for rows.Next() {
 		var it ItemDTO
+		var substance string
 		if err := rows.Scan(&it.ID, &it.MedicineName, &it.MedicineID, &it.Dosage, &it.TimesPerDay,
-			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation); err != nil {
+			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation, &substance); err != nil {
 			return nil, err
 		}
+		it.Explanation = explain.ServeJSON(it.Explanation, substance)
 		it.MealLabel = models.MealLabel(it.Meal)
 		p.Items = append(p.Items, it)
 	}

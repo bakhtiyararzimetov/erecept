@@ -99,8 +99,8 @@ func TestInstructionNotDocx(t *testing.T) {
 		w.Write([]byte(`<html>Ошибка</html>`))
 	})
 	defer stop()
-	if _, err := c.Instruction(context.Background(), 1); err == nil {
-		t.Fatal("ожидалась ошибка")
+	if _, err := c.Instruction(context.Background(), 1); !errors.Is(err, ErrNoInstruction) {
+		t.Fatalf("ожидался ErrNoInstruction, получено %v", err)
 	}
 }
 
@@ -108,13 +108,75 @@ func TestInstructionEmpty(t *testing.T) {
 	docx := makeDocx(t, `<w:p></w:p>`)
 	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) { w.Write(docx) })
 	defer stop()
-	if _, err := c.Instruction(context.Background(), 1); err == nil {
-		t.Fatal("ожидалась ошибка для пустого текста")
+	if _, err := c.Instruction(context.Background(), 1); !errors.Is(err, ErrNoInstruction) {
+		t.Fatalf("ожидался ErrNoInstruction для пустого текста, получено %v", err)
 	}
 }
 
 func TestSourceURL(t *testing.T) {
 	if got := SourceURL(Entry{RegisterID: 5}); got != "https://register.ndda.kz/" {
 		t.Fatal(got)
+	}
+}
+
+func TestFindFor(t *testing.T) {
+	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`[
+			{"id":1,"drugTradeName":"Парацетамол-Плюс","regNumber":"A","mnn":"Парацетамол, Кофеин"},
+			{"id":2,"drugTradeName":"Парацетамол","regNumber":"B","mnn":"Парацетамол, Аскорбиновая кислота"},
+			{"id":3,"drugTradeName":"Парацетамол Детский","regNumber":"C","mnn":" Парацетамол "},
+			{"id":4,"drugTradeName":"Парацетамол®","regNumber":"D","mnn":"парацетамол"}]`))
+	})
+	defer stop()
+	ctx := context.Background()
+
+	// Точное название + совпадающее МНН важнее первого с тем же МНН.
+	e, err := c.FindFor(ctx, "парацетамол", "Парацетамол")
+	if err != nil || e.RegisterID != 4 {
+		t.Fatalf("ожидалась запись 4: %+v, %v", e, err)
+	}
+	// Точного названия с этим МНН нет — первая запись с совпадающим МНН.
+	e, err = c.FindFor(ctx, "Панадол", "парацетамол")
+	if err != nil || e.RegisterID != 3 {
+		t.Fatalf("ожидалась запись 3: %+v, %v", e, err)
+	}
+	// Нет записи с таким МНН — ошибка, а не чужой препарат.
+	if _, err := c.FindFor(ctx, "Парацетамол", "варфарин"); !errors.Is(err, ErrWrongMNN) {
+		t.Fatalf("ожидался ErrWrongMNN, получено %v", err)
+	}
+	// Без МНН — как Find (точное название).
+	if e, err := c.FindFor(ctx, "Парацетамол", ""); err != nil || e.RegisterID != 2 {
+		t.Fatalf("без МНН ожидалась запись 2: %+v, %v", e, err)
+	}
+}
+
+func TestFindForNotFound(t *testing.T) {
+	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`[]`)) })
+	defer stop()
+	if _, err := c.FindFor(context.Background(), "Нет", "нет"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("ожидался ErrNotFound, получено %v", err)
+	}
+}
+
+func TestCandidatesForOrder(t *testing.T) {
+	c, stop := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`[
+			{"id":1,"drugTradeName":"Парацетамол Детский","mnn":"парацетамол"},
+			{"id":2,"drugTradeName":"Парацетамол-Плюс","mnn":"парацетамол, кофеин"},
+			{"id":3,"drugTradeName":"ПАРАЦЕТАМОЛ","mnn":"Парацетамол"},
+			{"id":4,"drugTradeName":"Парацетамол®","mnn":"парацетамол"}]`))
+	})
+	defer stop()
+	list, err := c.CandidatesFor(context.Background(), "Парацетамол", "парацетамол")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []int64
+	for _, e := range list {
+		ids = append(ids, e.RegisterID)
+	}
+	// Сначала точные названия с этим МНН, затем остальные с этим МНН; чужое МНН не попадает.
+	if len(ids) != 3 || ids[0] != 3 || ids[1] != 4 || ids[2] != 1 {
+		t.Fatalf("порядок кандидатов: %v", ids)
 	}
 }

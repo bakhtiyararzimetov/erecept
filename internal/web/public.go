@@ -148,7 +148,8 @@ func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem)
 	if len(ids) == 0 {
 		return nil
 	}
-	rows, err := w.DB.Query(ctx, `SELECT medicine_id, data FROM medicine_explanations WHERE medicine_id = ANY($1)`, ids)
+	rows, err := w.DB.Query(ctx, `SELECT e.medicine_id, e.data, m.active_substance
+		FROM medicine_explanations e JOIN medicines m ON m.id = e.medicine_id WHERE e.medicine_id = ANY($1)`, ids)
 	if err != nil {
 		log.Printf("памятки рецепта: %v", err)
 		return nil
@@ -158,10 +159,12 @@ func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem)
 	for rows.Next() {
 		var id int64
 		var ex explain.Explanation
-		if err := rows.Scan(&id, &ex); err != nil {
+		var substance string
+		if err := rows.Scan(&id, &ex, &substance); err != nil {
 			log.Printf("памятки рецепта: %v", err)
 			continue
 		}
+		explain.ApplyRules(&ex, explain.IsHighRisk(substance, ""))
 		out[id] = &ex
 	}
 	if err := rows.Err(); err != nil {

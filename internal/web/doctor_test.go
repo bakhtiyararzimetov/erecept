@@ -350,8 +350,7 @@ func TestPrescriptionPageShowsExplanation(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("код %d", w.Code)
 	}
-	for _, want := range []string{"Коротко о лекарстве (ИИ)", "Сгенерировано ИИ по инструкции НЦЭЛС, рег. № РК-ЛС-5№000042",
-		"Не заменяет совет врача", "Снижает температуру и уменьшает боль.", "Тяжёлые болезни печени",
+	for _, want := range []string{"Коротко о лекарстве (ИИ)", "Сгенерировано ИИ по инструкции НЦЭЛС, рег. № РК-ЛС-5№000042. Не заменяет совет врача.", "Снижает температуру и уменьшает боль.", "Тяжёлые болезни печени",
 		"позвоните врачу", "Сыпь, отёк лица", `class="explain-note"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("на странице нет %q", want)
@@ -364,5 +363,34 @@ func TestPrescriptionPageShowsExplanation(t *testing.T) {
 	// Публичная страница и печать памятку не показывают.
 	if strings.Contains(get(h, "/r/"+code, nil).Body.String(), "Коротко о лекарстве") {
 		t.Error("на публичной странице памятки быть не должно")
+	}
+}
+
+// Высокий риск по МНН справочника применяется при показе, даже если в базе high_risk=false;
+// без рег. номера пометка остаётся грамотной.
+func TestPrescriptionPageAppliesHighRisk(t *testing.T) {
+	pool, h := newTestEnv(t)
+	cookies := doctorCookies(t, h, "doctor1")
+	ctx := context.Background()
+	var medID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO medicines (name, active_substance) VALUES ('Варфарин', 'варфарин') RETURNING id`).Scan(&medID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO medicine_explanations (medicine_id, data) VALUES ($1, $2)`, medID,
+		`{"purpose":"Разжижает кровь.","how_to_take":"Внутрь.","missed_dose":"Выпейте, как вспомните.","if_stopped_early":"Нельзя.","high_risk":false,"source":{"reg_number":""}}`); err != nil {
+		t.Fatal(err)
+	}
+	v := validForm()
+	v.Set("items[0].name", "Варфарин")
+	id, _ := createRxWith(t, pool, h, cookies, v)
+	body := get(h, "/doctor/prescriptions/"+itoa(id), cookies).Body.String()
+	for _, want := range []string{`<p class="explain-note">Не принимайте пропущенную дозу самостоятельно — позвоните врачу.</p>`,
+		"Сгенерировано ИИ по инструкции НЦЭЛС. Не заменяет совет врача."} {
+		if !strings.Contains(body, want) {
+			t.Errorf("на странице нет %q", want)
+		}
+	}
+	if strings.Contains(body, "Выпейте, как вспомните.") || strings.Contains(body, "рег. №") {
+		t.Error("сохранённый missed_dose или пустой рег. № не должны показываться")
 	}
 }

@@ -22,7 +22,7 @@
                 <dt>Если бросить раньше</dt><dd>{{.IfStoppedEarly}}</dd>
                 {{if .UrgentSigns}}<dt>Срочно к врачу, если</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
               </dl>
-              <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС, рег. № {{.Source.RegNumber}}. Не заменяет совет врача</p>
+              <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС{{with .Source.RegNumber}}, рег. № {{.}}{{end}}. Не заменяет совет врача.</p>
             </details>
           </td></tr>{{end}}
         {{end}}</tbody>

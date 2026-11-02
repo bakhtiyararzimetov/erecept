@@ -422,3 +422,44 @@ func TestPrescriptionDTOIncludesExplanation(t *testing.T) {
 		t.Fatalf("у Нурофена ожидался explanation: null, получено %q (есть поле: %v)", v, ok)
 	}
 }
+
+// Правила безопасности применяются при выдаче, что бы ни лежало в базе.
+func TestPrescriptionDTOAppliesSafetyRules(t *testing.T) {
+	pool := dbtest.New(t)
+	e := &env{t: t, pool: pool, h: (&API{DB: pool}).Routes()}
+	ctx := context.Background()
+	itemID := e.newPrescription("explain2")
+	var warfarinID, paraID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO medicines (name, active_substance) VALUES ('Варфарин', 'варфарин') RETURNING id`).Scan(&warfarinID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO medicines (name, active_substance) VALUES ('Парацетамол', 'парацетамол') RETURNING id`).Scan(&paraID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE prescription_items SET medicine_id = $1 WHERE id = $2`, warfarinID, itemID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO prescription_items (prescription_id, position, medicine_name, medicine_id, dosage, times_per_day, days, meal, times)
+		SELECT prescription_id, 1, 'Парацетамол', $1, '1 таблетка', 1, 3, 'after', '{09:00}' FROM prescription_items WHERE id = $2`, paraID, itemID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO medicine_explanations (medicine_id, data) VALUES
+		($1, '{"purpose":"Разжижает кровь.","missed_dose":"Выпейте, как вспомните.","high_risk":false}'),
+		($2, '{"purpose":"Снижает температуру.","missed_dose":"В инструкции не указано, спросите врача или фармацевта.","high_risk":false}')`,
+		warfarinID, paraID); err != nil {
+		t.Fatal(err)
+	}
+	r := e.claim("explain2", "secret-explain2-0123456789")
+	var w, p struct {
+		MissedDose string `json:"missed_dose"`
+		HighRisk   bool   `json:"high_risk"`
+	}
+	if err := json.Unmarshal(r.Prescription.Items[0].Explanation, &w); err != nil || !w.HighRisk ||
+		w.MissedDose != "Не принимайте пропущенную дозу самостоятельно — позвоните врачу." {
+		t.Fatalf("варфарин: %s", r.Prescription.Items[0].Explanation)
+	}
+	if err := json.Unmarshal(r.Prescription.Items[1].Explanation, &p); err != nil || p.HighRisk ||
+		p.MissedDose != "В инструкции не указано, спросите врача или фармацевта. Не принимайте двойную дозу, чтобы восполнить пропущенную." {
+		t.Fatalf("парацетамол: %s", r.Prescription.Items[1].Explanation)
+	}
+}
