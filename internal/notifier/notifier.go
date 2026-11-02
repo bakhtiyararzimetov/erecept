@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	missedAfter = 60 * time.Minute // через сколько после времени приёма считаем пропуск
-	maxAge      = 3 * time.Hour    // более старые пропуски не рассылаем (сервер мог спать)
+	DefaultPushURL = "https://exp.host/--/api/v2/push/send"
+	missedAfter    = 60 * time.Minute // через сколько после времени приёма считаем пропуск
+	maxAge         = 3 * time.Hour    // более старые пропуски не рассылаем (сервер мог спать)
 )
 
 type Notifier struct {
@@ -29,7 +30,7 @@ type Notifier struct {
 func New(pool *pgxpool.Pool) *Notifier {
 	return &Notifier{
 		DB:      pool,
-		PushURL: "https://exp.host/--/api/v2/push/send",
+		PushURL: DefaultPushURL,
 		Client:  &http.Client{Timeout: 15 * time.Second},
 		Now:     time.Now,
 	}
@@ -63,7 +64,8 @@ func (n *Notifier) tick(ctx context.Context) {
 	}
 }
 
-type message struct {
+// Message — одно push-сообщение для Expo Push API.
+type Message struct {
 	To    string         `json:"to"`
 	Title string         `json:"title"`
 	Body  string         `json:"body"`
@@ -110,9 +112,9 @@ func (n *Notifier) CheckOnce(ctx context.Context) (int, error) {
 	for _, m := range list {
 		tokens, err := n.tokens(ctx, m.patientID)
 		if err == nil && len(tokens) > 0 {
-			msgs := make([]message, 0, len(tokens))
+			msgs := make([]Message, 0, len(tokens))
 			for _, tok := range tokens {
-				msgs = append(msgs, message{
+				msgs = append(msgs, Message{
 					To:    tok,
 					Title: "Пропущен приём лекарства",
 					Body:  fmt.Sprintf("%s не отметил «%s» в %s", m.patient, m.med, m.at.In(time.Local).Format("15:04")),
@@ -120,7 +122,7 @@ func (n *Notifier) CheckOnce(ctx context.Context) (int, error) {
 					Data:  map[string]any{"type": "missed", "dose_id": m.id},
 				})
 			}
-			err = n.push(ctx, msgs)
+			err = SendExpo(ctx, n.Client, n.PushURL, msgs)
 			if err == nil {
 				sent += len(msgs)
 			}
@@ -155,20 +157,20 @@ func (n *Notifier) tokens(ctx context.Context, patientID int64) ([]string, error
 	return out, rows.Err()
 }
 
-// push отправляет сообщения одним запросом. Не-2xx — ошибка; ошибки по отдельным
+// SendExpo отправляет сообщения одним запросом. Не-2xx — ошибка; ошибки по отдельным
 // токенам (Expo отвечает 200) только пишем в лог, повторять их бессмысленно.
-func (n *Notifier) push(ctx context.Context, msgs []message) error {
+func SendExpo(ctx context.Context, client *http.Client, url string, msgs []Message) error {
 	body, err := json.Marshal(msgs)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.PushURL, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	resp, err := n.Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("отправка push: %w", err)
 	}

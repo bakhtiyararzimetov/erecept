@@ -1,0 +1,1 @@
+ALTER TABLE patients ADD COLUMN last_sos_at TIMESTAMPTZ;
