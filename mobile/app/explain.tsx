@@ -96,6 +96,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
   sub: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
   text: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.text },
-  small: { fontSize: 14, fontFamily: "Inter_400Regular", color: colors.muted },
+  small: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
   risk: { borderWidth: 2, borderColor: colors.error, borderRadius: radius.control, padding: 12 },
 });

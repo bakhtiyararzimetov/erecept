@@ -8,9 +8,15 @@ function call() {
   const now = Date.now();
   if (now - lastSos > 10_000) {
     lastSos = now; // защита от двойного нажатия: второй push не уходит
-    api.sos().catch((e) => console.warn("sos: не отправлено", e)); // без сети звонок всё равно работает
+    api.sos().catch((e) => {
+      lastSos = 0; // не дошло: повторное нажатие снова уведомит родственников
+      console.warn("sos: не отправлено", e);
+    }); // без сети звонок всё равно работает
   }
-  Linking.openURL("tel:103").catch((e) => console.warn("sos: не открылся набор номера", e));
+  Linking.openURL("tel:103").catch((e) => {
+    console.warn("sos: не открылся набор номера", e);
+    Alert.alert("Не удалось позвонить", "Наберите 103 вручную");
+  });
 }
 
 export function SosButton() {
@@ -46,5 +52,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   text: { fontSize: sizes.text, fontFamily: "Inter_600SemiBold", color: colors.error },
-  hint: { fontSize: 14, fontFamily: "Inter_400Regular", color: colors.muted, textAlign: "center" },
+  hint: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted, textAlign: "center" },
 });

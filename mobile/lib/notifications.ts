@@ -111,6 +111,7 @@ export async function handleResponse(resp: Notifications.NotificationResponse): 
     await rescheduleAll();
   } else if (resp.actionIdentifier === "SNOOZE" && doseId !== undefined) {
     await channelReady;
+    await Notifications.cancelScheduledNotificationAsync(`dose-${doseId}-repeat`).catch(() => undefined);
     await Notifications.scheduleNotificationAsync({
       identifier: SNOOZE_PREFIX + doseId,
       content: {
