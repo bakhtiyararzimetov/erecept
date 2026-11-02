@@ -114,7 +114,7 @@ func TestCheckOnce(t *testing.T) {
 			t.Fatalf("тело %q: %v", f.bodies[0], err)
 		}
 		body, _ := msgs[0]["body"].(string)
-		want := "Иванов Иван Иванович не отметил «Парацетамол» в " + at.In(time.Local).Format("15:04")
+		want := "Иванов Иван Иванович не отметил(а) «Парацетамол» в " + at.In(time.Local).Format("15:04")
 		if body != want || msgs[0]["to"] != "ExponentPushToken[abc]" || msgs[0]["title"] != "Пропущен приём лекарства" {
 			t.Errorf("сообщение: %v", msgs[0])
 		}

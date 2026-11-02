@@ -117,7 +117,7 @@ func (n *Notifier) CheckOnce(ctx context.Context) (int, error) {
 				msgs = append(msgs, Message{
 					To:    tok,
 					Title: "Пропущен приём лекарства",
-					Body:  fmt.Sprintf("%s не отметил «%s» в %s", m.patient, m.med, m.at.In(time.Local).Format("15:04")),
+					Body:  fmt.Sprintf("%s не отметил(а) «%s» в %s", m.patient, m.med, m.at.In(time.Local).Format("15:04")),
 					Sound: "default",
 					Data:  map[string]any{"type": "missed", "dose_id": m.id},
 				})
