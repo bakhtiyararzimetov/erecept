@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eRecept — pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; background: #0B1F1D; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; }
+  section { position: absolute; inset: 0; width: 1920px; height: 1080px; box-sizing: border-box; }
+  section:not(.on) { display: none !important; }
+  section h1, section h2, section h3, section p, section ul, section ol, section table { margin: 0; }
+  section table { border-collapse: collapse; width: 100%; }
+  section th, section td { border-bottom: 2px solid #E5E7EB; padding: 0.35em 0.6em; }
+  section li { margin-bottom: 0.3em; }
+  #bar { position: fixed; right: 16px; bottom: 12px; color: #9CC9C2; font: 14px Inter, Arial, sans-serif; user-select: none; background: rgba(18,48,45,.85); padding: 6px 10px; border-radius: 10px; }
+  #bar button { background: none; border: 1px solid #2E5A55; color: #CDEBE7; border-radius: 6px; padding: 4px 10px; margin-left: 6px; cursor: pointer; font: inherit; }
+</style>
+</head>
+<body>
+<div id="stage">
+<section id="cover" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:64px">
+<div style="display:flex;flex-direction:column;gap:32px;width:1080px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<div style="width:96px;height:96px;background:#0F766E;border-radius:24px"></div>
+<h1 style="font-size:120px;font-weight:800;letter-spacing:-3px;line-height:1">eRecept</h1>
+</div>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">The e-prescription that makes sure medicine is actually taken</h2>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:28px;color:#4B5563">Bakhtiyar Arzimetov — solo founder</p>
+<p style="font-size:28px;color:#4B5563">b.a.music.777@gmail.com · +7 747 945 3926 · <span style="color:#0F766E">erecept.onrender.com</span></p>
+</div>
+</div>
+<img src="img/04-today.png" alt="The app’s Today screen with the medicine schedule" style="width:362px;height:784px;object-fit:cover;border:12px solid #1F2937;border-radius:44px">
+
+</section>
+<section id="problem" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">PROBLEM</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">The state pays for medicine — but nobody knows if it is taken</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px">
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:72px;font-weight:800;color:#0F766E;line-height:1">3.4M</p>
+<p style="font-size:28px;color:#4B5563;line-height:1.4">people in Kazakhstan received free outpatient medicines in 2025 — 1 in 6 residents</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:72px;font-weight:800;color:#B42318;line-height:1">~50%</p>
+<p style="font-size:28px;color:#4B5563;line-height:1.4">of patients who received free blood-pressure medicine did not use it</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:72px;font-weight:800;color:#0F766E;line-height:1">~2M</p>
+<p style="font-size:28px;color:#4B5563;line-height:1.4">people aged 65+ — the patients most likely to forget doses</p>
+</div>
+</div>
+<p style="font-size:28px;color:#4B5563;line-height:1.45">Plus: handwritten prescriptions nobody can read, 10-page leaflets nobody reads, and no idea where the medicine is cheaper.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7280">Sources: Ministry of Health of Kazakhstan, May 2026 · National Center for Public Health analysis 2023 (via Tengri Health, Oct 2025) · Bureau of National Statistics, 1 Jan 2026</p>
+
+</section>
+<section id="solution" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;gap:72px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:36px;flex:1">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">SOLUTION</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">From the doctor’s QR code to the patient’s “Taken”</h2>
+<ol style="font-size:32px;line-height:1.45;color:#1F2937">
+<li><b>Doctor</b> writes the prescription online → QR code</li>
+<li><b>Patient</b> scans it → schedule for the whole course, offline reminders, one “Taken” button</li>
+<li><b>Family</b> is notified if a dose is missed for 60 minutes</li>
+<li><b>Doctor</b> sees adherence: % taken and missed doses</li>
+</ol>
+<p style="font-size:32px;font-weight:700;color:#0F766E;line-height:1.35">Value: the treatment the doctor prescribed actually happens — and everyone can see it.</p>
+</div>
+<img src="img/web-rx-ai.png" alt="Doctor’s website: prescription, QR code and AI summary" style="width:720px;height:450px;object-fit:cover;border:2px solid #E5E7EB;border-radius:20px;background:#FFFFFF">
+
+</section>
+<section id="product" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px 128px 96px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;justify-content:space-between;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">PRODUCT · DEMO</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Working today — live demo</h2>
+</div>
+<p style="font-size:28px;color:#4B5563;width:620px;line-height:1.4">Doctor website + patient & family app. Live at erecept.onrender.com, 80-second video available.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:56px;justify-content:center">
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="img/04-today.png" alt="Today screen: doses with Taken button" style="width:290px;height:628px;object-fit:cover;border:10px solid #1F2937;border-radius:36px">
+<p style="font-size:26px;font-weight:600">Schedule + “Taken”</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="img/05-explain.png" alt="AI summary of the official leaflet" style="width:290px;height:628px;object-fit:cover;border:10px solid #1F2937;border-radius:36px">
+<p style="font-size:26px;font-weight:600">AI summary of the leaflet</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="img/12-relative.png" alt="Relative’s screen" style="width:290px;height:628px;object-fit:cover;border:10px solid #1F2937;border-radius:36px">
+<p style="font-size:26px;font-weight:600">Family sees missed doses</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="img/07-shops.png" alt="Pharmacy prices" style="width:290px;height:628px;object-fit:cover;border:10px solid #1F2937;border-radius:36px">
+<p style="font-size:26px;font-weight:600">Pharmacy prices</p>
+</div>
+</div>
+
+</section>
+<section id="market" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">MARKET SIZE</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Start with hypertension, grow to every long-term patient</h2>
+<div style="display:flex;flex-direction:row;gap:28px">
+<div style="flex:1;background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#4B5563">TAM</p>
+<p style="font-size:64px;font-weight:800;color:#1F2937;line-height:1">3.4M</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">patients on free outpatient medicines (2025); 337 bn ₸ state budget for them planned in 2026</p>
+</div>
+<div style="flex:1;background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#4B5563">SAM</p>
+<p style="font-size:64px;font-weight:800;color:#1F2937;line-height:1">1.41M</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">patients registered with hypertension (2024) — our first segment</p>
+</div>
+<div style="flex:1;background:#E6F2F1;border:2px solid #0F766E;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#0F766E">SOM · 3-year target</p>
+<p style="font-size:64px;font-weight:800;color:#0F766E;line-height:1">15,000</p>
+<p style="font-size:26px;color:#1F2937;line-height:1.4">patients in 40 polyclinics — about 1% of SAM; our target, not a measurement</p>
+</div>
+</div>
+<p style="font-size:28px;color:#4B5563;line-height:1.45">Region: Kazakhstan is the largest pharma market in Eurasia (~$2.4 bn, 42% paid by the state); Uzbekistan is the same size.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7280">Sources: Ministry of Health of Kazakhstan 2025–2026 · MoH statistical yearbook 2024 · IQVIA Eurasia, 12 months to March 2026</p>
+
+</section>
+<section id="customer" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">TARGET CUSTOMER</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Three people in one story</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px">
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<h3 style="font-size:36px;font-weight:700">Patient, 65+</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Need:</b> 2–3 daily medicines for blood pressure; forgets doses; needs big buttons</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Reach:</b> the doctor hands over the QR at the polyclinic</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<h3 style="font-size:36px;font-weight:700">Adult child, 30–45</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Need:</b> lives apart, worries about a parent’s health</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Reach:</b> invite code from the parent’s app</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<h3 style="font-size:36px;font-weight:700">Primary-care doctor</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Need:</b> to know if treatment is followed, legible prescriptions</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4"><b>Reach:</b> polyclinic management, pilot program</p>
+</div>
+</div>
+<p style="font-size:26px;color:#6B7280">These personas are hypotheses — we will validate them in interviews and the pilot.</p>
+
+</section>
+<section id="model" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">BUSINESS MODEL</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Free for patients. Paid by those who gain from adherence</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px">
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">1 · FIRST</p>
+<h3 style="font-size:36px;font-weight:700">Pharmacy chains</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">3% commission on orders from eRecept prescriptions · Chains hold 76% of pharmacy turnover</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">2 · NEXT</p>
+<h3 style="font-size:36px;font-weight:700">Pharma companies</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Adherence programs: 500 ₸ (~$1) per active patient per month · Medisafe’s model (Sanofi-led $30M round)</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">3 · LATER</p>
+<h3 style="font-size:36px;font-weight:700">Health system</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Per-patient fee to measure whether free medicine is taken: 500 ₸ per patient per month</p>
+</div>
+</div>
+<p style="font-size:26px;color:#6B7280">Prices are our hypotheses — the pilot will show which payer converts first and at what price. No drug advertising (Health Code, art. 56).</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7280">Sources: Digital Business, June 2026 (pharmacy chains) · Medisafe Series C press release, 2021</p>
+
+</section>
+<section id="competition" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">COMPETITION</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Others cover one piece. We connect doctor, patient and family</h2>
+<table style="font-family:'Inter', Arial, sans-serif;font-size:26px;color:#1F2937">
+<tr><th style="width:22%;text-align:left">Service</th><th style="width:16%;text-align:center">QR from doctor</th><th style="width:16%;text-align:center">Reminders</th><th style="width:15%;text-align:center">Family alert</th><th style="width:16%;text-align:center">Official-leaflet AI</th><th style="width:15%;text-align:center">KZ prices</th></tr>
+<tr><td>eGov Social Wallet</td><td style="text-align:center">Yes</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">No</td></tr>
+<tr><td>Kaspi, i-teka</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">Yes</td></tr>
+<tr><td>Medisafe (global)</td><td style="text-align:center">No</td><td style="text-align:center">Yes</td><td style="text-align:center">Yes</td><td style="text-align:center">No</td><td style="text-align:center">No</td></tr>
+<tr><td>MyTherapy (global)</td><td style="text-align:center">No</td><td style="text-align:center">Yes</td><td style="text-align:center">No</td><td style="text-align:center">No</td><td style="text-align:center">No</td></tr>
+<tr style="background:#E6F2F1"><td><b>eRecept</b></td><td style="text-align:center"><b>Yes</b></td><td style="text-align:center"><b>Yes</b></td><td style="text-align:center"><b>Yes</b></td><td style="text-align:center"><b>Yes</b></td><td style="text-align:center"><b>Yes</b></td></tr>
+</table>
+<p style="font-size:28px;color:#4B5563;line-height:1.45"><b>Key advantage:</b> the prescription comes straight from the doctor, so the schedule is right from day one — no manual entry by an elderly patient.</p>
+
+</section>
+<section id="traction" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">TRACTION · VALIDATION</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Built and live. Validation is the next step</h2>
+<div style="display:flex;flex-direction:row;gap:28px">
+<div style="flex:1;background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:36px;font-weight:700">Done</h3>
+<ul style="font-size:28px;color:#4B5563;line-height:1.5">
+<li>Working product, deployed online</li>
+<li>Doctor & pharmacy website, patient & family app</li>
+<li>AI summaries for 27 of 30 demo medicines</li>
+<li>Automated tests for server and app</li>
+</ul>
+</div>
+<div style="flex:1;background:#E6F2F1;border:2px solid #0F766E;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:36px;font-weight:700;color:#0F766E">Next</h3>
+<ul style="font-size:28px;color:#1F2937;line-height:1.5">
+<li>Survey: [N] patients and families — [result]</li>
+<li>Doctor interviews: [N] — [result]</li>
+<li>Pilot: 1 polyclinic, [N] patients, 3 months</li>
+</ul>
+</div>
+</div>
+<p style="font-size:26px;color:#6B7280">No users or revenue yet — we say it openly.</p>
+
+</section>
+<section id="gtm" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">GO-TO-MARKET</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Doctors bring patients, patients bring their families</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px">
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:700">1 · Polyclinics</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Every QR the doctor prints is a new patient. Sell to the clinic once — patients come for free</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:700">2 · Family invites</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Each patient invites a relative with a 6-digit code — built-in word of mouth</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:700">3 · Pharmacy chains</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">QR posters at the counter for patients with paper prescriptions</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px">
+<p style="flex:1;font-size:30px;background:#E6F2F1;border-radius:16px;padding:24px 32px"><b>CAC per clinic:</b> ~200,000 ₸ (onboarding, training)</p>
+<p style="flex:1;font-size:30px;background:#E6F2F1;border-radius:16px;padding:24px 32px"><b>CAC per patient:</b> ~700 ₸ (≈ 300 patients per clinic) — estimate</p>
+</div>
+
+</section>
+<section id="team" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">TEAM</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">A solo founder who built the whole product</h2>
+<div style="display:flex;flex-direction:row;gap:28px">
+<div style="flex:1;background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:40px;display:flex;flex-direction:column;gap:14px">
+<div style="width:88px;height:88px;border-radius:44px;background:#E6F2F1;border:2px solid #0F766E"></div>
+<h3 style="font-size:40px;font-weight:700">Bakhtiyar Arzimetov</h3>
+<p style="font-size:28px;color:#0F766E;font-weight:600">Founder · Go developer</p>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Built the server, doctor & pharmacy website, patient app and AI summaries, and deployed them live</p>
+<p style="font-size:26px;color:#4B5563">b.a.music.777@gmail.com · +7 747 945 3926</p>
+</div>
+<div style="flex:1;background:#E6F2F1;border:2px solid #0F766E;border-radius:20px;padding:40px;display:flex;flex-direction:column;gap:14px">
+<h3 style="font-size:36px;font-weight:700;color:#0F766E">Looking for</h3>
+<ul style="font-size:28px;color:#1F2937;line-height:1.5">
+<li>A medical advisor — doctor or pharmacist</li>
+<li>A mentor in healthcare law and data</li>
+<li>Co-founder for sales to clinics and pharmacies</li>
+</ul>
+</div>
+</div>
+
+</section>
+<section id="financials" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">FINANCIALS · 3-YEAR FORECAST</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Pilot first, break-even in year 3</h2>
+<table style="font-family:'Inter', Arial, sans-serif;font-size:28px;color:#1F2937">
+<tr><th style="width:34%;text-align:left">Metric</th><th style="width:22%;text-align:right">Year 1 (pilot)</th><th style="width:22%;text-align:right">Year 2</th><th style="width:22%;text-align:right">Year 3</th></tr>
+<tr><td>Polyclinics</td><td style="text-align:right">1</td><td style="text-align:right">10</td><td style="text-align:right">40</td></tr>
+<tr><td>Active patients (avg)</td><td style="text-align:right">200</td><td style="text-align:right">3,000</td><td style="text-align:right">15,000</td></tr>
+<tr><td>Revenue, M ₸</td><td style="text-align:right">0</td><td style="text-align:right">18</td><td style="text-align:right">90</td></tr>
+<tr><td>Costs, M ₸</td><td style="text-align:right">10</td><td style="text-align:right">20</td><td style="text-align:right">45</td></tr>
+<tr style="background:#E6F2F1"><td><b>Profit / loss, M ₸</b></td><td style="text-align:right"><b>−10</b></td><td style="text-align:right"><b>−2</b></td><td style="text-align:right"><b>+45</b></td></tr>
+</table>
+<p style="font-size:26px;color:#4B5563;line-height:1.45"><b>Assumptions:</b> 500 ₸ per active patient per month (pilot year free); pharmacy commission not counted — upside. Costs: founder + servers in Kazakhstan + legal + pilot in year 1; team of 3 in year 2; team of 6 and marketing in year 3.</p>
+
+</section>
+<section id="roadmap" data-transition="fade" style="background:#F6F8FA;color:#1F2937;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:26px;font-weight:700;color:#0F766E;letter-spacing:2px">ROADMAP</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">MVP → launch → scale</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="background:#0F766E;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#CDEBE7">NOW · Nov 2026</p>
+<h3 style="font-size:34px;font-weight:700;color:#F6F8FA">MVP live</h3>
+<p style="font-size:26px;color:#E6F2F1;line-height:1.4">Doctor site, patient & family app, AI summaries</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">+3 MONTHS</p>
+<h3 style="font-size:34px;font-weight:700">Pilot</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">1 Almaty polyclinic, data on servers in Kazakhstan, legal opinion</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">+6 MONTHS</p>
+<h3 style="font-size:34px;font-weight:700">Launch</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Kazakh interface, Google Play & App Store, first pharmacy partner</p>
+</div>
+<div style="background:#FFFFFF;border:2px solid #E5E7EB;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:26px;font-weight:700;color:#0F766E">+12–36 MONTHS</p>
+<h3 style="font-size:34px;font-weight:700">Scale</h3>
+<p style="font-size:26px;color:#4B5563;line-height:1.4">Integration with medical information systems, other cities, the region</p>
+</div>
+</div>
+
+</section>
+<section id="ask" data-transition="fade" style="background:#12302D;color:#F6F8FA;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;gap:72px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:28px;width:720px">
+<p style="font-size:26px;font-weight:700;color:#7FD1C7;letter-spacing:2px">THE ASK</p>
+<h2 style="font-size:96px;font-weight:800;line-height:1;color:#F6F8FA">10M ₸</h2>
+<p style="font-size:30px;color:#D3E8E5;line-height:1.4">(~$20K) for year 1: pilot + launch</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;color:#F6F8FA;line-height:1.4"><b>Also:</b> a pilot polyclinic · intros to medical information systems and the Almaty health department · a mentor in healthcare law</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:row;justify-content:space-between;background:#1B403C;border-radius:16px;padding:22px 30px"><p style="font-size:30px">Product: KZ servers, Kazakh UI, app stores</p><p style="font-size:30px;font-weight:700">35%</p></div>
+<div style="display:flex;flex-direction:row;justify-content:space-between;background:#1B403C;border-radius:16px;padding:22px 30px"><p style="font-size:30px">Pilot in a polyclinic</p><p style="font-size:30px;font-weight:700">30%</p></div>
+<div style="display:flex;flex-direction:row;justify-content:space-between;background:#1B403C;border-radius:16px;padding:22px 30px"><p style="font-size:30px">Legal: data, AI law, device status</p><p style="font-size:30px;font-weight:700">20%</p></div>
+<div style="display:flex;flex-direction:row;justify-content:space-between;background:#1B403C;border-radius:16px;padding:22px 30px"><p style="font-size:30px">Pharmacist review & operations</p><p style="font-size:30px;font-weight:700">15%</p></div>
+<p style="font-size:24px;color:#9CC9C2">Draft split — adjust to your budget</p>
+</div>
+
+</section>
+<section id="closing" data-transition="fade" style="background:#0F766E;color:#F6F8FA;font-family:'Inter', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:36px">
+<p style="font-size:26px;font-weight:700;color:#CDEBE7;letter-spacing:2px">eRECEPT</p>
+<h2 style="font-size:72px;font-weight:700;line-height:1.15;color:#F6F8FA">Kaspi helps you buy medicine. eRecept makes sure it’s taken.</h2>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-end;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:10px">
+<p style="font-size:32px;font-weight:600;color:#F6F8FA">erecept.onrender.com</p>
+<p style="font-size:28px;color:#E6F2F1">Bakhtiyar Arzimetov · b.a.music.777@gmail.com · +7 747 945 3926</p>
+</div>
+<h1 style="font-size:96px;font-weight:800;letter-spacing:-2px;line-height:1;color:#F6F8FA">Questions?</h1>
+</div>
+
+</section>
+</div>
+<div id="bar"><span id="num"></span><button id="prev" aria-label="Previous slide">←</button><button id="next" aria-label="Next slide">→</button><button id="fs">Full screen</button></div>
+<script>
+  // Листание: стрелки, пробел, клик; F — во весь экран; номер слайда в адресе (#3).
+  const slides = [...document.querySelectorAll("#stage > section")];
+  let i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1)) || 1) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle("on", k === i));
+    document.getElementById("num").textContent = (i + 1) + " / " + slides.length;
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+  function fit() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    document.getElementById("stage").style.transform = "translate(-50%, -50%) scale(" + k + ")";
+  }
+  addEventListener("resize", fit);
+  addEventListener("keydown", (e) => {
+    if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === "Home") show(0);
+    if (e.key === "End") show(slides.length - 1);
+    if (e.key === "f" || e.key === "F") toggleFs();
+  });
+  document.getElementById("stage").addEventListener("click", () => show(i + 1));
+  document.getElementById("prev").onclick = () => show(i - 1);
+  document.getElementById("next").onclick = () => show(i + 1);
+  function toggleFs() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+  document.getElementById("fs").onclick = toggleFs;
+  fit(); show(i);
+</script>
+</body>
+</html>

@@ -48,6 +48,10 @@ func (w *Web) Routes() http.Handler {
 
 	static, _ := fs.Sub(assets, "static")
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServerFS(static)))
+	// Временно: презентация для жюри (static/pitch), открывается без входа.
+	r.Get("/pitch", func(rw http.ResponseWriter, r *http.Request) {
+		http.Redirect(rw, r, "/static/pitch/", http.StatusFound)
+	})
 
 	r.Get("/", w.home)
 	r.Get("/login", w.loginForm)
