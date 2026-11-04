@@ -16,6 +16,12 @@
   section table { border-collapse: collapse; width: 100%; }
   section th, section td { border-bottom: 2px solid #E5E7EB; padding: 0.35em 0.6em; }
   section li { margin-bottom: 0.3em; }
+  /* Речь: видна только на пульте (?key=…) или по клавише N, под слайдом */
+  aside.notes { display: none; }
+  #notes { display: none; position: fixed; left: 0; right: 0; bottom: 0; overflow-y: auto; box-sizing: border-box; padding: 14px 16px 18px; background: #12302D; color: #E1F2EF; font: 17px/1.5 Inter, Arial, sans-serif; }
+  #notes b { color: #7FD1C7; display: block; font-size: 13px; letter-spacing: 1px; margin-bottom: 6px; }
+  #notes i { color: #9CC9C2; }
+  body.with-notes #notes { display: block; }
   #bar { position: fixed; right: 16px; top: 12px; color: #CDEBE7; font: 14px Inter, Arial, sans-serif; user-select: none; background: rgba(18,48,45,.85); opacity: .35; transition: opacity .2s; padding: 6px 10px; border-radius: 10px; }
   #bar:hover { opacity: 1; }
   #bar button { background: none; border: 1px solid #2E5A55; color: #CDEBE7; border-radius: 6px; padding: 4px 10px; margin-left: 6px; cursor: pointer; font: inherit; }
@@ -54,6 +60,7 @@
 <p style="font-size:52px;color:#CDEBE7;margin-top:44px;max-width:1500px;line-height:1.3">The e-prescription that makes sure medicine is actually taken</p>
 <p style="font-size:34px;color:#9CC9C2;margin-top:40px">Bakhtiyar Arzimetov · Tashenev University · Shymkent</p>
 <div class="foot"><span>1 / 7</span><span class="timer">10 sec</span></div>
+<aside class="notes">Good afternoon! I'm Bakhtiyar, from Tashenev University in Shymkent. This is eRecept — the e-prescription that makes sure medicine is actually taken.</aside>
 </section>
 <section>
 <p class="kick">02 · PROBLEM</p>
@@ -71,6 +78,7 @@
   </div>
 </div>
 <div class="foot"><span>2 / 7</span><span class="timer">30 sec</span></div>
+<aside class="notes">Kazakhstan gives free medicine to 3.4 million people. But about half of patients with blood-pressure medicine simply don't take it. <i>(pause)</i> Why? The prescription is hard to read, the leaflet is ten pages long, and nobody reminds them. The result — complications, hospitals, and 337 billion tenge that don't fully work.</aside>
 </section>
 <section>
 <p class="kick">03 · SOLUTION</p>
@@ -92,6 +100,7 @@
   </div>
 </div>
 <div class="foot"><span>3 / 7</span><span class="timer">40 sec</span></div>
+<aside class="notes">Here's how eRecept works. The doctor just speaks — our AI fills the prescription in three seconds. The patient gets a QR code, scans it, and the app reminds them on time. The AI explains every medicine in simple words, from the official leaflet. If grandma misses a dose, her son sees it and calls her. And the app shows the cheapest pharmacy nearby. This is not a mock-up — scan the QR code, it's live right now. <i>(point at the QR, wait 2 sec)</i></aside>
 </section>
 <section>
 <p class="kick">04 · CUSTOMERS AND MARKET</p>
@@ -102,6 +111,7 @@
   <div class="card"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg><h3>Edge</h3><p>Medisafe (USA), MyTherapy (Germany) — manual reminders. eRecept starts from the doctor’s real prescription, with AI and pharmacies</p></div>
 </div>
 <div class="foot"><span>4 / 7</span><span class="timer">25 sec</span></div>
+<aside class="notes">Our customer is a chronic patient over fifty — and their family. That's 3.4 million people in Kazakhstan. Reminder apps exist abroad, but there the patient types everything by hand. In eRecept, the prescription comes straight from the doctor. That's our edge.</aside>
 </section>
 <section>
 <p class="kick">05 · HOW WE MAKE MONEY</p>
@@ -112,6 +122,7 @@
   <div class="card"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><h3>Done so far</h3><p>Live product · voice dictation · AI summaries for 27 of 30 medicines · pharmacy prices · emergency button</p></div>
 </div>
 <div class="foot"><span>5 / 7</span><span class="timer">25 sec</span></div>
+<aside class="notes">For patients and doctors, eRecept is free. Pharmacies pay us a small commission per order, because we bring them a customer with a ready prescription. The patient saves money, the pharmacy sells more, and we earn. Everyone wins.</aside>
 </section>
 <section>
 <p class="kick">06 · TEAM</p>
@@ -128,6 +139,7 @@
   <h3>Open seat</h3><p style="color:#0F766E;font-weight:700">Medical advisor</p><p>A doctor who will guide the pilot</p></div>
 </div>
 <div class="foot"><span>6 / 7</span><span class="timer">20 sec</span></div>
+<aside class="notes">I'm the founder and the developer. Everything you saw today — the doctor's side, the patient app, the AI — I built myself. Now I'm looking for a doctor to join as a medical advisor.</aside>
 </section>
 <section class="accent">
 <p class="kick">07 · NEXT STEPS</p>
@@ -146,11 +158,13 @@
   </div>
 </div>
 <div class="foot"><span>7 / 7 · Thank you!</span><span class="timer">20 sec</span></div>
+<aside class="notes">Our next six months: a pilot in a Shymkent clinic, login by IIN, and the first partner pharmacies. We are asking for three things: a clinic for the pilot, partner pharmacies, and a medical mentor. eRecept — medicine that is actually taken. Thank you!</aside>
 </section>
 </div>
+<div id="notes"></div>
 <div id="bar"><span id="num"></span><button id="prev" aria-label="Previous slide">←</button><button id="next" aria-label="Next slide">→</button><button id="fs">Full screen</button></div>
 <script>
-  // Листание: стрелки, пробел, клик; F — во весь экран; номер слайда в адресе (#3).
+  // Листание: стрелки, пробел, клик; F — во весь экран; N — речь под слайдом; номер слайда в адресе (#3).
   const slides = [...document.querySelectorAll("#stage > section")];
   let i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1)) || 1) - 1));
   // Пульт: ссылка с ?key=… (телефон) отправляет номер слайда на сервер,
@@ -166,12 +180,26 @@
     i = n;
     slides.forEach((s, k) => s.classList.toggle("on", k === i));
     document.getElementById("num").textContent = (i + 1) + " / " + slides.length + (key ? " · пульт" : "");
+    const note = slides[i].querySelector("aside.notes");
+    document.getElementById("notes").innerHTML = "<b>SAY · " + slides[i].querySelector(".timer").textContent + "</b>" + (note ? note.innerHTML : "");
+    fit();
     history.replaceState(null, "", "#" + (i + 1));
   }
   function fit() {
+    const stage = document.getElementById("stage");
+    if (document.body.classList.contains("with-notes")) {
+      // Слайд сверху под кнопками, речь — сразу под слайдом до низа экрана.
+      const k = Math.min(innerWidth / 1920, innerHeight * 0.5 / 1080), top = 56;
+      stage.style.top = (top + 540 * k) + "px";
+      stage.style.transform = "translate(-50%, -50%) scale(" + k + ")";
+      document.getElementById("notes").style.top = (top + 1080 * k) + "px";
+      return;
+    }
     const k = Math.min(innerWidth / 1920, innerHeight / 1080);
-    document.getElementById("stage").style.transform = "translate(-50%, -50%) scale(" + k + ")";
+    stage.style.top = "50%";
+    stage.style.transform = "translate(-50%, -50%) scale(" + k + ")";
   }
+  if (key) document.body.classList.add("with-notes");
   addEventListener("resize", fit);
   addEventListener("keydown", (e) => {
     if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
@@ -179,6 +207,7 @@
     if (e.key === "Home") show(0);
     if (e.key === "End") show(slides.length - 1);
     if (e.key === "f" || e.key === "F") toggleFs();
+    if (e.key === "n" || e.key === "N") { document.body.classList.toggle("with-notes"); fit(); }
   });
   document.getElementById("stage").addEventListener("click", () => show(i + 1));
   // Телефон: свайп влево — дальше, вправо — назад.
