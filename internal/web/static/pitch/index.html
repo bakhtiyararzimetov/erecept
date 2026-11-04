@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>eRecept — 3-minute pitch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Rubik:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
 <style>
   html, body { touch-action: manipulation; }
-  html, body { margin: 0; height: 100%; background: #16213E; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #12302D; overflow: hidden; }
   #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; }
   section { position: absolute; inset: 0; width: 1920px; height: 1080px; box-sizing: border-box; }
   section:not(.on) { display: none !important; }
@@ -16,41 +16,43 @@
   section table { border-collapse: collapse; width: 100%; }
   section th, section td { border-bottom: 2px solid #E5E7EB; padding: 0.35em 0.6em; }
   section li { margin-bottom: 0.3em; }
-  #bar { position: fixed; right: 16px; top: 12px; color: #C9D2E3; font: 14px Inter, Arial, sans-serif; user-select: none; background: rgba(22,33,62,.85); opacity: .35; transition: opacity .2s; padding: 6px 10px; border-radius: 10px; }
+  #bar { position: fixed; right: 16px; top: 12px; color: #CDEBE7; font: 14px Inter, Arial, sans-serif; user-select: none; background: rgba(18,48,45,.85); opacity: .35; transition: opacity .2s; padding: 6px 10px; border-radius: 10px; }
   #bar:hover { opacity: 1; }
-  #bar button { background: none; border: 1px solid #3A4A70; color: #E3E8F2; border-radius: 6px; padding: 4px 10px; margin-left: 6px; cursor: pointer; font: inherit; }
+  #bar button { background: none; border: 1px solid #2E5A55; color: #CDEBE7; border-radius: 6px; padding: 4px 10px; margin-left: 6px; cursor: pointer; font: inherit; }
 
-  /* Шаблон учителя: тёмно-синий + оранжевый, таймер в углу */
-  section { font-family: Inter, Arial, sans-serif; color: #16213E; background: #fff; padding: 104px 130px 0; display: flex; flex-direction: column; }
-  .kick { font: 700 30px Inter, sans-serif; letter-spacing: 2px; color: #C2580F; margin-bottom: 22px; }
-  section h2 { font: 800 76px/1.12 Rubik, Inter, sans-serif; letter-spacing: -1px; max-width: 1660px; }
-  .foot { position: absolute; left: 130px; right: 130px; bottom: 72px; display: flex; justify-content: space-between; align-items: center; font-size: 26px; color: #6B7488; }
-  .timer { background: #16213E; color: #F5A13A; font-weight: 700; padding: 12px 34px; border-radius: 40px; }
-  .dark { background: #16213E; color: #fff; }
-  .dark .foot { color: #9AA6C2; }
-  .dark .timer, .orange .timer { background: #F5A13A; color: #16213E; }
-  .orange { background: #F5A13A; }
-  .orange .foot { color: #16213E; font-weight: 600; }
-  .orange .kick { color: #16213E; }
-  .orange .timer { background: #16213E; color: #F5A13A; }
-  .big { font: 800 150px/1 Rubik, sans-serif; color: #F5A13A; }
+  /* Шаблон учителя в цветах приложения: светлый фон, белые карточки, бирюзовый акцент */
+  section { font-family: Inter, Arial, sans-serif; color: #1F2937; background: #F6F8FA; padding: 104px 130px 0; display: flex; flex-direction: column; }
+  .kick { font: 700 30px Inter, sans-serif; letter-spacing: 2px; color: #0F766E; margin-bottom: 22px; }
+  section h2 { font: 800 76px/1.12 Inter, sans-serif; letter-spacing: -1px; max-width: 1660px; }
+  .foot { position: absolute; left: 130px; right: 130px; bottom: 72px; display: flex; justify-content: space-between; align-items: center; font-size: 26px; color: #5B6472; }
+  .timer { background: #0F766E; color: #fff; font-weight: 700; padding: 12px 34px; border-radius: 40px; }
+  .dark { background: #12302D; color: #fff; }
+  .dark .foot { color: #9CC9C2; }
+  .dark .timer { background: #0F766E; color: #fff; }
+  .accent { background: #0F766E; color: #fff; }
+  .accent h2 { color: #fff; }
+  .accent .foot { color: #CDEBE7; font-weight: 600; }
+  .accent .kick { color: #CDEBE7; }
+  .accent .timer { background: #12302D; color: #fff; }
+  .big { font: 800 150px/1 Inter, sans-serif; color: #7FD1C7; letter-spacing: -3px; }
   .cards { display: flex; gap: 40px; margin-top: 54px; height: 500px; }
-  .card { flex: 1; background: #EEF1F6; border-radius: 34px; padding: 48px 50px; display: flex; flex-direction: column; gap: 22px; }
-  .card.navy { background: #16213E; color: #fff; }
+  .card { flex: 1; background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 34px; padding: 48px 50px; display: flex; flex-direction: column; gap: 22px; }
+  .card.navy { background: #12302D; border-color: #12302D; color: #fff; }
   .card h3 { font: 700 40px/1.2 Inter, sans-serif; }
-  .card p { font-size: 32px; line-height: 1.4; color: #4A5470; }
-  .card.navy p { color: #C9D2E3; }
-  .ico { width: 56px; height: 56px; stroke: #F5A13A; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .src { font-size: 22px; color: #8A93A8; }
+  .card p { font-size: 32px; line-height: 1.4; color: #5B6472; }
+  .card.navy p { color: #CDEBE7; }
+  .card.navy .ico { stroke: #7FD1C7; }
+  .ico { width: 56px; height: 56px; stroke: #0F766E; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .src { font-size: 22px; color: #5B6472; }
 </style>
 </head>
 <body>
 <div id="stage">
 <section class="dark" style="justify-content:center;padding-bottom:120px">
-<p class="kick" style="color:#F5A13A">PITCH · 3 MIN</p>
-<h1 style="font:800 200px/1 Rubik,sans-serif;letter-spacing:-3px">eRecept</h1>
-<p style="font-size:52px;color:#C9D2E3;margin-top:44px;max-width:1500px;line-height:1.3">The e-prescription that makes sure medicine is actually taken</p>
-<p style="font-size:34px;color:#9AA6C2;margin-top:40px">Bakhtiyar Arzimetov · Tashenev University · Shymkent</p>
+<p class="kick" style="color:#7FD1C7">PITCH · 3 MIN</p>
+<h1 style="font:800 200px/1 Inter,sans-serif;letter-spacing:-3px;display:flex;align-items:center;gap:48px"><span style="width:150px;height:150px;border-radius:32px;background:#0F766E;flex:none"></span>eRecept</h1>
+<p style="font-size:52px;color:#CDEBE7;margin-top:44px;max-width:1500px;line-height:1.3">The e-prescription that makes sure medicine is actually taken</p>
+<p style="font-size:34px;color:#9CC9C2;margin-top:40px">Bakhtiyar Arzimetov · Tashenev University · Shymkent</p>
 <div class="foot"><span>1 / 7</span><span class="timer">10 sec</span></div>
 </section>
 <section>
@@ -60,12 +62,12 @@
   <div class="card navy" style="flex:0 0 760px;justify-content:center">
     <div class="big">~50%</div>
     <p style="font-size:36px">of patients with free blood-pressure medicine did not use it</p>
-    <p class="src" style="color:#9AA6C2">National Center for Public Health, 2023</p>
+    <p class="src" style="color:#9CC9C2">National Center for Public Health, 2023</p>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
-    <div style="border-left:7px solid #F5A13A;padding-left:36px"><h3 style="font:700 40px Inter">Who?</h3><p style="font-size:32px;color:#4A5470;margin-top:8px;line-height:1.35">Chronic patients, mostly elderly — <b style="color:#16213E">1.41M</b> people with hypertension</p></div>
-    <div style="border-left:7px solid #F5A13A;padding-left:36px"><h3 style="font:700 40px Inter">What hurts?</h3><p style="font-size:32px;color:#4A5470;margin-top:8px;line-height:1.35">Missed doses → complications, hospitals; <b style="color:#16213E">337 bn ₸</b> state budget wasted</p></div>
-    <div style="border-left:7px solid #F5A13A;padding-left:36px"><h3 style="font:700 40px Inter">How today?</h3><p style="font-size:32px;color:#4A5470;margin-top:8px;line-height:1.35">Unreadable prescription, 10-page leaflet, no reminders, family doesn’t know</p></div>
+    <div style="border-left:7px solid #0F766E;padding-left:36px"><h3 style="font:700 40px Inter">Who?</h3><p style="font-size:32px;color:#5B6472;margin-top:8px;line-height:1.35">Chronic patients, mostly elderly — <b style="color:#12302D">1.41M</b> people with hypertension</p></div>
+    <div style="border-left:7px solid #0F766E;padding-left:36px"><h3 style="font:700 40px Inter">What hurts?</h3><p style="font-size:32px;color:#5B6472;margin-top:8px;line-height:1.35">Missed doses → complications, hospitals; <b style="color:#12302D">337 bn ₸</b> state budget wasted</p></div>
+    <div style="border-left:7px solid #0F766E;padding-left:36px"><h3 style="font:700 40px Inter">How today?</h3><p style="font-size:32px;color:#5B6472;margin-top:8px;line-height:1.35">Unreadable prescription, 10-page leaflet, no reminders, family doesn’t know</p></div>
   </div>
 </div>
 <div class="foot"><span>2 / 7</span><span class="timer">30 sec</span></div>
@@ -75,14 +77,14 @@
 <h2>One QR code connects the doctor, the patient, the family and the pharmacy</h2>
 <div style="display:flex;gap:56px;margin-top:48px;height:520px">
   <div style="flex:1;display:flex;flex-direction:column;gap:40px">
-    <h3 style="font:700 38px Inter;color:#4A5470">How it works</h3>
-    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#F5A13A;font:800 38px/76px Rubik;text-align:center">1</span><p style="font-size:33px;line-height:1.38;color:#2A3452;padding-top:6px">The doctor <b>dictates</b> the prescription — the patient <b>scans the QR</b></p></div>
-    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#F5A13A;font:800 38px/76px Rubik;text-align:center">2</span><p style="font-size:33px;line-height:1.38;color:#2A3452;padding-top:6px">AI fills the form in <b>~3 sec</b>, builds the schedule, reminds on time, explains each medicine</p></div>
-    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#F5A13A;font:800 38px/76px Rubik;text-align:center">3</span><p style="font-size:33px;line-height:1.38;color:#2A3452;padding-top:6px">Doses taken on time · the family sees missed doses · the <b>cheapest pharmacy</b> nearby</p></div>
+    <h3 style="font:700 38px Inter;color:#5B6472">How it works</h3>
+    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#0F766E;color:#fff;font:800 38px/76px Inter;text-align:center">1</span><p style="font-size:33px;line-height:1.38;color:#1F2937;padding-top:6px">The doctor <b>dictates</b> the prescription — the patient <b>scans the QR</b></p></div>
+    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#0F766E;color:#fff;font:800 38px/76px Inter;text-align:center">2</span><p style="font-size:33px;line-height:1.38;color:#1F2937;padding-top:6px">AI fills the form in <b>~3 sec</b>, builds the schedule, reminds on time, explains each medicine</p></div>
+    <div style="display:flex;gap:30px;align-items:flex-start"><span style="flex:0 0 76px;height:76px;border-radius:50%;background:#0F766E;color:#fff;font:800 38px/76px Inter;text-align:center">3</span><p style="font-size:33px;line-height:1.38;color:#1F2937;padding-top:6px">Doses taken on time · the family sees missed doses · the <b>cheapest pharmacy</b> nearby</p></div>
   </div>
-  <div style="flex:0 0 820px;background:#EEF1F6;border-radius:34px;display:flex;align-items:center;justify-content:center;gap:28px;padding:0 30px">
-    <img src="img/04-today.png" alt="Patient app: today’s schedule" style="height:470px;border-radius:26px;box-shadow:0 10px 30px rgba(22,33,62,.18)">
-    <img src="img/05-explain.png" alt="AI summary of a medicine" style="height:470px;border-radius:26px;box-shadow:0 10px 30px rgba(22,33,62,.18)">
+  <div style="flex:0 0 820px;background:#FFFFFF;border:2px solid #E5E7EB;border-radius:34px;display:flex;align-items:center;justify-content:center;gap:28px;padding:0 30px">
+    <img src="img/04-today.png" alt="Patient app: today’s schedule" style="height:470px;border-radius:26px;box-shadow:0 10px 30px rgba(18,48,45,.12)">
+    <img src="img/05-explain.png" alt="AI summary of a medicine" style="height:470px;border-radius:26px;box-shadow:0 10px 30px rgba(18,48,45,.12)">
     <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
       <img src="img/qr-demo.png" alt="QR: live demo prescription" style="width:230px;height:230px;background:#fff;border-radius:18px;padding:12px">
       <p style="font:700 26px Inter;text-align:center">Scan — it’s live</p>
@@ -105,8 +107,8 @@
 <p class="kick">05 · HOW WE MAKE MONEY</p>
 <h2>Free for patients and doctors — pharmacies pay for customers</h2>
 <div class="cards">
-  <div class="card"><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.3 1.9 4.8 4.9"/></svg><h3>Who pays</h3><p><b style="color:#16213E">Pharmacies</b> — we bring them a customer with a ready prescription</p></div>
-  <div class="card navy"><svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4.5"/><path d="M11.2 11.2L20 20M16.5 16.5l2.5-2.5M14 14l2-2"/></svg><h3>Price</h3><div style="font:800 64px/1.15 Rubik;color:#F5A13A">a small commission</div><p>per order from the app</p></div>
+  <div class="card"><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.3 1.9 4.8 4.9"/></svg><h3>Who pays</h3><p><b style="color:#12302D">Pharmacies</b> — we bring them a customer with a ready prescription</p></div>
+  <div class="card navy"><svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4.5"/><path d="M11.2 11.2L20 20M16.5 16.5l2.5-2.5M14 14l2-2"/></svg><h3>Price</h3><div style="font:800 64px/1.15 Inter;color:#7FD1C7">a small commission</div><p>per order from the app</p></div>
   <div class="card"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><h3>Done so far</h3><p>Live product · voice dictation · AI summaries for 27 of 30 medicines · pharmacy prices · emergency button</p></div>
 </div>
 <div class="foot"><span>5 / 7</span><span class="timer">25 sec</span></div>
@@ -115,30 +117,30 @@
 <p class="kick">06 · TEAM</p>
 <h2>Why us? One person built a full working product — a team will scale it</h2>
 <div class="cards">
-  <div class="card" style="background:#F8F8F4;align-items:center;text-align:center;justify-content:center;">
-  <span style="width:130px;height:130px;border-radius:50%;background:#D5DDEA;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#16213E;width:66px;height:66px" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.3 1.9 4.8 4.9"/></svg></span>
-  <h3>Bakhtiyar Arzimetov</h3><p style="color:#C2580F;font-weight:700">Founder &amp; developer</p><p>Built everything: doctor portal, patient app, AI</p></div>
-  <div class="card" style="background:#F8F8F4;align-items:center;text-align:center;justify-content:center;">
-  <span style="width:130px;height:130px;border-radius:50%;background:#D5DDEA;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#16213E;width:66px;height:66px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.8 5.8 3.8 9s-1.2 6.2-3.8 9c-2.6-2.8-3.8-5.8-3.8-9S9.4 5.8 12 3z"/></svg></span>
-  <h3>From Shymkent</h3><p style="color:#C2580F;font-weight:700">Our first market</p><p>Knows local clinics and pharmacies</p></div>
-  <div class="card" style="background:#F8F8F4;align-items:center;text-align:center;justify-content:center;border:3px dashed #C9D2E3;">
-  <span style="width:130px;height:130px;border-radius:50%;background:#D5DDEA;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#16213E;width:66px;height:66px" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2.5 2.5 9.5 2.5 12 0v-5M22 9v6"/></svg></span>
-  <h3>Open seat</h3><p style="color:#C2580F;font-weight:700">Medical advisor</p><p>A doctor who will guide the pilot</p></div>
+  <div class="card" style="background:#FFFFFF;align-items:center;text-align:center;justify-content:center;">
+  <span style="width:130px;height:130px;border-radius:50%;background:#E1F2EF;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#12302D;width:66px;height:66px" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.3 1.9 4.8 4.9"/></svg></span>
+  <h3>Bakhtiyar Arzimetov</h3><p style="color:#0F766E;font-weight:700">Founder &amp; developer</p><p>Built everything: doctor portal, patient app, AI</p></div>
+  <div class="card" style="background:#FFFFFF;align-items:center;text-align:center;justify-content:center;">
+  <span style="width:130px;height:130px;border-radius:50%;background:#E1F2EF;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#12302D;width:66px;height:66px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.8 5.8 3.8 9s-1.2 6.2-3.8 9c-2.6-2.8-3.8-5.8-3.8-9S9.4 5.8 12 3z"/></svg></span>
+  <h3>From Shymkent</h3><p style="color:#0F766E;font-weight:700">Our first market</p><p>Knows local clinics and pharmacies</p></div>
+  <div class="card" style="background:#FFFFFF;align-items:center;text-align:center;justify-content:center;border:3px dashed #CDEBE7;">
+  <span style="width:130px;height:130px;border-radius:50%;background:#E1F2EF;display:flex;align-items:center;justify-content:center"><svg class="ico" style="stroke:#12302D;width:66px;height:66px" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2.5 2.5 9.5 2.5 12 0v-5M22 9v6"/></svg></span>
+  <h3>Open seat</h3><p style="color:#0F766E;font-weight:700">Medical advisor</p><p>A doctor who will guide the pilot</p></div>
 </div>
 <div class="foot"><span>6 / 7</span><span class="timer">20 sec</span></div>
 </section>
-<section class="orange">
+<section class="accent">
 <p class="kick">07 · NEXT STEPS</p>
 <h2>Our next 6 months</h2>
 <div style="display:flex;gap:70px;margin-top:70px;height:600px;align-items:center">
   <div style="flex:1;display:flex;flex-direction:column;gap:50px">
-    <div style="border-left:7px solid #16213E;padding-left:34px"><h3 style="font:800 40px Rubik">1–2 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px">Pilot in one Shymkent clinic</p></div>
-    <div style="border-left:7px solid #16213E;padding-left:34px"><h3 style="font:800 40px Rubik">3–4 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px">Login by IIN · full history · first 50 patients</p></div>
-    <div style="border-left:7px solid #16213E;padding-left:34px"><h3 style="font:800 40px Rubik">5–6 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px">First partner pharmacies · first commission</p></div>
+    <div style="border-left:7px solid #7FD1C7;padding-left:34px"><h3 style="font:800 40px Inter">1–2 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px;color:#E1F2EF">Pilot in one Shymkent clinic</p></div>
+    <div style="border-left:7px solid #7FD1C7;padding-left:34px"><h3 style="font:800 40px Inter">3–4 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px;color:#E1F2EF">Login by IIN · full history · first 50 patients</p></div>
+    <div style="border-left:7px solid #7FD1C7;padding-left:34px"><h3 style="font:800 40px Inter">5–6 months</h3><p style="font-size:32px;line-height:1.35;margin-top:6px;color:#E1F2EF">First partner pharmacies · first commission</p></div>
   </div>
   <div class="card navy" style="flex:0 0 820px;height:560px;justify-content:center;gap:30px">
-    <p class="kick" style="color:#F5A13A;margin:0">OUR ASK</p>
-    <div style="font:800 58px/1.2 Rubik;color:#F5A13A">A pilot clinic · 2–3 partner pharmacies · a medical mentor</div>
+    <p class="kick" style="color:#7FD1C7;margin:0">OUR ASK</p>
+    <div style="font:800 58px/1.2 Inter;color:#7FD1C7">A pilot clinic · 2–3 partner pharmacies · a medical mentor</div>
     <p>To launch the pilot and the first sales</p>
     <p style="color:#fff;font-weight:600">erecept.onrender.com</p>
   </div>
