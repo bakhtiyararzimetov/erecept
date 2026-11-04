@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
 <style>
+  html, body { touch-action: manipulation; }
   html, body { margin: 0; height: 100%; background: #0B1F1D; overflow: hidden; }
   #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; }
   section { position: absolute; inset: 0; width: 1920px; height: 1080px; box-sizing: border-box; }
@@ -175,10 +176,20 @@
     if (e.key === "f" || e.key === "F") toggleFs();
   });
   document.getElementById("stage").addEventListener("click", () => show(i + 1));
+  // Телефон: свайп влево — дальше, вправо — назад.
+  let tx = null, ty = 0;
+  addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  addEventListener("touchend", (e) => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    tx = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? i + 1 : i - 1);
+  });
   document.getElementById("prev").onclick = () => show(i - 1);
   document.getElementById("next").onclick = () => show(i + 1);
   function toggleFs() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
   document.getElementById("fs").onclick = toggleFs;
+  if (!document.documentElement.requestFullscreen) document.getElementById("fs").hidden = true; // iPhone: нет полноэкранного режима
   fit(); show(i);
 </script>
 </body>
