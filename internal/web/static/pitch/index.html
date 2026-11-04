@@ -157,10 +157,19 @@
   // Листание: стрелки, пробел, клик; F — во весь экран; номер слайда в адресе (#3).
   const slides = [...document.querySelectorAll("#stage > section")];
   let i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1)) || 1) - 1));
-  function show(n) {
-    i = Math.max(0, Math.min(slides.length - 1, n));
+  // Пульт: ссылка с ?key=… (телефон) отправляет номер слайда на сервер,
+  // все открытые экраны получают его по /pitch/live и переключаются следом.
+  const key = new URLSearchParams(location.search).get("key");
+  function show(n, fromRemote) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (key && !fromRemote && n !== i) {
+      fetch("/pitch/live", { method: "POST", body: new URLSearchParams({ key: key, slide: n + 1 }) })
+        .then((r) => { if (!r.ok) document.getElementById("num").textContent += " · пульт не работает"; })
+        .catch(() => {});
+    }
+    i = n;
     slides.forEach((s, k) => s.classList.toggle("on", k === i));
-    document.getElementById("num").textContent = (i + 1) + " / " + slides.length;
+    document.getElementById("num").textContent = (i + 1) + " / " + slides.length + (key ? " · пульт" : "");
     history.replaceState(null, "", "#" + (i + 1));
   }
   function fit() {
@@ -190,7 +199,10 @@
   function toggleFs() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
   document.getElementById("fs").onclick = toggleFs;
   if (!document.documentElement.requestFullscreen) document.getElementById("fs").hidden = true; // iPhone: нет полноэкранного режима
-  fit(); show(i);
+  fit(); show(i, true);
+  if (window.EventSource) {
+    new EventSource("/pitch/live").onmessage = (e) => show(parseInt(e.data, 10) - 1, true);
+  }
 </script>
 </body>
 </html>

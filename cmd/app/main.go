@@ -56,6 +56,7 @@ func main() {
 
 	// ИИ-памятки о лекарствах и голосовое заполнение рецепта: без ключа выключены.
 	webApp := web.New(pool)
+	webApp.PitchKey = os.Getenv("PITCH_KEY") // пульт презентации /pitch
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
 		go explain.New(pool, leaflet.New(), key).BackfillLoop(ctx)
 		webApp.Dictate = dictate.New(key)

@@ -17,14 +17,16 @@ import (
 var assets embed.FS
 
 type Web struct {
-	DB      *pgxpool.Pool
-	Dictate Dictator // голосовое заполнение рецепта; nil — выключено
-	pages   map[string]*template.Template
+	DB       *pgxpool.Pool
+	Dictate  Dictator // голосовое заполнение рецепта; nil — выключено
+	PitchKey string   // ключ пульта презентации /pitch; пусто — пульт выключен
+	pages    map[string]*template.Template
+	live     *pitchLive
 }
 
 // New разбирает шаблоны один раз: каждая страница = layout.html + <страница>.html.
 func New(pool *pgxpool.Pool) *Web {
-	w := &Web{DB: pool, pages: map[string]*template.Template{}}
+	w := &Web{DB: pool, pages: map[string]*template.Template{}, live: newPitchLive()}
 	files, err := fs.Glob(assets, "templates/*.html")
 	if err != nil {
 		log.Fatal(err)
@@ -53,6 +55,8 @@ func (w *Web) Routes() http.Handler {
 	r.Get("/pitch", func(rw http.ResponseWriter, r *http.Request) {
 		http.Redirect(rw, r, "/static/pitch/", http.StatusFound)
 	})
+	r.Get("/pitch/live", w.pitchLiveStream)
+	r.Post("/pitch/live", w.pitchLiveSet)
 
 	r.Get("/", w.home)
 	r.Get("/login", w.loginForm)
