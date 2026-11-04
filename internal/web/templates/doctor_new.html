@@ -7,8 +7,25 @@
   <ul class="error-list">{{range .Errors}}<li class="error">{{.}}</li>{{end}}</ul>
 </div>
 {{end}}
+{{if .Dictated}}
+<div class="card notice" role="status">
+  <p><strong>ИИ заполнил форму по диктовке.</strong> Проверьте каждое поле и нажмите «Сохранить рецепт».</p>
+</div>
+{{end}}
 <div class="grid-2">
   <form class="card" method="post" action="/doctor/prescriptions">
+    {{if .CanDictate}}
+    <h2>Надиктовать рецепт (ИИ)</h2>
+    <div class="field">
+      <label for="dictation">Скажите или впишите рецепт своими словами</label>
+      <textarea id="dictation" name="dictation" placeholder="Иванова Галина Петровна, 14.03.1956. Амлодипин 5 мг, один раз утром после еды, 30 дней.">{{.Form.Dictation}}</textarea>
+    </div>
+    <p class="dictate-actions">
+      <button type="button" id="mic" class="btn btn-secondary" hidden>🎤 Говорить</button>
+      <button type="submit" id="dictate-btn" class="btn btn-secondary" formaction="/doctor/dictate" formnovalidate>Заполнить с ИИ</button>
+    </p>
+    <p class="muted">ИИ только заполняет поля. Рецепт сохранится после вашей проверки.</p>
+    {{end}}
     <h2>Пациент</h2>
     <div class="field{{if .Form.BadFields.patient_name}} has-error{{end}}">
       <label for="patient_name">ФИО пациента</label>
@@ -64,6 +81,43 @@ window.rowN = {{.Form.NextIndex}};
     if (!e.target.classList.contains("tpd")) return;
     var times = e.target.closest(".rx-row").querySelector(".times");
     if (times) times.value = defaults[e.target.value] || "";
+  });
+
+  // Диктовка: распознавание речи браузером (Chrome, Edge, Safari) дописывает текст в поле.
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var mic = document.getElementById("mic");
+  var box = document.getElementById("dictation");
+  if (SR && mic && box) {
+    mic.hidden = false;
+    var rec = null;
+    mic.addEventListener("click", function () {
+      if (rec) { rec.stop(); return; }
+      rec = new SR();
+      rec.lang = "ru-RU";
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.onresult = function (e) {
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            var t = e.results[i][0].transcript.trim();
+            box.value = box.value ? box.value.replace(/\s*$/, " ") + t : t;
+          }
+        }
+      };
+      rec.onerror = function (e) {
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") alert("Разрешите доступ к микрофону в браузере");
+      };
+      rec.onend = function () { rec = null; mic.textContent = "🎤 Говорить"; };
+      rec.start();
+      mic.textContent = "⏹ Остановить";
+    });
+  }
+  var form = box && box.form;
+  if (form) form.addEventListener("submit", function (e) {
+    var b = e.submitter;
+    if (!b || b.id !== "dictate-btn") return;
+    if (rec) rec.stop();
+    setTimeout(function () { b.disabled = true; b.textContent = "ИИ заполняет…"; }, 0);
   });
 })();
 </script>

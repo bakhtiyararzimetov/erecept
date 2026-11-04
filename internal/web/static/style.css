@@ -115,6 +115,8 @@ p.error { margin-bottom: 16px; }
 .explain dd { margin: 4px 0 0; }
 .explain ul { margin: 0; padding-left: 20px; }
 .explain-note { margin: 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 3px solid var(--text); border-radius: 8px; font-weight: 500; }
+.notice { border-left: 3px solid var(--accent); }
+.dictate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .explain-disclaimer { font-size: 13px; margin: 12px 0 0; }
 
 /* Вход */

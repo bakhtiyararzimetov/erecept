@@ -15,6 +15,7 @@ import (
 
 	"erecept/internal/api"
 	"erecept/internal/db"
+	"erecept/internal/dictate"
 	"erecept/internal/explain"
 	"erecept/internal/leaflet"
 	"erecept/internal/notifier"
@@ -53,9 +54,11 @@ func main() {
 
 	go notifier.New(pool).Run(ctx)
 
-	// ИИ-памятки о лекарствах: без ключа функция выключена.
+	// ИИ-памятки о лекарствах и голосовое заполнение рецепта: без ключа выключены.
+	webApp := web.New(pool)
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
 		go explain.New(pool, leaflet.New(), key).BackfillLoop(ctx)
+		webApp.Dictate = dictate.New(key)
 	} else {
 		log.Println("ANTHROPIC_API_KEY не задан: памятки о лекарствах не создаются")
 	}
@@ -66,7 +69,7 @@ func main() {
 
 	a := &api.API{DB: pool}
 	r.Mount("/api", a.Routes())
-	r.Mount("/", web.New(pool).Routes())
+	r.Mount("/", webApp.Routes())
 
 	go keepAwake()
 

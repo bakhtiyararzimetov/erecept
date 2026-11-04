@@ -41,6 +41,7 @@ type RxForm struct {
 	WaterTo      string
 	Items        []ItemForm
 	BadFields    map[string]bool
+	Dictation    string // текст для «Заполнить с ИИ»
 }
 
 const (
@@ -97,7 +98,7 @@ func (w *Web) medicineNames(ctx context.Context) []string {
 
 func (w *Web) renderForm(rw http.ResponseWriter, r *http.Request, status int, f RxForm, errs []string) {
 	w.renderStatus(rw, r, status, "doctor_new", map[string]any{
-		"Form": f, "Errors": errs, "Medicines": w.medicineNames(r.Context()),
+		"Form": f, "Errors": errs, "Medicines": w.medicineNames(r.Context()), "CanDictate": w.Dictate != nil,
 	})
 }
 

@@ -17,8 +17,9 @@ import (
 var assets embed.FS
 
 type Web struct {
-	DB    *pgxpool.Pool
-	pages map[string]*template.Template
+	DB      *pgxpool.Pool
+	Dictate Dictator // голосовое заполнение рецепта; nil — выключено
+	pages   map[string]*template.Template
 }
 
 // New разбирает шаблоны один раз: каждая страница = layout.html + <страница>.html.
@@ -66,6 +67,7 @@ func (w *Web) Routes() http.Handler {
 		r.Get("/", w.doctorNew)
 		r.Get("/item-row", w.itemRow)
 		r.Post("/prescriptions", w.createPrescription)
+		r.Post("/dictate", w.dictate)
 		r.Get("/prescriptions", w.prescriptionList)
 		r.Get("/prescriptions/{id}", w.prescriptionPage)
 		r.Get("/prescriptions/{id}/print", w.prescriptionPrint)
