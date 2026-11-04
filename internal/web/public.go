@@ -79,7 +79,7 @@ func (w *Web) loadOne(ctx context.Context, query string, arg any) (models.Prescr
 type ItemView struct {
 	Medicine, Dosage, How string
 	Days                  int
-	Explanation           *explain.Explanation // ИИ-памятка, показывается только врачу; nil — нет
+	Explanation           *explain.Explanation // ИИ-памятка (врач и публичная страница); nil — нет
 }
 
 // RxView — рецепт, подготовленный к показу.

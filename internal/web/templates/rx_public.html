@@ -25,6 +25,20 @@
   <p>{{.Dosage}}</p>
   <p>{{.How}}</p>
   <p class="muted">Курс: {{.Days}} дн.</p>
+  {{with .Explanation}}
+  <details class="explain">
+    <summary>Коротко о лекарстве (ИИ)</summary>
+    <dl>
+      <dt>Зачем</dt><dd>{{.Purpose}}</dd>
+      <dt>Как принимать</dt><dd>{{.HowToTake}}</dd>
+      {{if .DoNotTakeIf}}<dt>Нельзя принимать, если</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+      <dt>Если пропустили приём</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
+      <dt>Если бросить раньше</dt><dd>{{.IfStoppedEarly}}</dd>
+      {{if .UrgentSigns}}<dt>Срочно к врачу, если</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+    </dl>
+    <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС{{with .Source.RegNumber}}, рег. № {{.}}{{end}}. Не заменяет совет врача.</p>
+  </details>
+  {{end}}
 </div>
 {{end}}
 {{if or .WaterText .Comment}}

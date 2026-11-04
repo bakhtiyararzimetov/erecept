@@ -360,9 +360,12 @@ func TestPrescriptionPageShowsExplanation(t *testing.T) {
 	if n := strings.Count(body, "Коротко о лекарстве (ИИ)"); n != 1 {
 		t.Errorf("блоков памятки %d, ожидался 1", n)
 	}
-	// Публичная страница и печать памятку не показывают.
-	if strings.Contains(get(h, "/r/"+code, nil).Body.String(), "Коротко о лекарстве") {
-		t.Error("на публичной странице памятки быть не должно")
+	// Публичная страница (QR с рецепта) тоже показывает памятку — её видит пациент.
+	pub := get(h, "/r/"+code, nil).Body.String()
+	for _, want := range []string{"Коротко о лекарстве (ИИ)", "Снижает температуру и уменьшает боль.", "Не заменяет совет врача."} {
+		if !strings.Contains(pub, want) {
+			t.Errorf("на публичной странице нет %q", want)
+		}
 	}
 }
 
