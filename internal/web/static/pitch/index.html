@@ -22,6 +22,13 @@
   #notes b { color: #7FD1C7; display: block; font-size: 13px; letter-spacing: 1px; margin-bottom: 6px; }
   #notes i { color: #9CC9C2; }
   body.with-notes #notes { display: block; }
+  body.with-notes #bar { opacity: 1; }
+  #notes small { display: block; margin-top: 12px; padding-top: 10px; border-top: 1px solid #2E5A55; color: #9CC9C2; font-size: 14px; line-height: 1.6; }
+  #notes .qa { padding: 12px 0; border-top: 1px solid #2E5A55; }
+  #notes .qa b { margin: 0; font-size: 17px; letter-spacing: 0; color: #fff; }
+  #notes .qa em { display: block; margin-bottom: 6px; color: #9CC9C2; font-size: 14px; }
+  #qa-btn { display: none; }
+  body.with-notes #qa-btn { display: inline; }
   #bar { position: fixed; right: 16px; top: 12px; color: #CDEBE7; font: 14px Inter, Arial, sans-serif; user-select: none; background: rgba(18,48,45,.85); opacity: .35; transition: opacity .2s; padding: 6px 10px; border-radius: 10px; }
   #bar:hover { opacity: 1; }
   #bar button { background: none; border: 1px solid #2E5A55; color: #CDEBE7; border-radius: 6px; padding: 4px 10px; margin-left: 6px; cursor: pointer; font: inherit; }
@@ -60,7 +67,7 @@
 <p style="font-size:52px;color:#CDEBE7;margin-top:44px;max-width:1500px;line-height:1.3">The e-prescription that makes sure medicine is actually taken</p>
 <p style="font-size:34px;color:#9CC9C2;margin-top:40px">Bakhtiyar Arzimetov · Tashenev University · Shymkent</p>
 <div class="foot"><span>1 / 7</span><span class="timer">10 sec</span></div>
-<aside class="notes">Good afternoon, everyone! My name’s Bakhtiyar, and I’m from Tashenev University in Shymkent. Today I want to show you eRecept, an app that helps people actually take their medicine.</aside>
+<aside class="notes">Good afterNOON, everyone! My name’s BakhTIyar, and I’m from TasheNEV UniVERsity in ShymKENT. TOday I want to show you eRecept, an app that helps people ACtually take their MEDicine.<small>actually — ЭКчуали · medicine — МЕДисин · university — юниВЁРсити</small></aside>
 </section>
 <section>
 <p class="kick">02 · PROBLEM</p>
@@ -78,7 +85,7 @@
   </div>
 </div>
 <div class="foot"><span>2 / 7</span><span class="timer">30 sec</span></div>
-<aside class="notes">So, here’s the problem. In Kazakhstan, 3.4 million people get free medicine. That’s great, right? But here’s the thing: about half of patients with blood-pressure medicine just don’t take it. <i>(pause)</i> Why not? Well, prescriptions are hard to read, the leaflet is ten pages long, and no one reminds them. So people end up with complications, they end up in hospital. And the state spends three hundred and thirty-seven billion tenge on these medicines. So when people don’t take them, that money doesn’t help.</aside>
+<aside class="notes">So, here’s the PROBlem. In KazakhSTAN, three point FOUR MILlion people get free MEDicine. That’s great, right? But here’s the thing: about HALF of patients with blood-PRESsure medicine just DON’T take it. <i>(pause)</i> Why not? Well, preSCRIPtions are hard to read, the LEAFlet is ten pages long, and no one reMINDS them. So people end up with compliCAtions, they end up in HOSpital. And the state spends three hundred and thirty-seven BILlion tenge on these MEDicines. So when people DON’T take them, that money DOESN’T help.<small>prescriptions — приСКРИПшнз · leaflet — ЛИФлет · complications — комплиКЕЙшнз · hospital — ХОСпитл · pressure — ПРЕшер · billion — БИЛьен</small></aside>
 </section>
 <section>
 <p class="kick">03 · SOLUTION</p>
@@ -100,7 +107,7 @@
   </div>
 </div>
 <div class="foot"><span>3 / 7</span><span class="timer">40 sec</span></div>
-<aside class="notes">So how does eRecept work? It’s really simple. The doctor just talks, and our AI fills in the prescription in about three seconds. The patient gets a QR code, scans it, and the app reminds them when it’s time to take their pills. Not sure what a medicine is for? The AI explains it in plain language, based on the official leaflet. And here’s my favourite part: if Grandma misses a dose, her son gets a notification and can call her. The app also shows the cheapest pharmacy nearby. And this isn’t just a mock-up. Go ahead, scan the QR code. It’s live right now. <i>(point, wait 2 sec)</i></aside>
+<aside class="notes">So how does eRecept work? It’s really SIMple. The doctor just TALKS, and our A-I fills in the preSCRIPtion in about three SEConds. The patient gets a Q-R code, SCANS it, and the app reMINDS them when it’s time to take their pills. Not sure what a medicine is for? The A-I exPLAINS it in plain LANguage, based on the oFFIcial leaflet. And here’s my FAvourite part: if GRANDma misses a dose, her son gets a notifiCAtion and can call her. The app also shows the CHEAPest PHARmacy nearby. And this isn’t just a MOCK-up. Go ahead, scan the Q-R code. It’s LIVE right now. <i>(point, wait 2 sec)</i><small>notification — ноутифиКЕЙшн · pharmacy — ФАРмаси · official — оФИшл · language — ЛЭНгвидж · live — ЛАЙВ (не «лив») · dose — ДОУС</small></aside>
 </section>
 <section>
 <p class="kick">04 · CUSTOMERS AND MARKET</p>
@@ -111,7 +118,7 @@
   <div class="card"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg><h3>Edge</h3><p>Medisafe (USA), MyTherapy (Germany) — manual reminders. eRecept starts from the doctor’s real prescription, with AI and pharmacies</p></div>
 </div>
 <div class="foot"><span>4 / 7</span><span class="timer">25 sec</span></div>
-<aside class="notes">So who is this for? Mainly people over fifty with a chronic illness, and their families, who worry about them. In Kazakhstan, 3.4 million people get free medicine, and our first focus is chronic patients. Now, there are reminder apps in other countries, but with those, you have to type everything in yourself. With eRecept, the prescription comes straight from the doctor. That’s what makes us different.</aside>
+<aside class="notes">So who is this for? MAINly people over FIFty with a CHRONic illness, and their FAMilies, who worry about them. In KazakhSTAN, three point FOUR MILlion people get free MEDicine, and our FIRST focus is CHRONic patients. Now, there are reMINDer apps in other COUNtries, but with those, you have to type EVerything in yourSELF. With eRecept, the preSCRIPtion comes STRAIGHT from the doctor. That’s what makes us DIFferent.<small>chronic — КРОник · illness — ИЛнес · straight — СТРЕЙТ · reminder — риМАЙНдер · different — ДИФрент</small></aside>
 </section>
 <section>
 <p class="kick">05 · HOW WE MAKE MONEY</p>
@@ -122,7 +129,7 @@
   <div class="card"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg><h3>Done so far</h3><p>Live product · voice dictation · AI summaries for 27 of 30 medicines · pharmacy prices · emergency button</p></div>
 </div>
 <div class="foot"><span>5 / 7</span><span class="timer">25 sec</span></div>
-<aside class="notes">How do we make money? For patients and doctors, it’s completely free. Pharmacies pay us a small commission on each order, because we send them customers who already have a prescription. So the patient saves money, the pharmacy sells more, and we get paid. Everyone wins.</aside>
+<aside class="notes">How do we make MONey? For patients and doctors, it’s comPLETEly FREE. PHARmacies pay us a small comMISsion on each ORder, because we send them CUStomers who alREADy have a preSCRIPtion. So the patient SAVES money, the pharmacy sells MORE, and we get PAID. EVeryone wins.<small>pharmacies — ФАРмасиз · commission — кэМИшн · customers — КАСтэмерз · completely — кэмПЛИТли</small></aside>
 </section>
 <section>
 <p class="kick">06 · TEAM</p>
@@ -139,7 +146,7 @@
   <h3>Open seat</h3><p style="color:#0F766E;font-weight:700">Medical advisor</p><p>A doctor who will guide the pilot</p></div>
 </div>
 <div class="foot"><span>6 / 7</span><span class="timer">20 sec</span></div>
-<aside class="notes">A bit about me. I’m the founder, and I’m also the developer. Everything you’ve seen today, the doctor’s side, the patient app, the AI, I built it all myself. Now I’m looking for a doctor to join the team as a medical advisor.</aside>
+<aside class="notes">A bit about ME. I’m the FOUNDer, and I’m also the deVELoper. Everything you’ve seen today, the doctor’s side, the patient app, the A-I, I built it all mySELF. Now I’m looking for a DOCtor to join the team as a MEDical adVIsor.<small>developer — диВЕЛопер · founder — ФАУНдер · advisor — эдВАЙзер · built — БИЛТ</small></aside>
 </section>
 <section class="accent">
 <p class="kick">07 · NEXT STEPS</p>
@@ -158,11 +165,12 @@
   </div>
 </div>
 <div class="foot"><span>7 / 7 · Thank you!</span><span class="timer">20 sec</span></div>
-<aside class="notes">So, what’s next? Over the next six months, we want to run a pilot in a clinic in Shymkent, add login with IIN, and sign up our first partner pharmacies. To do that, we need three things: a clinic for the pilot, a few partner pharmacies, and a medical mentor. eRecept: because medicine only works when you take it. Thank you!</aside>
+<aside class="notes">So, what’s NEXT? Over the next six MONTHS, we want to run a PIlot in a clinic in ShymKENT, add login with I-I-N, and sign up our first PARTner PHARmacies. To do that, we need three things: a CLINic for the pilot, a few partner pharmacies, and a MEDical MENtor. eRecept: because MEDicine only works when you TAKE it. Thank you!<small>pilot — ПАЙлот · months — МАНСЗ · sign up — САЙН ап · I-I-N — ай-ай-эн · mentor — МЕНтор</small></aside>
 </section>
 </div>
 <div id="notes"></div>
-<div id="bar"><span id="num"></span><button id="prev" aria-label="Previous slide">←</button><button id="next" aria-label="Next slide">→</button><button id="fs">Full screen</button></div>
+<div id="qa-data" hidden><b>JURY QUESTIONS</b><div class="qa"><b>Where is the ~50% from?</b><em>Откуда 50%?</em>It’s from the National Center for Public Health, 2023. It’s about patients with free blood-pressure medicine.</div><div class="qa"><b>If the medicine is free, what do pharmacies earn?</b><em>Лекарства бесплатные — на чём заработает аптека?</em>Not all medicine is free. Many prescriptions, like antibiotics, are paid. Our commission comes from those purchases.</div><div class="qa"><b>What if the AI makes a mistake?</b><em>А если ИИ ошибётся?</em>The AI only fills in the form. The doctor checks every field and saves it. In the summaries, if something isn’t in the official leaflet, the AI says: ask your doctor or pharmacist.</div><div class="qa"><b>Do you have users?</b><em>Есть пользователи?</em>Not yet. The product works today, with demo data. Our goal is the first 50 patients in the pilot.</div><div class="qa"><b>Have you talked to doctors or pharmacies?</b><em>Говорили с врачами и аптеками?</em>Not formally yet. That’s why I’m asking for a pilot clinic and partner pharmacies.</div><div class="qa"><b>How much is the commission?</b><em>Сколько комиссия?</em>We’ll agree on it with our first partner pharmacies. The pilot will show what works.</div><div class="qa"><b>Can patients order in the app today?</b><em>Можно заказать в приложении?</em>Not yet. Today it shows prices and addresses. Reservation is the next step, so we can count each order.</div><div class="qa"><b>Are the pharmacy prices real?</b><em>Цены настоящие?</em>In the demo, they’re test data. The pharmacy account already works: a pharmacy can enter prices by hand or upload a file.</div><div class="qa"><b>What about older people without smartphones?</b><em>А пожилые без смартфона?</em>Today, the reminders need a smartphone. But the prescription can be printed, and family members can help set up the app.</div><div class="qa"><b>Why would a doctor use this?</b><em>Зачем это врачу?</em>Speaking is faster than typing, and the doctor can see if the patient takes the medicine. We’ll test this in the pilot.</div><div class="qa"><b>Is patient data safe?</b><em>Данные пациентов защищены?</em>Today we only use demo data. Before the pilot, we’ll meet the requirements of Kazakhstan’s personal data law.</div><div class="qa"><b>Did you really build it alone?</b><em>Правда сделали один?</em>Yes, with AI coding tools. That’s how one person can build a product this fast.</div><div class="qa"><b>Who are your competitors in Kazakhstan?</b><em>Конкуренты в Казахстане?</em>Medical systems store records. We focus on what happens after the visit: does the patient take the medicine?</div><div class="qa"><b>Does it work in Kazakh?</b><em>Есть казахский язык?</em>Today it works in Russian. Kazakh is on our plan.</div><div class="qa"><b>I don’t know the answer</b><em>Если не знаете ответ</em>Good question. I don’t have that number yet, and we’ll check it in the pilot.</div></div>
+<div id="bar"><span id="num"></span><button id="prev" aria-label="Previous slide">←</button><button id="next" aria-label="Next slide">→</button><button id="qa-btn">Q&amp;A</button><button id="fs">Full screen</button></div>
 <script>
   // Листание: стрелки, пробел, клик; F — во весь экран; N — речь под слайдом; номер слайда в адресе (#3).
   const slides = [...document.querySelectorAll("#stage > section")];
@@ -180,10 +188,17 @@
     i = n;
     slides.forEach((s, k) => s.classList.toggle("on", k === i));
     document.getElementById("num").textContent = (i + 1) + " / " + slides.length + (key ? " · пульт" : "");
-    const note = slides[i].querySelector("aside.notes");
-    document.getElementById("notes").innerHTML = "<b>SAY · " + slides[i].querySelector(".timer").textContent + "</b>" + (note ? note.innerHTML : "");
+    renderNotes();
     fit();
     history.replaceState(null, "", "#" + (i + 1));
+  }
+  // Речь текущего слайда или вопросы жюри (кнопка Q&A; на вопросах свайп не листает, чтобы не сбить экран).
+  let qa = false;
+  function renderNotes() {
+    const notes = document.getElementById("notes");
+    notes.innerHTML = qa ? document.getElementById("qa-data").innerHTML
+      : "<b>SAY · " + slides[i].querySelector(".timer").textContent + "</b>" + slides[i].querySelector("aside.notes").innerHTML;
+    notes.scrollTop = 0;
   }
   function fit() {
     const stage = document.getElementById("stage");
@@ -214,11 +229,12 @@
   let tx = null, ty = 0;
   addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
   addEventListener("touchend", (e) => {
-    if (tx === null) return;
+    if (tx === null || qa) return;
     const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
     tx = null;
     if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? i + 1 : i - 1);
   });
+  document.getElementById("qa-btn").onclick = () => { qa = !qa; document.getElementById("qa-btn").textContent = qa ? "Speech" : "Q&A"; renderNotes(); };
   document.getElementById("prev").onclick = () => show(i - 1);
   document.getElementById("next").onclick = () => show(i + 1);
   function toggleFs() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
