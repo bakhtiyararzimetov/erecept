@@ -1,6 +1,7 @@
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../lib/api";
 import { colors, radius, sizes } from "../lib/theme";
+import { t, tf } from "../lib/i18n";
 
 let lastSos = 0;
 
@@ -15,7 +16,7 @@ function call() {
   }
   Linking.openURL("tel:103").catch((e) => {
     console.warn("sos: не открылся набор номера", e);
-    Alert.alert("Не удалось позвонить", "Наберите 103 вручную");
+    Alert.alert(t("Не удалось позвонить"), t("Наберите 103 вручную"));
   });
 }
 
@@ -26,15 +27,15 @@ export function SosButton() {
         accessibilityRole="button"
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
         onPress={() =>
-          Alert.alert("Позвонить в скорую 103?", undefined, [
-            { text: "Отмена", style: "cancel" },
-            { text: "Позвонить", onPress: call },
+          Alert.alert(t("Позвонить в скорую 103?"), undefined, [
+            { text: t("Отмена"), style: "cancel" },
+            { text: t("Позвонить"), onPress: call },
           ])
         }
       >
-        <Text style={styles.text}>Мне плохо</Text>
+        <Text style={styles.text}>{t("Мне плохо")}</Text>
       </Pressable>
-      <Text style={styles.hint}>112 — единая служба · 9103 — скорая в Алматы</Text>
+      <Text style={styles.hint}>{t("112 — единая служба · 9103 — скорая в Алматы")}</Text>
     </View>
   );
 }

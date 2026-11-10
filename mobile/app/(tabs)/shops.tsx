@@ -9,6 +9,7 @@ import { formatKm, formatPrice } from "../../lib/format";
 import { loadCourses } from "../../lib/storage";
 import { colors, radius, sizes } from "../../lib/theme";
 import type { OffersResponse } from "../../lib/types";
+import { locale, t, tf } from "../../lib/i18n";
 
 type Sort = "price" | "distance";
 type Coords = { lat: number; lng: number };
@@ -61,7 +62,7 @@ export default function Shops() {
       if (id !== reqId.current) return;
       console.warn("shops: не удалось загрузить предложения", e);
       setData(null);
-      setError(e instanceof ApiError ? e.message : "Не удалось загрузить данные");
+      setError(e instanceof ApiError ? e.message : t("Не удалось загрузить данные"));
     } finally {
       if (id === reqId.current) setLoading(false);
     }
@@ -96,7 +97,7 @@ export default function Shops() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Где купить</Text>
+      <Text style={styles.title}>{t("Где купить")}</Text>
 
       {names.length > 0 && (
         <View style={styles.chips}>
@@ -124,11 +125,11 @@ export default function Shops() {
         onChangeText={setQuery}
         onSubmitEditing={search}
         returnKeyType="search"
-        placeholder="Название лекарства"
+        placeholder={t("Название лекарства")}
         placeholderTextColor={colors.muted}
         style={styles.input}
       />
-      <Button title="Найти" variant="secondary" onPress={search} />
+      <Button title={t("Найти")} variant="secondary" onPress={search} />
 
       <View style={styles.segments}>
         {(["price", "distance"] as Sort[]).map((s) => {
@@ -141,38 +142,38 @@ export default function Shops() {
               style={[styles.segment, active && styles.segmentActive]}
             >
               <Text style={[styles.chipText, active && { color: colors.card }]}>
-                {s === "price" ? "По цене" : "По расстоянию"}
+                {s === "price" ? t("По цене") : t("По расстоянию")}
               </Text>
             </Pressable>
           );
         })}
       </View>
       {sort === "price" && !coords && !denied && (
-        <Text style={styles.body}>Для сортировки по расстоянию приложению нужна ваша геопозиция. Она нигде не сохраняется</Text>
+        <Text style={styles.body}>{t("Для сортировки по расстоянию приложению нужна ваша геопозиция. Она нигде не сохраняется")}</Text>
       )}
       {denied && (
         <View style={styles.notice}>
-          <Text style={styles.noticeText}>Разрешите геолокацию, чтобы видеть ближайшие</Text>
+          <Text style={styles.noticeText}>{t("Разрешите геолокацию, чтобы видеть ближайшие")}</Text>
         </View>
       )}
 
-      {!name && <Text style={styles.body}>Выберите лекарство или введите название</Text>}
-      {loading && <Text style={styles.body}>Загрузка...</Text>}
+      {!name && <Text style={styles.body}>{t("Выберите лекарство или введите название")}</Text>}
+      {loading && <Text style={styles.body}>{t("Загрузка...")}</Text>}
       {error && (
         <Card style={{ gap: 12 }}>
           <Text style={styles.errorText}>{error}</Text>
-          <Button title="Повторить" onPress={load} />
+          <Button title={t("Повторить")} onPress={load} />
         </Card>
       )}
 
       {data && !loading && data.medicine === null && (
         <Card>
-          <Text style={styles.body}>Такое лекарство не найдено. Проверьте название</Text>
+          <Text style={styles.body}>{t("Такое лекарство не найдено. Проверьте название")}</Text>
         </Card>
       )}
       {data && data.medicine && data.offers.length === 0 && !loading && (
         <Card>
-          <Text style={styles.body}>Сейчас нет в наличии ни в одной аптеке</Text>
+          <Text style={styles.body}>{t("Сейчас нет в наличии ни в одной аптеке")}</Text>
         </Card>
       )}
       {data?.offers.map((o) => (
@@ -183,13 +184,13 @@ export default function Shops() {
           <Text style={styles.body}>{o.pharmacy.work_hours}</Text>
           {o.distance_km !== null && <Text style={styles.body}>{formatKm(o.distance_km)}</Text>}
           <Button
-            title="На карте"
+            title={t("На карте")}
             variant="secondary"
             onPress={() => Linking.openURL(`https://maps.google.com/?q=${o.pharmacy.lat},${o.pharmacy.lng}`).catch(() => undefined)}
           />
           {!!o.pharmacy.phone && (
             <Button
-              title="Позвонить"
+              title={t("Позвонить")}
               variant="secondary"
               onPress={() => Linking.openURL(`tel:${o.pharmacy.phone.replace(/[^\d+]/g, "")}`).catch(() => undefined)}
             />
@@ -199,7 +200,7 @@ export default function Shops() {
 
       {data && data.analogs.length > 0 && (
         <>
-          <Text style={styles.title}>Аналоги</Text>
+          <Text style={styles.title}>{t("Аналоги")}</Text>
           <View style={styles.notice}>
             <Text style={styles.noticeText}>{data.analog_note}</Text>
           </View>
@@ -210,7 +211,7 @@ export default function Shops() {
                 {[a.medicine.active_substance, a.medicine.form].filter(Boolean).join(", ")}
               </Text>
               <Text style={styles.text}>
-                от {formatPrice(a.min_price)}, аптек: {a.pharmacies_count}
+                {tf("от {0}, аптек: {1}", formatPrice(a.min_price), a.pharmacies_count)}
               </Text>
             </Card>
           ))}

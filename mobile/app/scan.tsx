@@ -10,6 +10,7 @@ import { registerPush } from "../lib/push";
 import { ensureNotificationPermission } from "../lib/notifications";
 import { extractCode } from "../lib/schedule";
 import { colors, radius } from "../lib/theme";
+import { t, tf } from "../lib/i18n";
 
 export default function Scan() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function Scan() {
     if (lock.current) return;
     const code = extractCode(raw);
     if (!code) {
-      setError("Это не QR-код рецепта. Проверьте код и попробуйте снова");
+      setError(t("Это не QR-код рецепта. Проверьте код и попробуйте снова"));
       return;
     }
     lock.current = true;
@@ -36,7 +37,7 @@ export default function Scan() {
       router.back();
     } catch (e) {
       console.warn("scan: не удалось загрузить рецепт", e);
-      setError(e instanceof ApiError ? e.message : "Не удалось загрузить рецепт");
+      setError(e instanceof ApiError ? e.message : t("Не удалось загрузить рецепт"));
       lock.current = false;
     } finally {
       setBusy(false);
@@ -53,16 +54,16 @@ export default function Scan() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Сканирование рецепта</Text>
+      <Text style={styles.title}>{t("Сканирование рецепта")}</Text>
 
       {permission && !granted && (
         <Card style={{ gap: 16 }}>
           <Text style={styles.body}>
-            Камера нужна, чтобы отсканировать QR-код с рецепта врача
-            {permission.canAskAgain ? "." : " Разрешите доступ в настройках телефона или введите код вручную ниже."}
+            {t("Камера нужна, чтобы отсканировать QR-код с рецепта врача")}
+            {permission.canAskAgain ? "." : t(" Разрешите доступ в настройках телефона или введите код вручную ниже.")}
           </Text>
           <Button
-            title={permission.canAskAgain ? "Разрешить камеру" : "Открыть настройки"}
+            title={permission.canAskAgain ? t("Разрешить камеру") : t("Открыть настройки")}
             onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
           />
         </Card>
@@ -79,34 +80,34 @@ export default function Scan() {
             />
             <View style={styles.frame} pointerEvents="none" />
           </View>
-          <Text style={styles.body}>Наведите камеру на QR-код рецепта</Text>
+          <Text style={styles.body}>{t("Наведите камеру на QR-код рецепта")}</Text>
         </>
       )}
 
-      {busy && <Text style={styles.body}>Загружаем рецепт…</Text>}
+      {busy && <Text style={styles.body}>{t("Загружаем рецепт…")}</Text>}
 
       {error && (
         <Card style={{ gap: 16 }}>
           <Text style={[styles.body, { color: colors.error }]}>{error}</Text>
-          <Button title="Попробовать снова" onPress={retry} />
+          <Button title={t("Попробовать снова")} onPress={retry} />
         </Card>
       )}
 
       <Card style={{ gap: 12 }}>
-        <Text style={styles.body}>Не работает камера? Введите код рецепта</Text>
+        <Text style={styles.body}>{t("Не работает камера? Введите код рецепта")}</Text>
         <TextInput
           value={manual}
           onChangeText={setManual}
-          placeholder="Код рецепта"
+          placeholder={t("Код рецепта")}
           placeholderTextColor={colors.muted}
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.input}
         />
-        <Button title="Загрузить" onPress={() => submit(manual)} disabled={busy || manual.trim() === ""} />
+        <Button title={t("Загрузить")} onPress={() => submit(manual)} disabled={busy || manual.trim() === ""} />
       </Card>
 
-      <Button title="Закрыть" variant="secondary" onPress={() => router.back()} />
+      <Button title={t("Закрыть")} variant="secondary" onPress={() => router.back()} />
     </ScrollView>
   );
 }

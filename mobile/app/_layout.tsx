@@ -8,6 +8,7 @@ import { rescheduleAll, setupNotifications } from "../lib/notifications";
 import { getRole, markRoleCommitted, onRoleChange } from "../lib/storage";
 import type { Role } from "../lib/types";
 import { colors } from "../lib/theme";
+import { initLang, onLangChange, type Lang } from "../lib/i18n";
 
 SplashScreen.preventAutoHideAsync();
 setupNotifications(); // на верхнем уровне: фоновые кнопки на Android требуют слушателя при загрузке модуля
@@ -16,6 +17,12 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
   // undefined — роль ещё читается; пока не прочитана, ничего не рисуем (заставка остаётся)
   const [role, setRoleState] = useState<Role | null | undefined>(undefined);
+  // язык читается до первого кадра; при смене всё дерево перерисовывается заново (key)
+  const [lang, setLangState] = useState<Lang | undefined>(undefined);
+  useEffect(() => {
+    initLang().then(setLangState, () => setLangState("ru"));
+    return onLangChange(setLangState);
+  }, []);
   useEffect(() => {
     getRole()
       .then(setRoleState)
@@ -25,7 +32,7 @@ export default function RootLayout() {
       });
     return onRoleChange(setRoleState);
   }, []);
-  const ready = (loaded || !!error) && role !== undefined; // без шрифта лучше системный, чем вечная заставка
+  const ready = (loaded || !!error) && role !== undefined && lang !== undefined; // без шрифта лучше системный, чем вечная заставка
   const relative = role === "relative";
   useEffect(() => {
     if (role !== undefined) markRoleCommitted(role); // эффект идёт после коммита, когда guard уже обновлён
@@ -49,7 +56,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack key={lang} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Protected guard={!relative}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="scan" options={{ presentation: "modal" }} />

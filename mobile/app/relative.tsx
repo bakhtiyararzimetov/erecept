@@ -7,6 +7,7 @@ import { ApiError, api } from "../lib/api";
 import { setRole, waitForRole } from "../lib/storage";
 import { colors } from "../lib/theme";
 import type { RelativeOverview } from "../lib/types";
+import { t, tf } from "../lib/i18n";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -27,7 +28,7 @@ export default function Relative() {
       setData(await api.relativeOverview());
     } catch (e) {
       console.warn("relative: обзор", e);
-      setError(e instanceof ApiError ? e.message : "Не удалось загрузить данные");
+      setError(e instanceof ApiError ? e.message : t("Не удалось загрузить данные"));
     } finally {
       setLoading(false);
     }
@@ -45,28 +46,28 @@ export default function Relative() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Близкие</Text>
-      {loading && !data && !error && <Text style={styles.body}>Загрузка…</Text>}
+      <Text style={styles.title}>{t("Близкие")}</Text>
+      {loading && !data && !error && <Text style={styles.body}>{t("Загрузка…")}</Text>}
       {error && (
         <Card style={{ gap: 12 }}>
           <Text style={styles.error}>{error}</Text>
-          <Button title="Повторить" onPress={load} />
+          <Button title={t("Повторить")} onPress={load} />
         </Card>
       )}
       {data && data.patients.length === 0 && (
         <Card>
-          <Text style={styles.body}>Пока нет подключённых пациентов</Text>
+          <Text style={styles.body}>{t("Пока нет подключённых пациентов")}</Text>
         </Card>
       )}
       {data?.patients.map((p, i) => (
         <Card key={`${p.patient_name}-${i}`} style={{ gap: 8 }}>
           <Text style={styles.name}>{p.patient_name}</Text>
           <Text style={styles.text}>
-            Всего: выпито {p.taken}, пропущено {p.missed}
+            {tf("Всего: выпито {0}, пропущено {1}", p.taken, p.missed)}
           </Text>
           {p.recent_missed.length > 0 && (
             <View style={{ gap: 4 }}>
-              <Text style={styles.body}>Последние пропуски</Text>
+              <Text style={styles.body}>{t("Последние пропуски")}</Text>
               {p.recent_missed.map((m, j) => (
                 <Text key={j} style={styles.text}>
                   {m.medicine_name}, {when(m.scheduled_at)}
@@ -76,8 +77,8 @@ export default function Relative() {
           )}
         </Card>
       ))}
-      <Button title={loading ? "Обновление..." : "Обновить"} onPress={load} disabled={loading} />
-      <Button title="Выйти из режима родственника" variant="secondary" onPress={leave} />
+      <Button title={loading ? t("Обновление...") : t("Обновить")} onPress={load} disabled={loading} />
+      <Button title={t("Выйти из режима родственника")} variant="secondary" onPress={leave} />
     </ScrollView>
   );
 }

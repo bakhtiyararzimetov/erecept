@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { colors } from "../../lib/theme";
+import { locale, t, tf } from "../../lib/i18n";
 
 export default function TabsLayout() {
   return (
@@ -16,10 +17,10 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Сегодня" }} />
-      <Tabs.Screen name="course" options={{ title: "Курс" }} />
-      <Tabs.Screen name="shops" options={{ title: "Аптеки" }} />
-      <Tabs.Screen name="settings" options={{ title: "Настройки" }} />
+      <Tabs.Screen name="index" options={{ title: t("Сегодня") }} />
+      <Tabs.Screen name="course" options={{ title: t("Курс") }} />
+      <Tabs.Screen name="shops" options={{ title: t("Аптеки") }} />
+      <Tabs.Screen name="settings" options={{ title: t("Настройки") }} />
     </Tabs>
   );
 }

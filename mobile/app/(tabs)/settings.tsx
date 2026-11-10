@@ -8,6 +8,7 @@ import { API_URL, ApiError, api } from "../../lib/api";
 import { ensureNotificationPermission } from "../../lib/notifications";
 import { pushProjectId, registerPush } from "../../lib/push";
 import { colors } from "../../lib/theme";
+import { getLang, setLang, t, tf } from "../../lib/i18n";
 
 export default function Settings() {
   const router = useRouter();
@@ -23,10 +24,10 @@ export default function Settings() {
       Notifications.getPermissionsAsync()
         .then((p) => {
           setGranted(p.granted);
-          setNotif(p.granted ? "Уведомления включены" : "Уведомления выключены");
+          setNotif(p.granted ? t("Уведомления включены") : t("Уведомления выключены"));
           if (p.granted) registerPush().catch(() => undefined); // разрешение уже есть, окно не появится
         })
-        .catch(() => setNotif("Состояние уведомлений неизвестно"));
+        .catch(() => setNotif(t("Состояние уведомлений неизвестно")));
     }, []),
   );
 
@@ -38,7 +39,7 @@ export default function Settings() {
       setCode(r.code);
     } catch (e) {
       console.warn("settings: приглашение", e);
-      setInviteError(e instanceof ApiError ? e.message : "Не удалось создать код");
+      setInviteError(e instanceof ApiError ? e.message : t("Не удалось создать код"));
     } finally {
       setBusy(false);
     }
@@ -46,57 +47,65 @@ export default function Settings() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Настройки</Text>
+      <Text style={styles.title}>{t("Настройки")}</Text>
 
       <Card style={{ gap: 12 }}>
-        <Text style={styles.name}>Родственник</Text>
-        <Text style={styles.body}>Родственник увидит, пьёте ли вы лекарства вовремя</Text>
-        <Button title="Пригласить родственника" onPress={invite} disabled={busy} />
+        <Text style={styles.name}>{t("Язык")}</Text>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Button title="Русский" variant={getLang() === "ru" ? "primary" : "secondary"} onPress={() => setLang("ru")} />
+          <Button title="English" variant={getLang() === "en" ? "primary" : "secondary"} onPress={() => setLang("en")} />
+        </View>
+      </Card>
+
+      <Card style={{ gap: 12 }}>
+        <Text style={styles.name}>{t("Родственник")}</Text>
+        <Text style={styles.body}>{t("Родственник увидит, пьёте ли вы лекарства вовремя")}</Text>
+        <Button title={t("Пригласить родственника")} onPress={invite} disabled={busy} />
         {inviteError && (
           <>
             <Text style={styles.error}>{inviteError}</Text>
-            <Button title="Повторить" variant="secondary" onPress={invite} />
+            <Button title={t("Повторить")} variant="secondary" onPress={invite} />
           </>
         )}
         {code && (
           <View style={{ gap: 8 }}>
-            <Text style={styles.code} accessibilityLabel={`Код ${code.split("").join(" ")}`}>
+            <Text style={styles.code} accessibilityLabel={`${t("Код")} ${code.split("").join(" ")}`}>
               {code}
             </Text>
-            <Text style={styles.body}>Действует 24 часа</Text>
+            <Text style={styles.body}>{t("Действует 24 часа")}</Text>
             <Button
-              title="Поделиться"
+              title={t("Поделиться")}
               variant="secondary"
-              onPress={() => Share.share({ message: `Код для приложения еРецепт: ${code}` }).catch(() => undefined)}
+              onPress={() => Share.share({ message: `${t("Код для приложения еРецепт:")} ${code}` }).catch(() => undefined)}
             />
           </View>
         )}
       </Card>
 
       <Card style={{ gap: 12 }}>
-        <Text style={styles.name}>Я родственник</Text>
-        <Button title="Я родственник — ввести код" variant="secondary" onPress={() => router.push("/join")} />
+        <Text style={styles.name}>{t("Я родственник")}</Text>
+        <Button title={t("Я родственник — ввести код")} variant="secondary" onPress={() => router.push("/join")} />
       </Card>
 
       <Card style={{ gap: 8 }}>
-        <Text style={styles.name}>Уведомления</Text>
+        <Text style={styles.name}>{t("Уведомления")}</Text>
         <Text style={styles.body}>{notif}</Text>
         {!granted && (
           <Button
-            title="Включить уведомления"
+            title={t("Включить уведомления")}
             variant="secondary"
             onPress={async () => {
               const ok = await ensureNotificationPermission();
               setGranted(ok);
-              setNotif(ok ? "Уведомления включены" : "Уведомления выключены. Включите их в настройках телефона");
+              setNotif(ok ? t("Уведомления включены") : t("Уведомления выключены. Включите их в настройках телефона"));
               if (ok) registerPush().catch(() => undefined);
             }}
           />
         )}
-        {!pushAvailable && <Text style={styles.body}>Push недоступен: нужна сборка с EAS (см. README)</Text>}
+        {!pushAvailable && <Text style={styles.body}>{t("Push недоступен: нужна сборка с EAS (см. README)")}</Text>}
       </Card>
 
-      <Text style={styles.small}>Сервер: {API_URL}</Text>
+      <Text style={styles.small}>{tf("Сервер: {0}", API_URL)}</Text>
     </ScrollView>
   );
 }

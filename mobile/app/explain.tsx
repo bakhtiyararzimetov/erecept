@@ -6,6 +6,7 @@ import { Card } from "../components/Card";
 import { loadCourses } from "../lib/storage";
 import { colors, radius } from "../lib/theme";
 import type { Item } from "../lib/types";
+import { t, tf } from "../lib/i18n";
 
 function List({ items }: { items: string[] }) {
   return (
@@ -50,42 +51,42 @@ export default function Explain() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {!item || !e ? (
         <Card style={{ gap: 12 }}>
-          <Text style={styles.title}>Памятки нет</Text>
-          <Text style={styles.text}>Для этого лекарства краткой памятки пока нет</Text>
+          <Text style={styles.title}>{t("Памятки нет")}</Text>
+          <Text style={styles.text}>{t("Для этого лекарства краткой памятки пока нет")}</Text>
         </Card>
       ) : (
         <Card style={{ gap: 16 }}>
           <Text style={styles.title}>{item.medicine_name}</Text>
-          <Block title="Зачем">
+          <Block title={t("Зачем")}>
             <Text style={styles.text}>{e.purpose}</Text>
           </Block>
-          <Block title="Как принимать">
+          <Block title={t("Как принимать")}>
             <Text style={styles.text}>{e.how_to_take}</Text>
           </Block>
           {e.do_not_take_if?.length > 0 && (
-            <Block title="Кому нельзя">
+            <Block title={t("Кому нельзя")}>
               <List items={e.do_not_take_if} />
             </Block>
           )}
-          <Block title="Если пропустили приём">
+          <Block title={t("Если пропустили приём")}>
             <View style={e.high_risk ? styles.risk : undefined}>
               <Text style={styles.text}>{e.missed_dose}</Text>
             </View>
           </Block>
-          <Block title="Если бросить раньше">
+          <Block title={t("Если бросить раньше")}>
             <Text style={styles.text}>{e.if_stopped_early}</Text>
           </Block>
           {e.urgent_signs?.length > 0 && (
-            <Block title="Срочно к врачу">
+            <Block title={t("Срочно к врачу")}>
               <List items={e.urgent_signs} />
             </Block>
           )}
           <Text style={styles.small}>
-            Сгенерировано ИИ по инструкции НЦЭЛС{e.source?.reg_number ? `, рег. № ${e.source.reg_number}` : ""}. Не заменяет совет врача
+            {t("Сгенерировано ИИ по инструкции НЦЭЛС")}{e.source?.reg_number ? `${t(", рег. №")} ${e.source.reg_number}` : ""}. {t("Не заменяет совет врача")}
           </Text>
         </Card>
       )}
-      <Button title="Закрыть" variant="secondary" onPress={() => router.back()} />
+      <Button title={t("Закрыть")} variant="secondary" onPress={() => router.back()} />
     </ScrollView>
   );
 }

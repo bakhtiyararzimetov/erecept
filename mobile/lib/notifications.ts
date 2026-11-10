@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import { loadCourses } from "./storage";
 import { notificationContent, responseKey, snoozeTime, upcomingNotifications } from "./schedule";
 import { flushMarks, markTaken } from "./sync";
+import { t } from "./i18n";
 
 const CHANNEL = "reminders";
 const SNOOZE_PREFIX = "snooze-";
@@ -29,13 +30,13 @@ export function setupNotifications(): void {
   });
   if (Platform.OS === "android") {
     channelReady = Notifications.setNotificationChannelAsync(CHANNEL, {
-      name: "Напоминания",
+      name: t("Напоминания"),
       importance: Notifications.AndroidImportance.HIGH,
     }).catch((e) => console.warn("notifications: канал", e));
   }
   Notifications.setNotificationCategoryAsync("dose", [
-    { identifier: "TAKEN", buttonTitle: "Выпил", options: { opensAppToForeground: false } },
-    { identifier: "SNOOZE", buttonTitle: "Через 15 мин", options: { opensAppToForeground: false } },
+    { identifier: "TAKEN", buttonTitle: t("Выпил"), options: { opensAppToForeground: false } },
+    { identifier: "SNOOZE", buttonTitle: t("Через 15 мин"), options: { opensAppToForeground: false } },
   ]).catch((e) => console.warn("notifications: категория", e));
 
   if (!listenerAdded) {

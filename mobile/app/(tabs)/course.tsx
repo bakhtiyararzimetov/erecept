@@ -10,6 +10,7 @@ import { courseProgress } from "../../lib/schedule";
 import { loadCourses, saveCourses } from "../../lib/storage";
 import { colors, radius } from "../../lib/theme";
 import type { Course, Item } from "../../lib/types";
+import { locale, t, tf } from "../../lib/i18n";
 
 function fmtDate(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -18,7 +19,7 @@ function fmtDate(iso: string): string {
 
 function period(c: Course): string {
   const p = c.prescription;
-  if (!p.start_date) return "Дата начала не задана";
+  if (!p.start_date) return t("Дата начала не задана");
   const [y, m, d] = p.start_date.split("-").map(Number);
   const days = Math.max(1, ...p.items.map((i) => i.days));
   const end = new Date(y, m - 1, d + days - 1);
@@ -60,7 +61,7 @@ export default function CourseScreen() {
       if (source === "camera") {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) {
-          setPhotoError({ itemId: item.id, text: "Нет доступа к камере. Разрешите его в настройках телефона" });
+          setPhotoError({ itemId: item.id, text: t("Нет доступа к камере. Разрешите его в настройках телефона") });
           return;
         }
         res = await ImagePicker.launchCameraAsync({ quality: 0.6 });
@@ -78,7 +79,7 @@ export default function CourseScreen() {
       setCourses(saved);
     } catch (e) {
       console.warn("course: фото не загружено", e);
-      setPhotoError({ itemId: item.id, text: e instanceof ApiError ? e.message : "Не удалось загрузить фото. Попробуйте ещё раз" });
+      setPhotoError({ itemId: item.id, text: e instanceof ApiError ? e.message : t("Не удалось загрузить фото. Попробуйте ещё раз") });
     } finally {
       setBusyItem(null);
     }
@@ -88,10 +89,10 @@ export default function CourseScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Курс</Text>
+      <Text style={styles.title}>{t("Курс")}</Text>
       {courses.length === 0 && (
         <Card>
-          <Text style={styles.body}>Курсов пока нет. Отсканируйте рецепт на экране «Сегодня»</Text>
+          <Text style={styles.body}>{t("Курсов пока нет. Отсканируйте рецепт на экране «Сегодня»")}</Text>
         </Card>
       )}
       {courses.map((c) => {
@@ -106,13 +107,13 @@ export default function CourseScreen() {
               <View style={[styles.fill, { width: `${pr.percent}%` }]} />
             </View>
             <View style={styles.stats}>
-              <Text style={styles.body}>Отмечено: {pr.taken}</Text>
-              <Text style={styles.body}>Пропущено: {pr.missed}</Text>
-              <Text style={styles.body}>Осталось: {left}</Text>
+              <Text style={styles.body}>{tf("Отмечено: {0}", pr.taken)}</Text>
+              <Text style={styles.body}>{tf("Пропущено: {0}", pr.missed)}</Text>
+              <Text style={styles.body}>{tf("Осталось: {0}", left)}</Text>
             </View>
             {!!c.prescription.comment && (
               <View style={styles.comment}>
-                <Text style={styles.label}>Комментарий врача</Text>
+                <Text style={styles.label}>{t("Комментарий врача")}</Text>
                 <Text style={styles.text}>{c.prescription.comment}</Text>
               </View>
             )}
@@ -131,16 +132,16 @@ export default function CourseScreen() {
                   </Text>
                   {item.explanation && (
                     <Button
-                      title="Коротко о лекарстве"
+                      title={t("Коротко о лекарстве")}
                       variant="secondary"
                       onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
                     />
                   )}
                   <View style={styles.photoRow}>
-                    {photo && <Image source={{ uri: photo }} style={styles.thumb} accessibilityLabel="Фото таблетки" />}
+                    {photo && <Image source={{ uri: photo }} style={styles.thumb} accessibilityLabel={t("Фото таблетки")} />}
                     <View style={{ flex: 1 }}>
                       <Button
-                        title={busyItem === item.id ? "Загрузка..." : "Фото таблетки"}
+                        title={busyItem === item.id ? t("Загрузка...") : t("Фото таблетки")}
                         variant="secondary"
                         disabled={busyItem === item.id}
                         onPress={() => setChoosing(choosing === item.id ? null : item.id)}
@@ -149,8 +150,8 @@ export default function CourseScreen() {
                   </View>
                   {choosing === item.id && (
                     <View style={{ gap: 8 }}>
-                      <Button title="Снять" variant="secondary" onPress={() => pick(item, "camera")} />
-                      <Button title="Из галереи" variant="secondary" onPress={() => pick(item, "gallery")} />
+                      <Button title={t("Снять")} variant="secondary" onPress={() => pick(item, "camera")} />
+                      <Button title={t("Из галереи")} variant="secondary" onPress={() => pick(item, "gallery")} />
                     </View>
                   )}
                   {photoError?.itemId === item.id && <Text style={styles.error}>{photoError.text}</Text>}

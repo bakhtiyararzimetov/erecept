@@ -6,6 +6,7 @@ import type {
   OffersResponse,
   RelativeOverview,
 } from "./types";
+import { getLang, t } from "./i18n";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://erecept.onrender.com";
 
@@ -29,10 +30,10 @@ async function request<T>(method: string, path: string, body?: unknown, form?: F
   }
   let res: Response;
   try {
-    res = await fetch(API_URL + path, { method, headers, body: payload });
+    res = await fetch(API_URL + path + (path.includes("?") ? "&" : "?") + "lang=" + getLang(), { method, headers, body: payload });
   } catch (e) {
     console.warn("api: сеть недоступна", method, path, e);
-    throw new ApiError("Нет связи с сервером", 0);
+    throw new ApiError(t("Нет связи с сервером"), 0);
   }
   let data: any = null;
   try {
@@ -42,7 +43,7 @@ async function request<T>(method: string, path: string, body?: unknown, form?: F
   }
   if (!res.ok) {
     throw new ApiError(
-      (data && typeof data.error === "string" && data.error) || "Нет связи с сервером",
+      (data && typeof data.error === "string" && data.error) || t("Нет связи с сервером"),
       res.status,
     );
   }

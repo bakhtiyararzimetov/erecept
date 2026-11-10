@@ -7,6 +7,7 @@ import { ApiError, api } from "../lib/api";
 import { registerPush } from "../lib/push";
 import { setRole, waitForRole } from "../lib/storage";
 import { colors, radius } from "../lib/theme";
+import { t, tf } from "../lib/i18n";
 
 export default function Join() {
   const router = useRouter();
@@ -18,8 +19,8 @@ export default function Join() {
   async function submit() {
     const c = code.trim();
     const n = name.trim();
-    if (!/^\d{6}$/.test(c)) return setError("Введите код из 6 цифр");
-    if (!n) return setError("Введите ваше имя");
+    if (!/^\d{6}$/.test(c)) return setError(t("Введите код из 6 цифр"));
+    if (!n) return setError(t("Введите ваше имя"));
     setBusy(true);
     setError(null);
     try {
@@ -30,7 +31,7 @@ export default function Join() {
       router.replace("/relative");
     } catch (e) {
       console.warn("join: не удалось подключиться", e);
-      setError(e instanceof ApiError ? e.message : "Не удалось подключиться");
+      setError(e instanceof ApiError ? e.message : t("Не удалось подключиться"));
     } finally {
       setBusy(false);
     }
@@ -39,9 +40,9 @@ export default function Join() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Я родственник</Text>
+        <Text style={styles.title}>{t("Я родственник")}</Text>
         <Card style={{ gap: 12 }}>
-          <Text style={styles.label}>Код из приложения пациента</Text>
+          <Text style={styles.label}>{t("Код из приложения пациента")}</Text>
           <TextInput
             value={code}
             onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
@@ -49,11 +50,11 @@ export default function Join() {
             maxLength={6}
             style={[styles.input, { letterSpacing: 6, fontSize: 24 }]}
           />
-          <Text style={styles.label}>Ваше имя</Text>
+          <Text style={styles.label}>{t("Ваше имя")}</Text>
           <TextInput value={name} onChangeText={setName} style={styles.input} />
           {error && <Text style={styles.error}>{error}</Text>}
-          <Button title={busy ? "Подключение..." : "Подключиться"} onPress={submit} disabled={busy} />
-          <Button title="Назад" variant="secondary" onPress={() => router.back()} />
+          <Button title={busy ? t("Подключение...") : t("Подключиться")} onPress={submit} disabled={busy} />
+          <Button title={t("Назад")} variant="secondary" onPress={() => router.back()} />
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>

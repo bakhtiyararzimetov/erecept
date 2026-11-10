@@ -12,6 +12,7 @@ import { loadCourses } from "../../lib/storage";
 import { flushMarks, markTaken } from "../../lib/sync";
 import { colors, radius } from "../../lib/theme";
 import type { Course } from "../../lib/types";
+import { locale, t, tf } from "../../lib/i18n";
 
 const STATUS: Record<DoseStatus, { label: string; color: string } | null> = {
   taken: { label: "Выпито", color: colors.muted },
@@ -21,7 +22,7 @@ const STATUS: Record<DoseStatus, { label: string; color: string } | null> = {
 };
 
 function dateTitle(d: Date): string {
-  return new Intl.DateTimeFormat("ru-RU", { weekday: "long", day: "numeric", month: "long" }).format(d);
+  return new Intl.DateTimeFormat(locale(), { weekday: "long", day: "numeric", month: "long" }).format(d);
 }
 
 function timeOf(iso: string): string {
@@ -79,7 +80,7 @@ export default function Today() {
       flushMarks().catch(() => undefined);
     } catch (e) {
       console.warn("today: не удалось сохранить отметку", e);
-      setActionError("Не удалось сохранить отметку. Попробуйте ещё раз");
+      setActionError(t("Не удалось сохранить отметку. Попробуйте ещё раз"));
     } finally {
       inFlight.current.delete(doseId);
     }
@@ -94,7 +95,7 @@ export default function Today() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {!online && (
         <View style={styles.offline}>
-          <Text style={styles.offlineText}>Нет интернета. Отметки сохранятся и отправятся позже</Text>
+          <Text style={styles.offlineText}>{t("Нет интернета. Отметки сохранятся и отправятся позже")}</Text>
         </View>
       )}
       {actionError && (
@@ -105,17 +106,17 @@ export default function Today() {
       <SosButton />
       {courses.length === 0 ? (
         <Card style={{ gap: 16 }}>
-          <Text style={styles.title}>Сегодня</Text>
-          <Text style={styles.body}>Отсканируйте QR-код с рецепта врача</Text>
-          <Button title="Сканировать рецепт" onPress={() => router.push("/scan")} />
+          <Text style={styles.title}>{t("Сегодня")}</Text>
+          <Text style={styles.body}>{t("Отсканируйте QR-код с рецепта врача")}</Text>
+          <Button title={t("Сканировать рецепт")} onPress={() => router.push("/scan")} />
         </Card>
       ) : (
         <>
           <Text style={styles.date}>{dateTitle(now)}</Text>
-          <Button title="Сканировать ещё рецепт" variant="secondary" onPress={() => router.push("/scan")} />
+          <Button title={t("Сканировать ещё рецепт")} variant="secondary" onPress={() => router.push("/scan")} />
           {entries.length === 0 && (
             <Card>
-              <Text style={styles.body}>На сегодня приёмов нет</Text>
+              <Text style={styles.body}>{t("На сегодня приёмов нет")}</Text>
             </Card>
           )}
           {entries.map(({ dose, item, status }) => {
@@ -124,25 +125,25 @@ export default function Today() {
               <Card key={dose.id} style={{ gap: 8 }}>
                 <View style={styles.row}>
                   <Text style={styles.time}>{timeOf(dose.scheduled_at)}</Text>
-                  {badge && <Text style={[styles.badge, { color: badge.color, borderColor: colors.border, backgroundColor: status === "taken" ? "#F3F4F6" : colors.card }]}>{badge.label}</Text>}
+                  {badge && <Text style={[styles.badge, { color: badge.color, borderColor: colors.border, backgroundColor: status === "taken" ? "#F3F4F6" : colors.card }]}>{t(badge.label)}</Text>}
                 </View>
                 <Text style={styles.name}>{item.medicine_name}</Text>
                 <Text style={styles.body}>
                   {item.dosage}, {item.meal_label}
                 </Text>
                 <Text style={styles.body}>
-                  день {dose.day_number} из {dose.total_days}
+                  {tf("день {0} из {1}", dose.day_number, dose.total_days)}
                 </Text>
-                {status !== "taken" && <Button title="Выпил" onPress={() => onTaken(dose.id)} />}
+                {status !== "taken" && <Button title={t("Выпил")} onPress={() => onTaken(dose.id)} />}
                 {item.explanation && (
                   <Button
-                    title="Коротко о лекарстве"
+                    title={t("Коротко о лекарстве")}
                     variant="secondary"
                     onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
                   />
                 )}
                 <Button
-                  title="Где купить"
+                  title={t("Где купить")}
                   variant="secondary"
                   onPress={() => router.push({ pathname: "/shops", params: { name: item.medicine_name } })}
                 />

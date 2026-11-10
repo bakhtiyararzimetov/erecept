@@ -2,6 +2,7 @@
 // Функции, которым нужен «календарный день», используют ЛОКАЛЬНОЕ время устройства
 // (на телефонах пациентов это Asia/Almaty).
 import type { Course, Dose, Item, Prescription } from "./types";
+import { t, tf } from "./i18n";
 
 export type PlannedNotification = {
   key: string;
@@ -31,7 +32,7 @@ export function extractCode(scanned: string): string | null {
 export function reminderText(item: Item, dose: Dose): { title: string; body: string } {
   return {
     title: item.medicine_name,
-    body: `${item.dosage}, ${item.meal_label} · день ${dose.day_number} из ${dose.total_days}`,
+    body: `${item.dosage}, ${item.meal_label} · ${tf("день {0} из {1}", dose.day_number, dose.total_days)}`,
   };
 }
 
@@ -98,7 +99,7 @@ export function upcomingNotifications(courses: Course[], now: Date, limit = 60):
         key: `dose-${dose.id}-repeat`,
         at: repeatAt,
         title: text.title,
-        body: "Напоминание: " + text.body,
+        body: t("Напоминание: ") + text.body,
         kind: "dose",
         doseId: dose.id,
       });
@@ -112,8 +113,8 @@ export function upcomingNotifications(courses: Course[], now: Date, limit = 60):
           out.push({
             key: `water-${c.prescription.id}-${at.getTime()}`,
             at,
-            title: "Время выпить воды",
-            body: "Стакан воды",
+            title: t("Время выпить воды"),
+            body: t("Стакан воды"),
             kind: "water",
           });
         }
