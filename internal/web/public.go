@@ -196,7 +196,7 @@ func (w *Web) publicPage(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Не удалось показать рецепт, попробуйте ещё раз", http.StatusInternalServerError)
 		return
 	}
-	w.renderPlain(rw, "rx_public", map[string]any{"Rx": v})
+	w.renderPlain(rw, "rx_public", map[string]any{"Rx": v, "CanCheck": w.BoxCheck != nil})
 }
 
 // qrPNG — PNG 512px со ссылкой на публичную страницу рецепта.

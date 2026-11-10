@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,15 +19,18 @@ var assets embed.FS
 
 type Web struct {
 	DB       *pgxpool.Pool
-	Dictate  Dictator // голосовое заполнение рецепта; nil — выключено
-	PitchKey string   // ключ пульта презентации /pitch; пусто — пульт выключен
+	Dictate  Dictator   // голосовое заполнение рецепта; nil — выключено
+	BoxCheck BoxChecker // проверка упаковки по фото на публичной странице рецепта; nil — выключена
+	PitchKey string     // ключ пульта презентации /pitch; пусто — пульт выключен
 	pages    map[string]*template.Template
 	live     *pitchLive
+	boxLimit *rateLimit
 }
 
 // New разбирает шаблоны один раз: каждая страница = layout.html + <страница>.html.
 func New(pool *pgxpool.Pool) *Web {
-	w := &Web{DB: pool, pages: map[string]*template.Template{}, live: newPitchLive()}
+	w := &Web{DB: pool, pages: map[string]*template.Template{}, live: newPitchLive(),
+		boxLimit: newRateLimit(10, time.Hour, 50, 24*time.Hour)}
 	files, err := fs.Glob(assets, "templates/*.html")
 	if err != nil {
 		log.Fatal(err)
@@ -64,6 +68,7 @@ func (w *Web) Routes() http.Handler {
 	r.Post("/logout", w.logout)
 
 	r.Get("/r/{code}", w.publicPage)
+	r.Post("/r/{code}/check", w.boxCheck)
 	r.Get("/qr/{file}", w.qrPNG)
 
 	r.Route("/doctor", func(r chi.Router) {

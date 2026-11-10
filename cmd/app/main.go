@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"erecept/internal/api"
+	"erecept/internal/boxcheck"
 	"erecept/internal/db"
 	"erecept/internal/dictate"
 	"erecept/internal/explain"
@@ -60,6 +61,7 @@ func main() {
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
 		go explain.New(pool, leaflet.New(), key).BackfillLoop(ctx)
 		webApp.Dictate = dictate.New(key)
+		webApp.BoxCheck = boxcheck.New(key)
 	} else {
 		log.Println("ANTHROPIC_API_KEY не задан: памятки о лекарствах не создаются")
 	}

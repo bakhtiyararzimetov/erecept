@@ -1,0 +1,10 @@
+<div class="card box-result {{.Kind}}" role="status">
+  {{if .Error}}
+  <p>{{.Error}}</p>
+  {{else}}{{with .Res}}
+  <p class="box-verdict">{{.Message}}</p>
+  {{if or .Box.Brand .Box.Substance}}<p class="muted">На упаковке: {{if .Box.Brand}}{{.Box.Brand}}{{end}}{{if .Box.Substance}} · {{.Box.Substance}}{{end}}{{if .Box.Strength}} · {{.Box.Strength}}{{end}}{{if .Box.Form}} · {{.Box.Form}}{{end}}</p>{{end}}
+  {{end}}
+  <p class="muted">{{$.Footer}}</p>
+  {{end}}
+</div>
