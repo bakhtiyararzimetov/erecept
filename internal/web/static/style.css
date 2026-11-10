@@ -203,3 +203,5 @@ pre.muted { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; bac
 .box-result.ok { border-left-color: var(--accent); }
 .box-result.warn { border-left-color: var(--error); }
 .box-verdict { font-weight: 600; font-size: 17px; }
+.lang-switch { margin-left: auto; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.lang-switch a { color: var(--accent); text-decoration: none; }

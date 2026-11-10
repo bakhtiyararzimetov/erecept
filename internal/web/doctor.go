@@ -80,8 +80,13 @@ func emptyForm() RxForm {
 	return RxForm{WaterFrom: "09:00", WaterTo: "21:00", Items: []ItemForm{newItemForm(0)}}
 }
 
+// medicineNames — подсказки для поля «Лекарство»: русские названия, на английском сайте — английские.
 func (w *Web) medicineNames(ctx context.Context) []string {
-	rows, err := w.DB.Query(ctx, `SELECT name FROM medicines ORDER BY name`)
+	q := `SELECT name FROM medicines ORDER BY name`
+	if i18n.FromContext(ctx) == i18n.EN {
+		q = `SELECT CASE WHEN name_en <> '' THEN name_en ELSE name END AS n FROM medicines ORDER BY n`
+	}
+	rows, err := w.DB.Query(ctx, q)
 	if err != nil {
 		log.Printf("справочник лекарств: %v", err)
 		return nil
@@ -324,7 +329,7 @@ func (w *Web) tryInsert(ctx context.Context, doctorID int64, f RxForm, birth tim
 	for pos, it := range f.Items {
 		days, _ := strconv.Atoi(it.Days)
 		_, err = tx.Exec(ctx, `INSERT INTO prescription_items (prescription_id, position, medicine_name, medicine_id, dosage, times_per_day, days, meal, times)
-			VALUES ($1, $2, $3, (SELECT id FROM medicines WHERE lower(name) = lower($3) LIMIT 1), $4, $5, $6, $7, $8)`,
+			VALUES ($1, $2, $3, (SELECT id FROM medicines WHERE lower(name) = lower($3) OR lower(name_en) = lower($3) ORDER BY lower(name) = lower($3) DESC LIMIT 1), $4, $5, $6, $7, $8)`,
 			id, pos, it.Name, it.Dosage, it.TimesPerDay, days, it.Meal, parseTimes(it.Times))
 		if err != nil {
 			return 0, err

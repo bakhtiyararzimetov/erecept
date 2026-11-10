@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"regexp"
@@ -60,5 +61,38 @@ func TestEnglishDoctorForm(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("нет %q", want)
 		}
+	}
+}
+
+// На английской странице — английские названия из справочника; русская страница как была.
+func TestEnglishMedicineNames(t *testing.T) {
+	w := dictateEnv(t, nil)
+	h := w.Routes()
+	_, code := createRx(t, w.DB, h, doctorCookies(t, h, "doctor1"))
+	if body := getLang(h, "/r/"+code+"?lang=en", nil); !strings.Contains(body, "<h2>Paracetamol</h2>") {
+		t.Error("нет английского названия Paracetamol")
+	}
+	if body := getLang(h, "/r/"+code+"?lang=ru", nil); !strings.Contains(body, "<h2>Парацетамол</h2>") {
+		t.Error("на русской странице должно остаться «Парацетамол»")
+	}
+	if body := getLang(h, "/doctor/?lang=en", doctorCookies(t, h, "doctor1")); !strings.Contains(body, `<option value="Glucophage">`) {
+		t.Error("в подсказках формы врача нет английских названий")
+	}
+}
+
+// Врач вписал английское название — рецепт привязан к тому же лекарству справочника.
+func TestDoctorEnglishNameLinksCatalog(t *testing.T) {
+	w := dictateEnv(t, nil)
+	h := w.Routes()
+	f := validForm()
+	f.Set("items[0].name", "glucophage")
+	if r := postForm(h, "/doctor/prescriptions", f, doctorCookies(t, h, "doctor1")); r.Code != http.StatusSeeOther {
+		t.Fatalf("код %d", r.Code)
+	}
+	var got, want int64
+	w.DB.QueryRow(context.Background(), `SELECT medicine_id FROM prescription_items WHERE medicine_name = 'glucophage'`).Scan(&got)
+	w.DB.QueryRow(context.Background(), `SELECT id FROM medicines WHERE name = 'Глюкофаж'`).Scan(&want)
+	if got == 0 || got != want {
+		t.Errorf("medicine_id %d, нужно %d", got, want)
 	}
 }

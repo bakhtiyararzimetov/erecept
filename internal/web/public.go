@@ -129,8 +129,13 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	v.Birth = p.PatientBirth.Format("02.01.2006")
 	v.Date = p.CreatedAt.In(time.Local).Format("02.01.2006")
 	expl := w.explanations(ctx, p.Items)
+	names := w.englishNames(ctx, l, p.Items)
 	for _, it := range p.Items {
-		iv := ItemView{Medicine: it.MedicineName, Dosage: it.Dosage, How: howText(l, it), Days: it.Days}
+		name := it.MedicineName
+		if it.MedicineID != nil && names[*it.MedicineID] != "" {
+			name = names[*it.MedicineID]
+		}
+		iv := ItemView{Medicine: name, Dosage: it.Dosage, How: howText(l, it), Days: it.Days}
 		if it.MedicineID != nil {
 			iv.Explanation = expl[*it.MedicineID]
 		}
@@ -239,4 +244,32 @@ func (w *Web) qrPNG(rw http.ResponseWriter, r *http.Request) {
 func noIndex(rw http.ResponseWriter) {
 	rw.Header().Set("X-Robots-Tag", "noindex")
 	rw.Header().Set("Cache-Control", "private, max-age=300")
+}
+
+// englishNames — английские названия лекарств рецепта из справочника (только для EN).
+func (w *Web) englishNames(ctx context.Context, l i18n.Lang, items []models.PrescriptionItem) map[int64]string {
+	if l != i18n.EN {
+		return nil
+	}
+	var ids []int64
+	for _, it := range items {
+		if it.MedicineID != nil {
+			ids = append(ids, *it.MedicineID)
+		}
+	}
+	out := map[int64]string{}
+	rows, err := w.DB.Query(ctx, `SELECT id, name_en FROM medicines WHERE id = ANY($1)`, ids)
+	if err != nil {
+		log.Printf("английские названия: %v", err)
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var n string
+		if rows.Scan(&id, &n) == nil {
+			out[id] = n
+		}
+	}
+	return out
 }
