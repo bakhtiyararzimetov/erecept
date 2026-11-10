@@ -39,7 +39,7 @@
     <h2>{{t "Лекарства"}}</h2>
     <datalist id="medicines">{{range .Medicines}}<option value="{{.}}">{{end}}</datalist>
     <div id="rows" class="rx-list">{{range .Form.Items}}{{template "item_row" .}}{{end}}</div>
-    <p><button type="button" class="btn btn-secondary" hx-get="/doctor/item-row" hx-vals='js:{i: window.rowN++}' hx-target="#rows" hx-swap="beforeend" hx-on::before-request="if (document.querySelectorAll('.rx-row').length >= 20) { event.preventDefault(); alert({{t "Не больше 20 лекарств в одном рецепте"}}); }">+ Добавить лекарство</button></p>
+    <p><button type="button" class="btn btn-secondary" hx-get="/doctor/item-row" hx-vals='js:{i: window.rowN++}' hx-target="#rows" hx-swap="beforeend" hx-on::before-request="if (document.querySelectorAll('.rx-row').length >= 20) { event.preventDefault(); alert(this.dataset.maxMsg); }" data-max-msg="{{t "Не больше 20 лекарств в одном рецепте"}}">{{t "+ Добавить лекарство"}}</button></p>
 
     <h2>{{t "Напоминание о воде"}}</h2>
     <div class="field{{if .Form.BadFields.water_every_hours}} has-error{{end}}">

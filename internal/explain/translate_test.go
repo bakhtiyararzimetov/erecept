@@ -61,3 +61,18 @@ func TestBackfillEnglish(t *testing.T) {
 		t.Errorf("data_en: %s", raw)
 	}
 }
+
+// Плохой перевод не повторяется каждый час: следующая попытка — через сутки.
+func TestBackfillEnglishRemembersFailure(t *testing.T) {
+	pool := dbtest.New(t)
+	var calls atomic.Int32
+	srv := fakeClaude(t, "end_turn", `not json`, &calls, nil)
+	s := newService(pool, nil, srv.URL)
+	id := insertMedicine(t, pool, "Парацетамол", "парацетамол")
+	pool.Exec(context.Background(), `INSERT INTO medicine_explanations (medicine_id, data) VALUES ($1, '{"purpose":"Снижает температуру."}')`, id)
+	s.backfillEN(context.Background())
+	s.backfillEN(context.Background())
+	if calls.Load() != 1 {
+		t.Errorf("после неудачи повтор должен ждать, вызовов: %d", calls.Load())
+	}
+}

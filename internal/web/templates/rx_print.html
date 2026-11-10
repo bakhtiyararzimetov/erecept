@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Рецепт — еРецепт</title>
+<title>{{t "Рецепт"}} — {{t "еРецепт"}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&subset=cyrillic&display=swap" rel="stylesheet">
@@ -30,20 +30,20 @@ body { background: #FFFFFF; }
 <body>
 {{with .Rx}}
 <div class="sheet">
-  <div class="toolbar no-print"><button class="btn btn-primary" type="button" onclick="window.print()">Печать</button></div>
-  <h1>Рецепт</h1>
-  <p class="meta"><strong>Врач:</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
-     <strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
-     <strong>Дата:</strong> {{.Date}}</p>
+  <div class="toolbar no-print"><button class="btn btn-primary" type="button" onclick="window.print()">{{t "Печать"}}</button></div>
+  <h1>{{t "Рецепт"}}</h1>
+  <p class="meta"><strong>{{t "Врач:"}}</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
+     <strong>{{t "Пациент:"}}</strong> {{.PatientName}}, {{t "дата рождения"}} {{.Birth}}<br>
+     <strong>{{t "Дата:"}}</strong> {{.Date}}</p>
   <table>
-    <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
+    <thead><tr><th>{{t "Лекарство"}}</th><th>{{t "Дозировка"}}</th><th>{{t "Как принимать"}}</th><th>{{t "Дней"}}</th></tr></thead>
     <tbody>{{range .Items}}<tr><td>{{.Medicine}}</td><td>{{.Dosage}}</td><td>{{.How}}</td><td>{{.Days}}</td></tr>{{end}}</tbody>
   </table>
   {{if .WaterText}}<p>{{.WaterText}}</p>{{end}}
-  {{if .Comment}}<p><strong>Комментарий врача:</strong> {{.Comment}}</p>{{end}}
+  {{if .Comment}}<p><strong>{{t "Комментарий врача:"}}</strong> {{.Comment}}</p>{{end}}
   <div class="sheet-bottom">
-    <div class="qr"><img src="{{.QRPath}}" alt="QR-код рецепта" width="160" height="160"><p>Отсканируйте в приложении еРецепт</p></div>
-    <div class="sign"><div class="sign-line"></div><p class="muted" style="font-size:12px">Подпись врача: {{.DoctorName}}</p></div>
+    <div class="qr"><img src="{{.QRPath}}" alt="{{t "QR-код рецепта"}}" width="160" height="160"><p>{{t "Отсканируйте в приложении еРецепт"}}</p></div>
+    <div class="sign"><div class="sign-line"></div><p class="muted" style="font-size:12px">{{t "Подпись врача:"}} {{.DoctorName}}</p></div>
   </div>
 </div>
 {{end}}

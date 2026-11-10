@@ -220,3 +220,26 @@ func TestCheckItemNameVariants(t *testing.T) {
 		}
 	}
 }
+
+// Английский ответ показывает форму и дозу с упаковки по-английски.
+func TestCheckEnglishFormAndStrength(t *testing.T) {
+	srv := fakeClaude(t, `{"box":{"brand":"Глюкофаж Лонг","substance":"метформин","substance_en":"metformin","strength":"750 мг","strength_en":"750 mg","form":"таблетки пролонгированного действия","form_en":"extended-release tablets"},"verdict":"analog","item":"Глюкофаж"}`, nil)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), []Item{{Name: "Глюкофаж", NameEN: "Glucophage", Substance: "метформин", SubstanceEN: "metformin", Dosage: "1 tablet 850 mg"}}, EN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Verdict != "form_diff" || !strings.Contains(res.Message, "extended-release tablets") || strings.ContainsAny(res.Message, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя") {
+		t.Errorf("%+v", res)
+	}
+}
+
+// Каждое обязательное поле схемы описано в properties (иначе API отклонит запрос).
+func TestSchemaRequiredHaveProperties(t *testing.T) {
+	box := outputSchema["properties"].(map[string]any)["box"].(map[string]any)
+	props := box["properties"].(map[string]any)
+	for _, f := range box["required"].([]string) {
+		if _, ok := props[f]; !ok {
+			t.Errorf("поле %q есть в required, но нет в properties", f)
+		}
+	}
+}

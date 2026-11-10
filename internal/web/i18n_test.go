@@ -115,3 +115,42 @@ func TestEnglishExplanationShown(t *testing.T) {
 		t.Error("на русской странице должна быть русская памятка")
 	}
 }
+
+// Предупреждение о 20 лекарствах — через data-атрибут: в hx-on шаблон экранирует текст как HTML, а не JS.
+func TestMaxItemsAlertIntact(t *testing.T) {
+	w := dictateEnv(t, nil)
+	h := w.Routes()
+	for _, l := range []string{"ru", "en"} {
+		body := getLang(h, "/doctor/?lang="+l, doctorCookies(t, h, "doctor1"))
+		if !strings.Contains(body, "alert(this.dataset.maxMsg)") || !strings.Contains(body, "data-max-msg=") {
+			t.Errorf("%s: предупреждение о 20 лекарствах сломано", l)
+		}
+	}
+	if body := getLang(h, "/doctor/?lang=en", doctorCookies(t, h, "doctor1")); !strings.Contains(body, "Add medicine") {
+		t.Error("кнопка «+ Добавить лекарство» не переведена")
+	}
+}
+
+func TestEnglishPrintPage(t *testing.T) {
+	w := dictateEnv(t, nil)
+	h := w.Routes()
+	cookies := doctorCookies(t, h, "doctor1")
+	id, _ := createRx(t, w.DB, h, cookies)
+	body := getLang(h, "/doctor/prescriptions/"+itoa(id)+"/print?lang=en", cookies)
+	if strings.ContainsAny(stripData(body), "абвгдежзийклмнопрстуфхцчшщыэюя") {
+		t.Errorf("на английской печати остался русский текст: %s", stripData(body))
+	}
+}
+
+// stripData убирает данные рецепта (ФИО, клиника, комментарий), оставляя текст интерфейса.
+func stripData(body string) string {
+	for _, d := range []string{"Иванов Иван Иванович", "Больше пить воды", "Неизвестное средство", "10 капель", "1 таблетка 500 мг"} {
+		body = strings.ReplaceAll(body, d, "")
+	}
+	re := regexp.MustCompile(`(?s)<style.*?</style>|<[^>]+>`)
+	body = re.ReplaceAllString(body, " ")
+	for _, n := range []string{"Ахметова Динара Сериковна", "Поликлиника №5", "Сейтказиев", "Ержан"} {
+		body = strings.ReplaceAll(body, n, "")
+	}
+	return body
+}
