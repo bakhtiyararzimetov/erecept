@@ -56,7 +56,7 @@ var glucophage = []Item{{Name: "Глюкофаж", Substance: "метформи�
 func TestCheckAnalog(t *testing.T) {
 	var body []byte
 	srv := fakeClaude(t, `{"box":{"brand":"Сиофор","substance":"метформин","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"глюкофаж"}`, &body)
-	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage, RU)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestCheckAnalog(t *testing.T) {
 // Модель назвала лекарство не из рецепта — ответу не верим.
 func TestCheckDowngradesUnknownItem(t *testing.T) {
 	srv := fakeClaude(t, `{"box":{"brand":"Аспирин","substance":"ацетилсалициловая кислота","strength":"500 мг","form":"таблетки"},"verdict":"match","item":"Аспирин"}`, nil)
-	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage, RU)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestCheckDowngradesUnknownItem(t *testing.T) {
 
 func TestCheckUnknownVerdict(t *testing.T) {
 	srv := fakeClaude(t, `{"box":{"brand":"","substance":"","strength":"","form":""},"verdict":"maybe","item":""}`, nil)
-	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage, RU)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestCheckMessagesSafe(t *testing.T) {
 func TestCheckBadImage(t *testing.T) {
 	c := newChecker("http://127.0.0.1:1")
 	for _, img := range [][]byte{nil, []byte("hello")} {
-		if _, err := c.Check(context.Background(), img, glucophage); !errors.Is(err, ErrImage) {
+		if _, err := c.Check(context.Background(), img, glucophage, RU); !errors.Is(err, ErrImage) {
 			t.Errorf("%q: ошибка %v", img, err)
 		}
 	}
@@ -139,7 +139,7 @@ func TestCheckBadImage(t *testing.T) {
 // Модель говорит «аналог», но вещество на упаковке другое — ✅ показывать нельзя.
 func TestCheckAnalogNeedsSameSubstance(t *testing.T) {
 	srv := fakeClaude(t, `{"box":{"brand":"Аспирин","substance":"ацетилсалициловая кислота","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"Глюкофаж"}`, nil)
-	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage, RU)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func TestCheckAnalogNeedsSameSubstance(t *testing.T) {
 func TestCheckAnalogWithoutKnownSubstanceWarns(t *testing.T) {
 	srv := fakeClaude(t, `{"box":{"brand":"Сиофор","substance":"метформин","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"Глюкофаж"}`, nil)
 	items := []Item{{Name: "Глюкофаж", Dosage: "1 таблетка 850 мг"}}
-	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), items)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), items, RU)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,12 +165,58 @@ func TestCheckAnalogWithoutKnownSubstanceWarns(t *testing.T) {
 func TestCheckExtendedReleaseIsFormDiff(t *testing.T) {
 	for _, verdict := range []string{"match", "analog"} {
 		srv := fakeClaude(t, `{"box":{"brand":"Глюкофаж Лонг","substance":"метформин","strength":"750 мг","form":"таблетки"},"verdict":"`+verdict+`","item":"Глюкофаж"}`, nil)
-		res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+		res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage, RU)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if res.Verdict != "form_diff" {
 			t.Errorf("%s: ожидали form_diff, получили %+v", verdict, res)
+		}
+	}
+}
+
+// Английские ответы: те же правила — не «можно принимать», все несовпадения — к фармацевту.
+func TestCheckMessagesSafeEN(t *testing.T) {
+	box := Box{Brand: "Metfora", Substance: "метформин", SubstanceEN: "metformin", Strength: "850 mg", Form: "tablets"}
+	item := Item{Name: "Глюкофаж", NameEN: "Glucophage", Substance: "метформин", SubstanceEN: "metformin", Dosage: "1 tablet 850 mg"}
+	for _, v := range append(append([]string{}, verdicts...), "analog_unverified") {
+		m := messageIn(EN, v, box, item)
+		low := strings.ToLower(m)
+		if m == "" || strings.Contains(low, "safe to take") || strings.ContainsAny(m, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя") {
+			t.Errorf("%s: %q", v, m)
+		}
+		if v != "match" && v != "unreadable" && !strings.Contains(low, "pharmacist") {
+			t.Errorf("%s без pharmacist: %q", v, m)
+		}
+	}
+	if m := messageIn(EN, "analog", box, item); !strings.Contains(m, "metformin") || !strings.Contains(m, "Glucophage") {
+		t.Errorf("analog EN: %q", m)
+	}
+}
+
+func TestCheckEnglishResult(t *testing.T) {
+	srv := fakeClaude(t, `{"box":{"brand":"Metfora","substance":"метформин","substance_en":"metformin","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"Глюкофаж"}`, nil)
+	items := []Item{{Name: "Глюкофаж", NameEN: "Glucophage", Substance: "метформин", SubstanceEN: "metformin", Dosage: "1 таблетка 850 мг"}}
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), items, EN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Verdict != "analog" || !strings.HasPrefix(res.Message, "✅ Analog") || res.Box.SubstanceEN != "metformin" {
+		t.Errorf("%+v", res)
+	}
+}
+
+// В рецепте для модели строка «Глюкофаж (Glucophage)» — любой из вариантов названия считается той же строкой.
+func TestCheckItemNameVariants(t *testing.T) {
+	items := []Item{{Name: "Глюкофаж", NameEN: "Glucophage", Substance: "метформин", SubstanceEN: "metformin", Dosage: "1 таблетка 850 мг"}}
+	for _, name := range []string{"Глюкофаж (Glucophage)", "Glucophage", "глюкофаж"} {
+		srv := fakeClaude(t, `{"box":{"brand":"Сиофор","substance":"метформин","substance_en":"metformin","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"`+name+`"}`, nil)
+		res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), items, RU)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Verdict != "analog" || res.Item != "Глюкофаж" {
+			t.Errorf("%q: %+v", name, res)
 		}
 	}
 }

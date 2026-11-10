@@ -15,14 +15,15 @@ import (
 )
 
 type fakeBoxChecker struct {
+	lang  boxcheck.Lang
 	res   boxcheck.Result
 	err   error
 	items []boxcheck.Item
 	img   []byte
 }
 
-func (f *fakeBoxChecker) Check(_ context.Context, img []byte, items []boxcheck.Item) (boxcheck.Result, error) {
-	f.img, f.items = img, items
+func (f *fakeBoxChecker) Check(_ context.Context, img []byte, items []boxcheck.Item, lang boxcheck.Lang) (boxcheck.Result, error) {
+	f.img, f.items, f.lang = img, items, lang
 	return f.res, f.err
 }
 
@@ -172,5 +173,27 @@ func TestBoxCheckOffReturnsFragment(t *testing.T) {
 	w := postPhoto(h, "/r/"+code+"/check", []byte("x"), "10.0.0.7")
 	if w.Code != http.StatusNotFound || !strings.Contains(w.Body.String(), "box-result") {
 		t.Errorf("код %d, тело %s", w.Code, w.Body.String())
+	}
+}
+
+func TestBoxCheckEnglish(t *testing.T) {
+	fake := &fakeBoxChecker{res: boxcheck.Result{Verdict: "match", Item: "Парацетамол", Message: "✅ Matches your prescription: Paracetamol."}}
+	_, h, code := boxEnv(t, fake)
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, _ := mw.CreateFormFile("photo", "box.jpg")
+	fw.Write([]byte("x"))
+	mw.Close()
+	req := httptest.NewRequest("POST", "/r/"+code+"/check", &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	req.AddCookie(&http.Cookie{Name: "lang", Value: "en"})
+	req.RemoteAddr = "10.0.0.9:1"
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if !strings.Contains(w.Body.String(), boxcheck.FooterEN) {
+		t.Errorf("нет английской подписи: %s", w.Body.String())
+	}
+	if fake.lang != boxcheck.EN || fake.items[0].NameEN != "Paracetamol" || fake.items[0].SubstanceEN != "paracetamol" {
+		t.Errorf("язык %q, строки %+v", fake.lang, fake.items)
 	}
 }

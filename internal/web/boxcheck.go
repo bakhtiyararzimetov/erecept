@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"erecept/internal/boxcheck"
+	"erecept/internal/i18n"
 	"erecept/internal/models"
 
 	"github.com/go-chi/chi/v5"
@@ -20,7 +21,7 @@ import (
 
 // BoxChecker сверяет фото упаковки с рецептом (boxcheck.Checker; в тестах — подделка).
 type BoxChecker interface {
-	Check(ctx context.Context, img []byte, items []boxcheck.Item) (boxcheck.Result, error)
+	Check(ctx context.Context, img []byte, items []boxcheck.Item, lang boxcheck.Lang) (boxcheck.Result, error)
 }
 
 const maxPhotoBytes = 6 << 20
@@ -67,7 +68,11 @@ func (w *Web) boxCheck(rw http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
-	res, err := w.BoxCheck.Check(ctx, img, items)
+	lang, footer := boxcheck.RU, boxcheck.Footer
+	if i18n.FromContext(r.Context()) == i18n.EN {
+		lang, footer = boxcheck.EN, boxcheck.FooterEN
+	}
+	res, err := w.BoxCheck.Check(ctx, img, items, lang)
 	switch {
 	case errors.Is(err, boxcheck.ErrImage):
 		w.boxError(rw, r, http.StatusBadRequest, "Это не похоже на фото. Сфотографируйте упаковку ещё раз.")
@@ -81,7 +86,7 @@ func (w *Web) boxCheck(rw http.ResponseWriter, r *http.Request) {
 	if res.Verdict == "match" || res.Verdict == "analog" {
 		kind = "ok"
 	}
-	w.renderFragment(rw, r, http.StatusOK, "box_result", map[string]any{"Res": res, "Kind": kind, "Footer": boxcheck.Footer})
+	w.renderFragment(rw, r, http.StatusOK, "box_result", map[string]any{"Res": res, "Kind": kind, "Footer": footer})
 }
 
 // boxItems — строки рецепта с действующим веществом из справочника (если лекарство оттуда).
@@ -92,20 +97,21 @@ func (w *Web) boxItems(ctx context.Context, rx []models.PrescriptionItem) ([]box
 			ids = append(ids, *it.MedicineID)
 		}
 	}
-	subst := map[int64]string{}
+	type catalog struct{ substance, nameEN, substanceEN string }
+	subst := map[int64]catalog{}
 	if len(ids) > 0 {
-		rows, err := w.DB.Query(ctx, `SELECT id, active_substance FROM medicines WHERE id = ANY($1)`, ids)
+		rows, err := w.DB.Query(ctx, `SELECT id, active_substance, name_en, substance_en FROM medicines WHERE id = ANY($1)`, ids)
 		if err != nil {
 			return nil, err
 		}
 		defer rows.Close()
 		for rows.Next() {
 			var id int64
-			var s string
-			if err := rows.Scan(&id, &s); err != nil {
+			var c catalog
+			if err := rows.Scan(&id, &c.substance, &c.nameEN, &c.substanceEN); err != nil {
 				return nil, err
 			}
-			subst[id] = s
+			subst[id] = c
 		}
 		if err := rows.Err(); err != nil {
 			return nil, err
@@ -115,7 +121,8 @@ func (w *Web) boxItems(ctx context.Context, rx []models.PrescriptionItem) ([]box
 	for _, it := range rx {
 		bi := boxcheck.Item{Name: it.MedicineName, Dosage: it.Dosage}
 		if it.MedicineID != nil {
-			bi.Substance = subst[*it.MedicineID]
+			c := subst[*it.MedicineID]
+			bi.Substance, bi.NameEN, bi.SubstanceEN = c.substance, c.nameEN, c.substanceEN
 		}
 		out = append(out, bi)
 	}
