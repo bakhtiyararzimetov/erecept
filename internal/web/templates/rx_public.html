@@ -78,15 +78,21 @@
   input.addEventListener("change", function () {
     var file = input.files && input.files[0];
     if (!file) return;
+    input.disabled = true; // одна проверка за раз — не тратим лимит повторными нажатиями
     show('<div class="card box-result"><p>ИИ читает упаковку…</p></div>');
     shrink(file).then(function (blob) {
       var fd = new FormData();
       fd.append("photo", blob, "box.jpg");
       return fetch(location.pathname.replace(/\/$/, "") + "/check", { method: "POST", body: fd });
-    }).then(function (r) { return r.text(); })
-      .then(show)
-      .catch(function () { show('<div class="card box-result warn"><p>Нет связи, попробуйте ещё раз.</p></div>'); })
-      .finally(function () { input.value = ""; });
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        // Ответ сервера — готовый кусок страницы; чужую страницу ошибки (например, прокси) не показываем.
+        if (t.indexOf("box-result") === -1) throw new Error("bad response");
+        return t;
+      });
+    }).then(show)
+      .catch(function () { show('<div class="card box-result warn"><p>Не получилось проверить. Попробуйте ещё раз.</p></div>'); })
+      .finally(function () { input.value = ""; input.disabled = false; });
   });
 })();
 </script>

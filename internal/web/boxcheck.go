@@ -30,12 +30,12 @@ const maxPhotoBytes = 6 << 20
 func (w *Web) boxCheck(rw http.ResponseWriter, r *http.Request) {
 	noIndex(rw)
 	if w.BoxCheck == nil {
-		http.NotFound(rw, r)
+		w.boxError(rw, http.StatusNotFound, "Проверка упаковки сейчас недоступна.")
 		return
 	}
 	p, err := w.loadPrescriptionByCode(r.Context(), chi.URLParam(r, "code"))
 	if errors.Is(err, pgx.ErrNoRows) {
-		http.NotFound(rw, r)
+		w.boxError(rw, http.StatusNotFound, "Рецепт не найден.")
 		return
 	}
 	if err != nil {
@@ -135,9 +135,14 @@ func (w *Web) renderFragment(rw http.ResponseWriter, status int, page string, da
 	}
 }
 
-// clientIP: за прокси Render настоящий адрес — последний в X-Forwarded-For
-// (первые значения клиент может подставить сам).
+// clientIP: Render стоит за Cloudflare — он кладёт адрес клиента в CF-Connecting-IP
+// (или True-Client-IP). Иначе последний адрес X-Forwarded-For: первые клиент может подставить сам.
 func clientIP(r *http.Request) string {
+	for _, h := range []string{"CF-Connecting-IP", "True-Client-IP"} {
+		if v := strings.TrimSpace(r.Header.Get(h)); v != "" {
+			return v
+		}
+	}
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		parts := strings.Split(xff, ",")
 		return strings.TrimSpace(parts[len(parts)-1])

@@ -135,3 +135,42 @@ func TestCheckBadImage(t *testing.T) {
 		}
 	}
 }
+
+// Модель говорит «аналог», но вещество на упаковке другое — ✅ показывать нельзя.
+func TestCheckAnalogNeedsSameSubstance(t *testing.T) {
+	srv := fakeClaude(t, `{"box":{"brand":"Аспирин","substance":"ацетилсалициловая кислота","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"Глюкофаж"}`, nil)
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Verdict != "unreadable" {
+		t.Errorf("ожидали unreadable, получили %+v", res)
+	}
+}
+
+// Лекарство вне справочника: вещество рецепта неизвестно, поэтому «аналог» — только с фармацевтом.
+func TestCheckAnalogWithoutKnownSubstanceWarns(t *testing.T) {
+	srv := fakeClaude(t, `{"box":{"brand":"Сиофор","substance":"метформин","strength":"850 мг","form":"таблетки"},"verdict":"analog","item":"Глюкофаж"}`, nil)
+	items := []Item{{Name: "Глюкофаж", Dosage: "1 таблетка 850 мг"}}
+	res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), items)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Verdict != "analog_unverified" || !strings.Contains(res.Message, "фармацевт") || strings.Contains(res.Message, "✅") {
+		t.Errorf("результат: %+v", res)
+	}
+}
+
+// Пролонгированная форма при обычном препарате в рецепте — всегда «форма отличается».
+func TestCheckExtendedReleaseIsFormDiff(t *testing.T) {
+	for _, verdict := range []string{"match", "analog"} {
+		srv := fakeClaude(t, `{"box":{"brand":"Глюкофаж Лонг","substance":"метформин","strength":"750 мг","form":"таблетки"},"verdict":"`+verdict+`","item":"Глюкофаж"}`, nil)
+		res, err := newChecker(srv.URL).Check(context.Background(), pngBytes(t), glucophage)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Verdict != "form_diff" {
+			t.Errorf("%s: ожидали form_diff, получили %+v", verdict, res)
+		}
+	}
+}

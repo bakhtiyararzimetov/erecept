@@ -141,3 +141,36 @@ func TestRateLimitGlobal(t *testing.T) {
 		t.Error("лимит не сбросился через сутки")
 	}
 }
+
+func TestClientIP(t *testing.T) {
+	cases := []struct {
+		name    string
+		headers map[string]string
+		remote  string
+		want    string
+	}{
+		{"без прокси", nil, "10.1.1.1:5555", "10.1.1.1"},
+		{"Cloudflare", map[string]string{"CF-Connecting-IP": "5.5.5.5", "X-Forwarded-For": "6.6.6.6, 7.7.7.7"}, "10.0.0.1:1", "5.5.5.5"},
+		{"True-Client-IP", map[string]string{"True-Client-IP": "8.8.8.8"}, "10.0.0.1:1", "8.8.8.8"},
+		{"XFF — последний адрес", map[string]string{"X-Forwarded-For": "1.2.3.4, 9.9.9.9"}, "10.0.0.1:1", "9.9.9.9"},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest("POST", "/", nil)
+		r.RemoteAddr = c.remote
+		for k, v := range c.headers {
+			r.Header.Set(k, v)
+		}
+		if got := clientIP(r); got != c.want {
+			t.Errorf("%s: %q, нужно %q", c.name, got, c.want)
+		}
+	}
+}
+
+// Выключенная проверка отвечает тем же оформленным куском, а не голым «404 page not found».
+func TestBoxCheckOffReturnsFragment(t *testing.T) {
+	_, h, code := boxEnv(t, nil)
+	w := postPhoto(h, "/r/"+code+"/check", []byte("x"), "10.0.0.7")
+	if w.Code != http.StatusNotFound || !strings.Contains(w.Body.String(), "box-result") {
+		t.Errorf("код %d, тело %s", w.Code, w.Body.String())
+	}
+}

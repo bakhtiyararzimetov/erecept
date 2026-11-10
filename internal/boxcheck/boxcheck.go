@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"unicode"
 
 	"github.com/anthropics/anthropic-sdk-go/v2"
 	"github.com/anthropics/anthropic-sdk-go/v2/option"
@@ -66,6 +67,7 @@ const systemPrompt = `Ты помогаешь пациенту в Казахст
 - combo — в препарате два действующих вещества или больше, а в рецепте такой комбинации нет;
 - not_in_rx — вещества нет в рецепте;
 - unreadable — упаковку не видно или прочитать уверенно нельзя. Если сомневаешься — unreadable.
+Дозу сравнивай в одной таблетке/капсуле: «2 таблетки 500 мг» в рецепте — это 500 мг на единицу.
 3. item — название строки рецепта, с которой сравнивал, точно как в рецепте; для combo, not_in_rx и unreadable — пустая строка.
 Не давай советов о лечении.`
 
@@ -168,8 +170,54 @@ func clean(out modelOutput, items []Item) Result {
 	case "combo", "not_in_rx":
 		res.Verdict = out.Verdict
 	}
+	switch res.Verdict {
+	case "match", "analog", "dose_diff", "form_diff":
+		if !sameSubstance(box, item, res.Verdict) {
+			res.Verdict, res.Item, item = "unreadable", "", Item{}
+			break
+		}
+		if (res.Verdict == "match" || res.Verdict == "analog") && extendedRelease(box.Brand+" "+box.Form) && !extendedRelease(item.Name+" "+item.Dosage) {
+			res.Verdict = "form_diff"
+		}
+		if res.Verdict == "analog" && item.Substance == "" {
+			res.Verdict = "analog_unverified"
+		}
+	}
 	res.Message = message(res.Verdict, box, item)
 	return res
+}
+
+// sameSubstance: вещество на упаковке должно совпасть с веществом рецепта (из справочника).
+// Для «аналога» оно обязательно; если вещество рецепта неизвестно, решает строка analog_unverified.
+func sameSubstance(box Box, item Item, verdict string) bool {
+	b, want := strings.ToLower(box.Substance), strings.ToLower(strings.TrimSpace(item.Substance))
+	if want == "" {
+		return verdict != "analog" || b != ""
+	}
+	if b == "" {
+		return verdict != "analog"
+	}
+	return strings.Contains(b, want)
+}
+
+// releaseMarkers — признаки пролонгированной формы в названии или форме.
+var releaseMarkers = map[string]bool{
+	"лонг": true, "long": true, "ретард": true, "retard": true, "пролонг": true, "депо": true,
+	"xr": true, "sr": true, "mr": true, "cr": true, "er": true, "xl": true, "od": true,
+}
+
+// extendedRelease ищет маркеры как отдельные слова, а слово «пролонгированного» — по корню.
+func extendedRelease(s string) bool {
+	s = strings.ToLower(s)
+	if strings.Contains(s, "пролонгирован") || strings.Contains(s, "модифицированн") || strings.Contains(s, "замедленн") {
+		return true
+	}
+	for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) }) {
+		if releaseMarkers[w] {
+			return true
+		}
+	}
+	return false
 }
 
 // message — готовые тексты; модель сама пациенту ничего не пишет.
@@ -186,6 +234,9 @@ func message(verdict string, box Box, item Item) string {
 	case "form_diff":
 		return fmt.Sprintf("⚠️ Форма отличается от рецепта (%s): на упаковке %s. Такое лекарство принимают по-другому — спросите фармацевта.",
 			item.Name, orDash(box.Form))
+	case "analog_unverified":
+		return fmt.Sprintf("⚠️ Другое название: похоже на аналог (%s, %s), но в рецепте не указано действующее вещество. Покажите фармацевту.",
+			orDash(box.Substance), orDash(box.Strength))
 	case "combo":
 		return "⚠️ Комбинированный препарат: в одной таблетке несколько веществ. Его нет в рецепте. Покажите фармацевту."
 	case "not_in_rx":
