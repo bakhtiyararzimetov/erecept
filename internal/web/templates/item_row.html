@@ -1,18 +1,18 @@
 {{define "item_row"}}<div class="rx-row{{if .Bad}} has-error{{end}}">
-  <div class="rx-f rx-name"><label>Лекарство<input name="items[{{.I}}].name" list="medicines" value="{{.Name}}" placeholder="Начните вводить название" autocomplete="off" required></label></div>
-  <div class="rx-f rx-dosage"><label>Дозировка<input name="items[{{.I}}].dosage" value="{{.Dosage}}" placeholder="1 таблетка 500 мг" required></label></div>
-  <div class="rx-f rx-tpd"><label>Раз в день
+  <div class="rx-f rx-name"><label>{{t "Лекарство"}}<input name="items[{{.I}}].name" list="medicines" value="{{.Name}}" placeholder="{{t "Начните вводить название"}}" autocomplete="off" required></label></div>
+  <div class="rx-f rx-dosage"><label>{{t "Дозировка"}}<input name="items[{{.I}}].dosage" value="{{.Dosage}}" placeholder="{{t "1 таблетка 500 мг"}}" required></label></div>
+  <div class="rx-f rx-tpd"><label>{{t "Раз в день"}}
     <select name="items[{{.I}}].times_per_day" class="tpd">{{$tpd := .TimesPerDay}}{{range .TPDOptions}}
       <option value="{{.}}"{{if eq . $tpd}} selected{{end}}>{{.}}</option>{{end}}
     </select></label></div>
-  <div class="rx-f rx-times"><label>Время приёма<input name="items[{{.I}}].times" class="times" value="{{.Times}}" placeholder="08:00, 20:00" inputmode="numeric"></label></div>
-  <div class="rx-f rx-meal"><label>Еда
+  <div class="rx-f rx-times"><label>{{t "Время приёма"}}<input name="items[{{.I}}].times" class="times" value="{{.Times}}" placeholder="08:00, 20:00" inputmode="numeric"></label></div>
+  <div class="rx-f rx-meal"><label>{{t "Еда"}}
     <select name="items[{{.I}}].meal">
-      <option value="before"{{if eq .Meal "before"}} selected{{end}}>до еды</option>
-      <option value="after"{{if eq .Meal "after"}} selected{{end}}>после еды</option>
-      <option value="during"{{if eq .Meal "during"}} selected{{end}}>во время еды</option>
-      <option value="any"{{if eq .Meal "any"}} selected{{end}}>независимо от еды</option>
+      <option value="before"{{if eq .Meal "before"}} selected{{end}}>{{t "до еды"}}</option>
+      <option value="after"{{if eq .Meal "after"}} selected{{end}}>{{t "после еды"}}</option>
+      <option value="during"{{if eq .Meal "during"}} selected{{end}}>{{t "во время еды"}}</option>
+      <option value="any"{{if eq .Meal "any"}} selected{{end}}>{{t "независимо от еды"}}</option>
     </select></label></div>
-  <div class="rx-f rx-days"><label>Дней<input name="items[{{.I}}].days" type="number" min="1" max="365" value="{{.Days}}" inputmode="numeric" required></label></div>
-  <div class="rx-f rx-del"><button type="button" class="btn btn-secondary row-delete" onclick="this.closest('.rx-row').remove()">Удалить</button></div>
+  <div class="rx-f rx-days"><label>{{t "Дней"}}<input name="items[{{.I}}].days" type="number" min="1" max="365" value="{{.Days}}" inputmode="numeric" required></label></div>
+  <div class="rx-f rx-del"><button type="button" class="btn btn-secondary row-delete" onclick="this.closest('.rx-row').remove()">{{t "Удалить"}}</button></div>
 </div>{{end}}

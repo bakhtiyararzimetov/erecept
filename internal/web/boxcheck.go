@@ -30,39 +30,39 @@ const maxPhotoBytes = 6 << 20
 func (w *Web) boxCheck(rw http.ResponseWriter, r *http.Request) {
 	noIndex(rw)
 	if w.BoxCheck == nil {
-		w.boxError(rw, http.StatusNotFound, "Проверка упаковки сейчас недоступна.")
+		w.boxError(rw, r, http.StatusNotFound, "Проверка упаковки сейчас недоступна.")
 		return
 	}
 	p, err := w.loadPrescriptionByCode(r.Context(), chi.URLParam(r, "code"))
 	if errors.Is(err, pgx.ErrNoRows) {
-		w.boxError(rw, http.StatusNotFound, "Рецепт не найден.")
+		w.boxError(rw, r, http.StatusNotFound, "Рецепт не найден.")
 		return
 	}
 	if err != nil {
 		log.Printf("проверка упаковки: %v", err)
-		w.boxError(rw, http.StatusInternalServerError, "Не удалось открыть рецепт, попробуйте ещё раз.")
+		w.boxError(rw, r, http.StatusInternalServerError, "Не удалось открыть рецепт, попробуйте ещё раз.")
 		return
 	}
 	if !w.boxLimit.allow(clientIP(r), time.Now()) {
-		w.boxError(rw, http.StatusTooManyRequests, "Слишком много проверок. Попробуйте позже.")
+		w.boxError(rw, r, http.StatusTooManyRequests, "Слишком много проверок. Попробуйте позже.")
 		return
 	}
 	r.Body = http.MaxBytesReader(rw, r.Body, maxPhotoBytes)
 	f, _, err := r.FormFile("photo")
 	if err != nil {
-		w.boxError(rw, http.StatusBadRequest, "Сфотографируйте упаковку и отправьте фото ещё раз.")
+		w.boxError(rw, r, http.StatusBadRequest, "Сфотографируйте упаковку и отправьте фото ещё раз.")
 		return
 	}
 	img, err := io.ReadAll(f)
 	f.Close()
 	if err != nil || len(img) == 0 {
-		w.boxError(rw, http.StatusBadRequest, "Сфотографируйте упаковку и отправьте фото ещё раз.")
+		w.boxError(rw, r, http.StatusBadRequest, "Сфотографируйте упаковку и отправьте фото ещё раз.")
 		return
 	}
 	items, err := w.boxItems(r.Context(), p.Items)
 	if err != nil {
 		log.Printf("проверка упаковки: %v", err)
-		w.boxError(rw, http.StatusInternalServerError, "Не удалось открыть рецепт, попробуйте ещё раз.")
+		w.boxError(rw, r, http.StatusInternalServerError, "Не удалось открыть рецепт, попробуйте ещё раз.")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
@@ -70,18 +70,18 @@ func (w *Web) boxCheck(rw http.ResponseWriter, r *http.Request) {
 	res, err := w.BoxCheck.Check(ctx, img, items)
 	switch {
 	case errors.Is(err, boxcheck.ErrImage):
-		w.boxError(rw, http.StatusBadRequest, "Это не похоже на фото. Сфотографируйте упаковку ещё раз.")
+		w.boxError(rw, r, http.StatusBadRequest, "Это не похоже на фото. Сфотографируйте упаковку ещё раз.")
 		return
 	case err != nil:
 		log.Printf("проверка упаковки: %v", err)
-		w.boxError(rw, http.StatusBadGateway, "ИИ сейчас не ответил. Попробуйте ещё раз через минуту.")
+		w.boxError(rw, r, http.StatusBadGateway, "ИИ сейчас не ответил. Попробуйте ещё раз через минуту.")
 		return
 	}
 	kind := "warn"
 	if res.Verdict == "match" || res.Verdict == "analog" {
 		kind = "ok"
 	}
-	w.renderFragment(rw, http.StatusOK, "box_result", map[string]any{"Res": res, "Kind": kind, "Footer": boxcheck.Footer})
+	w.renderFragment(rw, r, http.StatusOK, "box_result", map[string]any{"Res": res, "Kind": kind, "Footer": boxcheck.Footer})
 }
 
 // boxItems — строки рецепта с действующим веществом из справочника (если лекарство оттуда).
@@ -122,15 +122,15 @@ func (w *Web) boxItems(ctx context.Context, rx []models.PrescriptionItem) ([]box
 	return out, nil
 }
 
-func (w *Web) boxError(rw http.ResponseWriter, status int, text string) {
-	w.renderFragment(rw, status, "box_result", map[string]any{"Error": text, "Kind": "warn"})
+func (w *Web) boxError(rw http.ResponseWriter, r *http.Request, status int, text string) {
+	w.renderFragment(rw, r, status, "box_result", map[string]any{"Error": tr(r, text), "Kind": "warn"})
 }
 
 // renderFragment выводит кусок страницы (ответ для fetch) с нужным кодом.
-func (w *Web) renderFragment(rw http.ResponseWriter, status int, page string, data map[string]any) {
+func (w *Web) renderFragment(rw http.ResponseWriter, r *http.Request, status int, page string, data map[string]any) {
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	rw.WriteHeader(status)
-	if err := w.pages[page].ExecuteTemplate(rw, page+".html", data); err != nil {
+	if err := w.mustTpl(r, page).ExecuteTemplate(rw, page+".html", data); err != nil {
 		log.Printf("шаблон %s: %v", page, err)
 	}
 }

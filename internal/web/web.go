@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"erecept/internal/i18n"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -40,7 +42,7 @@ func New(pool *pgxpool.Pool) *Web {
 		if name == "layout" || name == "item_row" || name == "pharmacy_row" {
 			continue
 		}
-		t, err := template.New(name).Funcs(template.FuncMap{"money": money}).ParseFS(assets, "templates/layout.html", "templates/item_row.html", "templates/pharmacy_row.html", f)
+		t, err := template.New(name).Funcs(template.FuncMap{"money": money, "t": i18n.RU.T, "tf": i18n.RU.Tf, "lang": func() string { return "ru" }}).ParseFS(assets, "templates/layout.html", "templates/item_row.html", "templates/pharmacy_row.html", f)
 		if err != nil {
 			log.Fatalf("шаблон %s: %v", f, err)
 		}
@@ -51,6 +53,7 @@ func New(pool *pgxpool.Pool) *Web {
 
 func (w *Web) Routes() http.Handler {
 	r := chi.NewRouter()
+	r.Use(i18n.Middleware)
 	r.Use(w.loadUser)
 
 	static, _ := fs.Sub(assets, "static")
@@ -100,10 +103,10 @@ func (w *Web) render(rw http.ResponseWriter, r *http.Request, page string, data 
 
 // renderStatus — как render, но с нужным кодом ответа (например, 422 для формы с ошибками).
 func (w *Web) renderStatus(rw http.ResponseWriter, r *http.Request, status int, page string, data map[string]any) {
-	t, ok := w.pages[page]
+	t, ok := w.tpl(r, page)
 	if !ok {
 		log.Printf("нет шаблона %q", page)
-		http.Error(rw, "Страница не найдена", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Страница не найдена"), http.StatusInternalServerError)
 		return
 	}
 	if data == nil {
@@ -113,7 +116,7 @@ func (w *Web) renderStatus(rw http.ResponseWriter, r *http.Request, status int, 
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, "layout", data); err != nil {
 		log.Printf("шаблон %s: %v", page, err)
-		http.Error(rw, "Не удалось показать страницу, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось показать страницу, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -123,19 +126,47 @@ func (w *Web) renderStatus(rw http.ResponseWriter, r *http.Request, status int, 
 
 // renderPlain выводит страницу без шапки (печать, публичная страница):
 // шаблон страницы сам определяет полный HTML и называется как файл.
-func (w *Web) renderPlain(rw http.ResponseWriter, page string, data map[string]any) {
-	t, ok := w.pages[page]
+func (w *Web) renderPlain(rw http.ResponseWriter, r *http.Request, page string, data map[string]any) {
+	t, ok := w.tpl(r, page)
 	if !ok {
 		log.Printf("нет шаблона %q", page)
-		http.Error(rw, "Страница не найдена", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Страница не найдена"), http.StatusInternalServerError)
 		return
 	}
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, page+".html", data); err != nil {
 		log.Printf("шаблон %s: %v", page, err)
-		http.Error(rw, "Не удалось показать страницу, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось показать страницу, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	rw.Write(buf.Bytes())
 }
+
+// tpl — шаблон страницы с функциями перевода на язык запроса.
+// Разобранный шаблон не исполняется сам, исполняется его копия.
+func (w *Web) tpl(r *http.Request, page string) (*template.Template, bool) {
+	base, ok := w.pages[page]
+	if !ok {
+		return nil, false
+	}
+	t, err := base.Clone()
+	if err != nil {
+		log.Printf("шаблон %s: %v", page, err)
+		return nil, false
+	}
+	l := i18n.FromContext(r.Context())
+	return t.Funcs(template.FuncMap{"t": l.T, "tf": l.Tf, "lang": func() string { return string(l) }}), true
+}
+
+// mustTpl — tpl для известных шаблонов (кусков страниц).
+func (w *Web) mustTpl(r *http.Request, page string) *template.Template {
+	t, ok := w.tpl(r, page)
+	if !ok {
+		panic("нет шаблона " + page)
+	}
+	return t
+}
+
+// tr переводит строку интерфейса на язык запроса.
+func tr(r *http.Request, ru string) string { return i18n.T(i18n.FromContext(r.Context()), ru) }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base32"
+	"erecept/internal/i18n"
 	"errors"
 	"fmt"
 	"log"
@@ -92,7 +93,13 @@ type RxView struct {
 	Link, QRPath       string
 }
 
-func timesWord(n int) string {
+func timesWord(l i18n.Lang, n int) string {
+	if l == i18n.EN {
+		if n == 1 {
+			return "time"
+		}
+		return "times"
+	}
 	if n >= 2 && n <= 4 {
 		return "раза"
 	}
@@ -100,20 +107,21 @@ func timesWord(n int) string {
 }
 
 // howText: «2 раза в день, 08:00 и 20:00, после еды».
-func howText(it models.PrescriptionItem) string {
+func howText(l i18n.Lang, it models.PrescriptionItem) string {
 	var t string
 	switch n := len(it.Times); {
 	case n == 0:
 	case n == 1:
 		t = it.Times[0]
 	default:
-		t = strings.Join(it.Times[:n-1], ", ") + " и " + it.Times[n-1]
+		t = strings.Join(it.Times[:n-1], ", ") + i18n.T(l, " и ") + it.Times[n-1]
 	}
-	return fmt.Sprintf("%d %s в день, %s, %s", it.TimesPerDay, timesWord(it.TimesPerDay), t, models.MealLabel(it.Meal))
+	return i18n.Tf(l, "%d %s в день, %s, %s", it.TimesPerDay, timesWord(l, it.TimesPerDay), t, i18n.T(l, models.MealLabel(it.Meal)))
 }
 
 func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription) (RxView, error) {
 	v := RxView{Prescription: p}
+	l := i18n.FromContext(r.Context())
 	err := w.DB.QueryRow(ctx, `SELECT full_name, clinic FROM doctors WHERE id = $1`, p.DoctorID).Scan(&v.DoctorName, &v.Clinic)
 	if err != nil {
 		return v, err
@@ -122,14 +130,14 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	v.Date = p.CreatedAt.In(time.Local).Format("02.01.2006")
 	expl := w.explanations(ctx, p.Items)
 	for _, it := range p.Items {
-		iv := ItemView{Medicine: it.MedicineName, Dosage: it.Dosage, How: howText(it), Days: it.Days}
+		iv := ItemView{Medicine: it.MedicineName, Dosage: it.Dosage, How: howText(l, it), Days: it.Days}
 		if it.MedicineID != nil {
 			iv.Explanation = expl[*it.MedicineID]
 		}
 		v.Items = append(v.Items, iv)
 	}
 	if p.WaterEveryHours > 0 {
-		v.WaterText = fmt.Sprintf("Пейте воду: каждые %d ч, с %s до %s", p.WaterEveryHours, p.WaterFrom, p.WaterTo)
+		v.WaterText = i18n.Tf(l, "Пейте воду: каждые %d ч, с %s до %s", p.WaterEveryHours, p.WaterFrom, p.WaterTo)
 	}
 	v.Link = publicURL(r) + "/r/" + p.Code
 	v.QRPath = "/qr/" + p.Code + ".png"
@@ -174,7 +182,7 @@ func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem)
 }
 
 func (w *Web) notFound(rw http.ResponseWriter, r *http.Request) {
-	w.renderStatus(rw, r, http.StatusNotFound, "placeholder", map[string]any{"Title": "Рецепт не найден", "Text": "Такого рецепта нет или он вам недоступен."})
+	w.renderStatus(rw, r, http.StatusNotFound, "placeholder", map[string]any{"Title": tr(r, "Рецепт не найден"), "Text": tr(r, "Такого рецепта нет или он вам недоступен.")})
 }
 
 // publicPage — читаемая страница рецепта без входа: то, что открывает любой сканер QR.
@@ -187,16 +195,16 @@ func (w *Web) publicPage(rw http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Printf("публичный рецепт: %v", err)
-		http.Error(rw, "Не удалось показать рецепт, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось показать рецепт, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	v, err := w.rxView(r.Context(), r, p)
 	if err != nil {
 		log.Printf("публичный рецепт: %v", err)
-		http.Error(rw, "Не удалось показать рецепт, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось показать рецепт, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
-	w.renderPlain(rw, "rx_public", map[string]any{"Rx": v, "CanCheck": w.BoxCheck != nil})
+	w.renderPlain(rw, r, "rx_public", map[string]any{"Rx": v, "CanCheck": w.BoxCheck != nil})
 }
 
 // qrPNG — PNG 512px со ссылкой на публичную страницу рецепта.
@@ -210,7 +218,7 @@ func (w *Web) qrPNG(rw http.ResponseWriter, r *http.Request) {
 	var exists bool
 	if err := w.DB.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM prescriptions WHERE code = $1)`, code).Scan(&exists); err != nil {
 		log.Printf("QR: %v", err)
-		http.Error(rw, "Не удалось создать QR-код", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось создать QR-код"), http.StatusInternalServerError)
 		return
 	}
 	if !exists {
@@ -220,7 +228,7 @@ func (w *Web) qrPNG(rw http.ResponseWriter, r *http.Request) {
 	png, err := qrcode.Encode(publicURL(r)+"/r/"+code, qrcode.Medium, 512)
 	if err != nil {
 		log.Printf("QR: %v", err)
-		http.Error(rw, "Не удалось создать QR-код", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось создать QR-код"), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "image/png")

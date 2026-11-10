@@ -1,28 +1,28 @@
-{{define "title"}}Вход{{end}}
+{{define "title"}}{{t "Вход"}}{{end}}
 {{define "content"}}
 <div class="login-wrap">
   <div class="card login-card">
-    <h1>Вход для врачей и аптек</h1>
+    <h1>{{t "Вход для врачей и аптек"}}</h1>
     {{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
     <form method="post" action="/login">
       <div class="field">
-        <label for="login">Логин</label>
+        <label for="login">{{t "Логин"}}</label>
         <input id="login" name="login" type="text" value="{{.Login}}" autocomplete="username" autocapitalize="none" required>
       </div>
       <div class="field">
-        <label for="password">Пароль</label>
+        <label for="password">{{t "Пароль"}}</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required>
       </div>
-      <button class="btn btn-primary btn-block" type="submit">Войти</button>
+      <button class="btn btn-primary btn-block" type="submit">{{t "Войти"}}</button>
     </form>
   </div>
   <div class="card login-hint">
-    <h2>Демо-доступ</h2>
-    <p class="muted">Для показа используйте тестовые учётные записи.</p>
-    <p><strong>Врач:</strong> <code>doctor1</code> / <code>doctor123</code><br>
-       <span class="muted">также doctor2 / doctor123</span></p>
-    <p><strong>Аптека:</strong> <code>apteka1</code> / <code>apteka123</code><br>
-       <span class="muted">аптеки apteka1 … apteka8, пароль тот же</span></p>
+    <h2>{{t "Демо-доступ"}}</h2>
+    <p class="muted">{{t "Для показа используйте тестовые учётные записи."}}</p>
+    <p><strong>{{t "Врач:"}}</strong> <code>doctor1</code> / <code>doctor123</code><br>
+       <span class="muted">{{t "также doctor2 / doctor123"}}</span></p>
+    <p><strong>{{t "Аптека:"}}</strong> <code>apteka1</code> / <code>apteka123</code><br>
+       <span class="muted">{{t "аптеки apteka1 … apteka8, пароль тот же"}}</span></p>
   </div>
 </div>
 {{end}}

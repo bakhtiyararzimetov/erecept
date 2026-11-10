@@ -224,7 +224,7 @@ func (w *Web) pharmacyUpdate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var buf strings.Builder
-	if err := w.pages["pharmacy"].ExecuteTemplate(&buf, "pharmacy_row", it); err != nil {
+	if err := w.mustTpl(r, "pharmacy").ExecuteTemplate(&buf, "pharmacy_row", it); err != nil {
 		log.Printf("строка позиции: %v", err)
 		http.Error(rw, "Не удалось показать строку", http.StatusInternalServerError)
 		return

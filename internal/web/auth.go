@@ -116,14 +116,14 @@ func (w *Web) loginSubmit(rw http.ResponseWriter, r *http.Request) {
 
 	role, id, ok := w.checkCredentials(r.Context(), login, password)
 	if !ok {
-		w.render(rw, r, "login", map[string]any{"Error": "Неверный логин или пароль", "Login": login})
+		w.render(rw, r, "login", map[string]any{"Error": tr(r, "Неверный логин или пароль"), "Login": login})
 		return
 	}
 
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		log.Printf("генерация токена: %v", err)
-		http.Error(rw, "Не удалось войти, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось войти, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	token := hex.EncodeToString(b)
@@ -132,7 +132,7 @@ func (w *Web) loginSubmit(rw http.ResponseWriter, r *http.Request) {
 		token, role, id, expires)
 	if err != nil {
 		log.Printf("создание сессии: %v", err)
-		http.Error(rw, "Не удалось войти, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось войти, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	http.SetCookie(rw, &http.Cookie{

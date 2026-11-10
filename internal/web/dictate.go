@@ -26,7 +26,7 @@ func (w *Web) dictate(rw http.ResponseWriter, r *http.Request) {
 		f.Items[i].Bad = false
 	}
 	if w.Dictate == nil {
-		w.renderForm(rw, r, http.StatusOK, f, []string{"Голосовое заполнение не настроено. Заполните рецепт вручную."})
+		w.renderForm(rw, r, http.StatusOK, f, []string{tr(r, "Голосовое заполнение не настроено. Заполните рецепт вручную.")})
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
@@ -34,14 +34,14 @@ func (w *Web) dictate(rw http.ResponseWriter, r *http.Request) {
 	d, err := w.Dictate.Parse(ctx, f.Dictation, w.medicineNames(ctx))
 	switch {
 	case errors.Is(err, dictate.ErrEmpty):
-		w.renderForm(rw, r, http.StatusOK, f, []string{"Сначала надиктуйте или впишите текст рецепта."})
+		w.renderForm(rw, r, http.StatusOK, f, []string{tr(r, "Сначала надиктуйте или впишите текст рецепта.")})
 		return
 	case err != nil:
 		log.Printf("диктовка: %v", err)
-		w.renderForm(rw, r, http.StatusOK, f, []string{"ИИ не смог разобрать диктовку. Попробуйте ещё раз или заполните вручную."})
+		w.renderForm(rw, r, http.StatusOK, f, []string{tr(r, "ИИ не смог разобрать диктовку. Попробуйте ещё раз или заполните вручную.")})
 		return
 	case d.PatientName == "" && len(d.Items) == 0:
-		w.renderForm(rw, r, http.StatusOK, f, []string{"В диктовке не нашлось ни пациента, ни лекарств. Скажите, например: «Иванова Галина, амлодипин 5 мг утром после еды, 30 дней»."})
+		w.renderForm(rw, r, http.StatusOK, f, []string{tr(r, "В диктовке не нашлось ни пациента, ни лекарств. Скажите, например: «Иванова Галина, амлодипин 5 мг утром после еды, 30 дней».")})
 		return
 	}
 	mergeDraft(&f, d)

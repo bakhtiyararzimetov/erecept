@@ -1,42 +1,42 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Рецепт — еРецепт</title>
+<title>{{t "Рецепт"}} — {{t "еРецепт"}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&subset=cyrillic&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="topbar"><div class="topbar-inner"><a class="logo" href="/"><span class="logo-mark"></span><span>еРецепт</span></a></div></header>
+<header class="topbar"><div class="topbar-inner"><a class="logo" href="/"><span class="logo-mark"></span><span>{{t "еРецепт"}}</span></a><span class="lang-switch">{{if eq lang "en"}}<a href="?lang=ru">RU</a> · <b>EN</b>{{else}}<b>RU</b> · <a href="?lang=en">EN</a>{{end}}</span></div></header>
 <main class="container" style="max-width:720px">
 {{with .Rx}}
-<h1>Рецепт</h1>
+<h1>{{t "Рецепт"}}</h1>
 <div class="card">
-  <p><strong>Врач:</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
-     <strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
-     <strong>Дата:</strong> {{.Date}}</p>
+  <p><strong>{{t "Врач:"}}</strong> {{.DoctorName}}{{if .Clinic}}, {{.Clinic}}{{end}}<br>
+     <strong>{{t "Пациент:"}}</strong> {{.PatientName}}, {{t "дата рождения"}} {{.Birth}}<br>
+     <strong>{{t "Дата:"}}</strong> {{.Date}}</p>
 </div>
 {{range .Items}}
 <div class="card">
   <h2>{{.Medicine}}</h2>
   <p>{{.Dosage}}</p>
   <p>{{.How}}</p>
-  <p class="muted">Курс: {{.Days}} дн.</p>
+  <p class="muted">{{tf "Курс: %d дн." .Days}}</p>
   {{with .Explanation}}
   <details class="explain">
-    <summary>Коротко о лекарстве (ИИ)</summary>
+    <summary>{{t "Коротко о лекарстве (ИИ)"}}</summary>
     <dl>
-      <dt>Зачем</dt><dd>{{.Purpose}}</dd>
-      <dt>Как принимать</dt><dd>{{.HowToTake}}</dd>
-      {{if .DoNotTakeIf}}<dt>Нельзя принимать, если</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
-      <dt>Если пропустили приём</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
-      <dt>Если бросить раньше</dt><dd>{{.IfStoppedEarly}}</dd>
-      {{if .UrgentSigns}}<dt>Срочно к врачу, если</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+      <dt>{{t "Зачем"}}</dt><dd>{{.Purpose}}</dd>
+      <dt>{{t "Как принимать"}}</dt><dd>{{.HowToTake}}</dd>
+      {{if .DoNotTakeIf}}<dt>{{t "Нельзя принимать, если"}}</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+      <dt>{{t "Если пропустили приём"}}</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
+      <dt>{{t "Если бросить раньше"}}</dt><dd>{{.IfStoppedEarly}}</dd>
+      {{if .UrgentSigns}}<dt>{{t "Срочно к врачу, если"}}</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
     </dl>
-    <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС{{with .Source.RegNumber}}, рег. № {{.}}{{end}}. Не заменяет совет врача.</p>
+    <p class="muted explain-disclaimer">{{t "Сгенерировано ИИ по инструкции НЦЭЛС"}}{{with .Source.RegNumber}}{{t ", рег. №"}} {{.}}{{end}}. {{t "Не заменяет совет врача."}}</p>
   </details>
   {{end}}
 </div>
@@ -44,14 +44,14 @@
 {{if or .WaterText .Comment}}
 <div class="card">
   {{if .WaterText}}<p>{{.WaterText}}</p>{{end}}
-  {{if .Comment}}<p><strong>Комментарий врача:</strong> {{.Comment}}</p>{{end}}
+  {{if .Comment}}<p><strong>{{t "Комментарий врача:"}}</strong> {{.Comment}}</p>{{end}}
 </div>
 {{end}}
 {{if $.CanCheck}}
 <div class="card">
-  <h2>Купили лекарство? Проверьте упаковку</h2>
-  <p class="muted">Сфотографируйте лицевую сторону коробки — ИИ сверит название, вещество и дозу с рецептом.</p>
-  <label class="btn btn-primary box-btn">📷 Проверить упаковку<input type="file" id="box-photo" accept="image/*" capture="environment" hidden></label>
+  <h2>{{t "Купили лекарство? Проверьте упаковку"}}</h2>
+  <p class="muted">{{t "Сфотографируйте лицевую сторону коробки — ИИ сверит название, вещество и дозу с рецептом."}}</p>
+  <label class="btn btn-primary box-btn">{{t "📷 Проверить упаковку"}}<input type="file" id="box-photo" accept="image/*" capture="environment" hidden></label>
   <div id="box-result" aria-live="polite"></div>
 </div>
 <script>
@@ -79,7 +79,7 @@
     var file = input.files && input.files[0];
     if (!file) return;
     input.disabled = true; // одна проверка за раз — не тратим лимит повторными нажатиями
-    show('<div class="card box-result"><p>ИИ читает упаковку…</p></div>');
+    show('<div class="card box-result"><p>{{t "ИИ читает упаковку…"}}</p></div>');
     shrink(file).then(function (blob) {
       var fd = new FormData();
       fd.append("photo", blob, "box.jpg");
@@ -91,15 +91,15 @@
         return t;
       });
     }).then(show)
-      .catch(function () { show('<div class="card box-result warn"><p>Не получилось проверить. Попробуйте ещё раз.</p></div>'); })
+      .catch(function () { show('<div class="card box-result warn"><p>{{t "Не получилось проверить. Попробуйте ещё раз."}}</p></div>'); })
       .finally(function () { input.value = ""; input.disabled = false; });
   });
 })();
 </script>
 {{end}}
 <div class="card">
-  <p>Чтобы получать напоминания о приёме лекарств, откройте приложение еРецепт и отсканируйте QR-код с рецепта.</p>
-  <p class="muted">Напоминания работают в приложении на телефоне.</p>
+  <p>{{t "Чтобы получать напоминания о приёме лекарств, откройте приложение еРецепт и отсканируйте QR-код с рецепта."}}</p>
+  <p class="muted">{{t "Напоминания работают в приложении на телефоне."}}</p>
 </div>
 {{end}}
 </main>

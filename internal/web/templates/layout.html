@@ -1,9 +1,9 @@
 {{define "layout"}}<!DOCTYPE html>
-<html lang="ru">
+<html lang="{{lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{template "title" .}} — еРецепт</title>
+<title>{{template "title" .}} — {{t "еРецепт"}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&subset=cyrillic&display=swap" rel="stylesheet">
@@ -13,17 +13,18 @@
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="logo" href="/"><span class="logo-mark"></span><span>еРецепт</span></a>
+    <a class="logo" href="/"><span class="logo-mark"></span><span>{{t "еРецепт"}}</span></a>
+    <span class="lang-switch">{{if eq lang "en"}}<a href="?lang=ru">RU</a> · <b>EN</b>{{else}}<b>RU</b> · <a href="?lang=en">EN</a>{{end}}</span>
     {{if .User}}
     <nav class="menu">
       {{if eq .User.Role "doctor"}}
-      <a href="/doctor">Новый рецепт</a>
-      <a href="/doctor/prescriptions">Мои рецепты</a>
+      <a href="/doctor">{{t "Новый рецепт"}}</a>
+      <a href="/doctor/prescriptions">{{t "Мои рецепты"}}</a>
       {{else}}
-      <a href="/pharmacy">Мои лекарства</a>
+      <a href="/pharmacy">{{t "Мои лекарства"}}</a>
       {{end}}
       <span class="menu-user muted">{{.User.Name}}</span>
-      <form method="post" action="/logout"><button class="btn btn-secondary" type="submit">Выйти</button></form>
+      <form method="post" action="/logout"><button class="btn btn-secondary" type="submit">{{t "Выйти"}}</button></form>
     </nav>
     {{end}}
   </div>

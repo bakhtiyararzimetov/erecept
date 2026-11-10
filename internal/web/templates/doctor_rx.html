@@ -1,62 +1,62 @@
-{{define "title"}}Рецепт{{end}}
+{{define "title"}}{{t "Рецепт"}}{{end}}
 {{define "content"}}
 {{with .Rx}}
-<h1>Рецепт: {{.PatientName}}</h1>
+<h1>{{t "Рецепт:"}} {{.PatientName}}</h1>
 <div class="grid-2">
   <div>
     <div class="card">
-      <p><strong>Пациент:</strong> {{.PatientName}}, дата рождения {{.Birth}}<br>
-         <strong>Дата:</strong> {{.Date}}</p>
+      <p><strong>{{t "Пациент:"}}</strong> {{.PatientName}}, {{t "дата рождения"}} {{.Birth}}<br>
+         <strong>{{t "Дата:"}}</strong> {{.Date}}</p>
       <table class="table">
-        <thead><tr><th>Лекарство</th><th>Дозировка</th><th>Как принимать</th><th>Дней</th></tr></thead>
+        <thead><tr><th>{{t "Лекарство"}}</th><th>{{t "Дозировка"}}</th><th>{{t "Как принимать"}}</th><th>{{t "Дней"}}</th></tr></thead>
         <tbody>{{range .Items}}
-          <tr><td data-label="Лекарство">{{.Medicine}}</td><td data-label="Дозировка">{{.Dosage}}</td><td data-label="Как принимать">{{.How}}</td><td data-label="Дней">{{.Days}}</td></tr>
+          <tr><td data-label="{{t "Лекарство"}}">{{.Medicine}}</td><td data-label="{{t "Дозировка"}}">{{.Dosage}}</td><td data-label="{{t "Как принимать"}}">{{.How}}</td><td data-label="{{t "Дней"}}">{{.Days}}</td></tr>
           {{with .Explanation}}<tr class="explain-row"><td class="explain-cell" colspan="4">
             <details class="explain">
-              <summary>Коротко о лекарстве (ИИ)</summary>
+              <summary>{{t "Коротко о лекарстве (ИИ)"}}</summary>
               <dl>
-                <dt>Зачем</dt><dd>{{.Purpose}}</dd>
-                <dt>Как принимать</dt><dd>{{.HowToTake}}</dd>
-                {{if .DoNotTakeIf}}<dt>Нельзя принимать, если</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
-                <dt>Если пропустили приём</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
-                <dt>Если бросить раньше</dt><dd>{{.IfStoppedEarly}}</dd>
-                {{if .UrgentSigns}}<dt>Срочно к врачу, если</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+                <dt>{{t "Зачем"}}</dt><dd>{{.Purpose}}</dd>
+                <dt>{{t "Как принимать"}}</dt><dd>{{.HowToTake}}</dd>
+                {{if .DoNotTakeIf}}<dt>{{t "Нельзя принимать, если"}}</dt><dd><ul>{{range .DoNotTakeIf}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+                <dt>{{t "Если пропустили приём"}}</dt><dd>{{if .HighRisk}}<p class="explain-note">{{.MissedDose}}</p>{{else}}{{.MissedDose}}{{end}}</dd>
+                <dt>{{t "Если бросить раньше"}}</dt><dd>{{.IfStoppedEarly}}</dd>
+                {{if .UrgentSigns}}<dt>{{t "Срочно к врачу, если"}}</dt><dd><ul>{{range .UrgentSigns}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
               </dl>
-              <p class="muted explain-disclaimer">Сгенерировано ИИ по инструкции НЦЭЛС{{with .Source.RegNumber}}, рег. № {{.}}{{end}}. Не заменяет совет врача.</p>
+              <p class="muted explain-disclaimer">{{t "Сгенерировано ИИ по инструкции НЦЭЛС"}}{{with .Source.RegNumber}}{{t ", рег. №"}} {{.}}{{end}}. {{t "Не заменяет совет врача."}}</p>
             </details>
           </td></tr>{{end}}
         {{end}}</tbody>
       </table>
       {{if .WaterText}}<p style="margin-top:12px">{{.WaterText}}</p>{{end}}
-      {{if .Comment}}<p><strong>Комментарий:</strong> {{.Comment}}</p>{{end}}
+      {{if .Comment}}<p><strong>{{t "Комментарий:"}}</strong> {{.Comment}}</p>{{end}}
     </div>
     <div class="card" id="adherence">
-      <h2>Соблюдение лечения</h2>
-      {{if not .StartDate}}<p class="muted">Пациент ещё не отсканировал рецепт</p>
+      <h2>{{t "Соблюдение лечения"}}</h2>
+      {{if not .StartDate}}<p class="muted">{{t "Пациент ещё не отсканировал рецепт"}}</p>
       {{else}}{{with $.Stats}}
       <div class="stats">
-        <div class="stat"><span class="stat-value">{{.Percent}}%</span><span class="stat-label">Выполнено</span></div>
-        <div class="stat"><span class="stat-value">{{.Taken}}</span><span class="stat-label">Отмечено</span></div>
-        <div class="stat"><span class="stat-value">{{.Missed}}</span><span class="stat-label">Пропущено</span></div>
-        <div class="stat"><span class="stat-value">{{.Upcoming}}</span><span class="stat-label">Впереди</span></div>
+        <div class="stat"><span class="stat-value">{{.Percent}}%</span><span class="stat-label">{{t "Выполнено"}}</span></div>
+        <div class="stat"><span class="stat-value">{{.Taken}}</span><span class="stat-label">{{t "Отмечено"}}</span></div>
+        <div class="stat"><span class="stat-value">{{.Missed}}</span><span class="stat-label">{{t "Пропущено"}}</span></div>
+        <div class="stat"><span class="stat-value">{{.Upcoming}}</span><span class="stat-label">{{t "Впереди"}}</span></div>
       </div>
       <table class="table" style="margin-top:16px">
-        <thead><tr><th>Лекарство</th><th>Отмечено</th><th>Пропущено</th><th>Приёмов всего</th></tr></thead>
+        <thead><tr><th>{{t "Лекарство"}}</th><th>{{t "Отмечено"}}</th><th>{{t "Пропущено"}}</th><th>{{t "Приёмов всего"}}</th></tr></thead>
         <tbody>{{range .Items}}
-          <tr><td data-label="Лекарство">{{.MedicineName}}</td><td data-label="Отмечено">{{.Taken}}</td><td data-label="Пропущено">{{.Missed}}</td><td data-label="Приёмов всего">{{.Total}}</td></tr>
+          <tr><td data-label="{{t "Лекарство"}}">{{.MedicineName}}</td><td data-label="{{t "Отмечено"}}">{{.Taken}}</td><td data-label="{{t "Пропущено"}}">{{.Missed}}</td><td data-label="{{t "Приёмов всего"}}">{{.Total}}</td></tr>
         {{end}}</tbody>
       </table>
       {{end}}{{end}}
     </div>
   </div>
   <aside class="card">
-    <h2>QR-код рецепта</h2>
-    <p style="text-align:center"><img src="{{.QRPath}}" alt="QR-код рецепта" width="240" height="240" style="max-width:100%;height:auto"></p>
-    <p class="muted">Код: <code>{{.Code}}</code></p>
+    <h2>{{t "QR-код рецепта"}}</h2>
+    <p style="text-align:center"><img src="{{.QRPath}}" alt="{{t "QR-код рецепта"}}" width="240" height="240" style="max-width:100%;height:auto"></p>
+    <p class="muted">{{t "Код:"}} <code>{{.Code}}</code></p>
     <p class="muted"><a href="{{.Link}}">{{.Link}}</a></p>
     <div class="row">
-      <a class="btn btn-primary" href="/doctor/prescriptions/{{.ID}}/print" target="_blank" rel="noopener">Распечатать рецепт</a>
-      <a class="btn btn-secondary" href="/doctor">Новый рецепт</a>
+      <a class="btn btn-primary" href="/doctor/prescriptions/{{.ID}}/print" target="_blank" rel="noopener">{{t "Распечатать рецепт"}}</a>
+      <a class="btn btn-secondary" href="/doctor">{{t "Новый рецепт"}}</a>
     </div>
   </aside>
 </div>

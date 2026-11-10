@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"erecept/internal/i18n"
 	"errors"
 	"fmt"
 	"log"
@@ -112,11 +113,11 @@ func (w *Web) itemRow(rw http.ResponseWriter, r *http.Request) {
 	if err != nil || i < 0 || i > maxItemIndex {
 		i = 0
 	}
-	t := w.pages["doctor_new"]
+	t, _ := w.tpl(r, "doctor_new")
 	var buf strings.Builder
 	if err := t.ExecuteTemplate(&buf, "item_row", newItemForm(i)); err != nil {
 		log.Printf("строка лекарства: %v", err)
-		http.Error(rw, "Не удалось добавить строку", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось добавить строку"), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -139,30 +140,31 @@ func parseForm(r *http.Request) (RxForm, []string) {
 	}
 	f.WaterEvery, _ = strconv.Atoi(r.PostFormValue("water_every_hours"))
 	var errs []string
+	l := i18n.FromContext(r.Context())
 	bad := func(field, msg string) {
 		f.BadFields[field] = true
 		errs = append(errs, msg)
 	}
 
 	if f.PatientName == "" {
-		bad("patient_name", "Укажите ФИО пациента")
+		bad("patient_name", l.T("Укажите ФИО пациента"))
 	}
 	if b, ok := parseBirth(f.PatientBirth); !ok {
-		bad("patient_birth", "Дата рождения: введите в формате ДД.ММ.ГГГГ, например 14.03.1956")
+		bad("patient_birth", l.T("Дата рождения: введите в формате ДД.ММ.ГГГГ, например 14.03.1956"))
 	} else if b.After(time.Now()) {
-		bad("patient_birth", "Дата рождения не может быть в будущем")
+		bad("patient_birth", l.T("Дата рождения не может быть в будущем"))
 	} else if b.Year() < 1900 {
-		bad("patient_birth", "Проверьте дату рождения: год должен быть не раньше 1900")
+		bad("patient_birth", l.T("Проверьте дату рождения: год должен быть не раньше 1900"))
 	}
 	if f.WaterEvery < 0 || f.WaterEvery > 4 {
-		bad("water_every_hours", "Напоминание о воде: выберите значение из списка")
+		bad("water_every_hours", l.T("Напоминание о воде: выберите значение из списка"))
 		f.WaterEvery = 0
 	}
 	if f.WaterEvery > 0 {
 		if !models.ValidTime(f.WaterFrom) || !models.ValidTime(f.WaterTo) {
-			bad("water_from", "Напоминание о воде: время нужно в формате ЧЧ:ММ")
+			bad("water_from", l.T("Напоминание о воде: время нужно в формате ЧЧ:ММ"))
 		} else if f.WaterFrom >= f.WaterTo {
-			bad("water_from", "Напоминание о воде: «с» должно быть раньше, чем «до»")
+			bad("water_from", l.T("Напоминание о воде: «с» должно быть раньше, чем «до»"))
 		}
 	}
 
@@ -178,7 +180,7 @@ func parseForm(r *http.Request) (RxForm, []string) {
 	}
 	sort.Ints(idx)
 	if len(idx) > maxItems {
-		bad("items", fmt.Sprintf("Не больше %d лекарств в одном рецепте", maxItems))
+		bad("items", l.Tf("Не больше %d лекарств в одном рецепте", maxItems))
 		idx = idx[:maxItems]
 	}
 	for pos, i := range idx {
@@ -187,42 +189,42 @@ func parseForm(r *http.Request) (RxForm, []string) {
 		}
 		it := ItemForm{I: i, Name: get("name"), Dosage: get("dosage"), Days: get("days"), Meal: get("meal"), Times: get("times")}
 		it.TimesPerDay, _ = strconv.Atoi(get("times_per_day"))
-		pre := fmt.Sprintf("Лекарство %d: ", pos+1)
+		pre := l.Tf("Лекарство %d: ", pos+1)
 		rowBad := func(msg string) {
 			it.Bad = true
 			errs = append(errs, pre+msg)
 		}
 		if it.Name == "" {
-			rowBad("Укажите название лекарства")
+			rowBad(l.T("Укажите название лекарства"))
 		}
 		if it.Dosage == "" {
-			rowBad("укажите дозировку")
+			rowBad(l.T("укажите дозировку"))
 		}
 		if it.TimesPerDay < 1 || it.TimesPerDay > 12 {
-			rowBad("укажите, сколько раз в день принимать")
+			rowBad(l.T("укажите, сколько раз в день принимать"))
 		}
 		if d, err := strconv.Atoi(it.Days); err != nil || d < 1 || d > 365 {
-			rowBad("число дней должно быть от 1 до 365")
+			rowBad(l.T("число дней должно быть от 1 до 365"))
 		}
 		switch it.Meal {
 		case models.MealBefore, models.MealAfter, models.MealDuring, models.MealAny:
 		default:
 			it.Meal = models.MealAny
-			rowBad("выберите, когда принимать относительно еды")
+			rowBad(l.T("выберите, когда принимать относительно еды"))
 		}
 		if list := parseTimes(it.Times); it.Times == "" || len(list) == 0 {
-			rowBad("укажите время приёма, например 08:00, 20:00")
+			rowBad(l.T("укажите время приёма, например 08:00, 20:00"))
 		} else if t, ok := firstInvalidTime(list); !ok {
-			rowBad(fmt.Sprintf("«%s» — время нужно в формате ЧЧ:ММ, например 08:00", t))
+			rowBad(l.Tf("«%s» — время нужно в формате ЧЧ:ММ, например 08:00", t))
 		} else if dup(list) {
-			rowBad("время приёма повторяется")
+			rowBad(l.T("время приёма повторяется"))
 		} else if it.TimesPerDay >= 1 && it.TimesPerDay <= 12 && len(list) != it.TimesPerDay {
-			rowBad(fmt.Sprintf("число времён приёма должно совпадать с «раз в день» (указано %d, времён %d)", it.TimesPerDay, len(list)))
+			rowBad(l.Tf("число времён приёма должно совпадать с «раз в день» (указано %d, времён %d)", it.TimesPerDay, len(list)))
 		}
 		f.Items = append(f.Items, it)
 	}
 	if len(f.Items) == 0 {
-		errs = append(errs, "Добавьте хотя бы одно лекарство")
+		errs = append(errs, l.T("Добавьте хотя бы одно лекарство"))
 		f.Items = []ItemForm{newItemForm(0)}
 	}
 	return f, errs
@@ -261,7 +263,7 @@ func dup(list []string) bool {
 
 func (w *Web) createPrescription(rw http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		w.renderForm(rw, r, http.StatusUnprocessableEntity, emptyForm(), []string{"Не удалось прочитать форму, попробуйте ещё раз"})
+		w.renderForm(rw, r, http.StatusUnprocessableEntity, emptyForm(), []string{tr(r, "Не удалось прочитать форму, попробуйте ещё раз")})
 		return
 	}
 	f, errs := parseForm(r)
@@ -272,7 +274,7 @@ func (w *Web) createPrescription(rw http.ResponseWriter, r *http.Request) {
 	id, err := w.insertPrescription(r.Context(), currentUser(r).ID, f)
 	if err != nil {
 		log.Printf("сохранение рецепта: %v", err)
-		w.renderForm(rw, r, http.StatusInternalServerError, f, []string{"Не удалось сохранить рецепт, попробуйте ещё раз"})
+		w.renderForm(rw, r, http.StatusInternalServerError, f, []string{tr(r, "Не удалось сохранить рецепт, попробуйте ещё раз")})
 		return
 	}
 	http.Redirect(rw, r, fmt.Sprintf("/doctor/prescriptions/%d", id), http.StatusSeeOther)
@@ -350,7 +352,7 @@ func (w *Web) ownRx(rw http.ResponseWriter, r *http.Request) (RxView, bool) {
 	}
 	if err != nil {
 		log.Printf("рецепт %d: %v", id, err)
-		http.Error(rw, "Не удалось показать рецепт, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось показать рецепт, попробуйте ещё раз"), http.StatusInternalServerError)
 		return RxView{}, false
 	}
 	return v, true
@@ -366,7 +368,7 @@ func (w *Web) prescriptionPage(rw http.ResponseWriter, r *http.Request) {
 		st, err := w.prescriptionStats(r.Context(), v.ID, time.Now())
 		if err != nil {
 			log.Printf("статистика рецепта %d: %v", v.ID, err)
-			http.Error(rw, "Не удалось посчитать статистику, попробуйте ещё раз", http.StatusInternalServerError)
+			http.Error(rw, tr(r, "Не удалось посчитать статистику, попробуйте ещё раз"), http.StatusInternalServerError)
 			return
 		}
 		data["Stats"] = st
@@ -376,7 +378,7 @@ func (w *Web) prescriptionPage(rw http.ResponseWriter, r *http.Request) {
 
 func (w *Web) prescriptionPrint(rw http.ResponseWriter, r *http.Request) {
 	if v, ok := w.ownRx(rw, r); ok {
-		w.renderPlain(rw, "rx_print", map[string]any{"Rx": v})
+		w.renderPlain(rw, r, "rx_print", map[string]any{"Rx": v})
 	}
 }
 
@@ -398,7 +400,7 @@ func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 		GROUP BY p.id ORDER BY p.created_at DESC, p.id DESC`, currentUser(r).ID)
 	if err != nil {
 		log.Printf("список рецептов: %v", err)
-		http.Error(rw, "Не удалось загрузить рецепты, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось загрузить рецепты, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -409,7 +411,7 @@ func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 		var due, taken int
 		if err := rows.Scan(&lr.ID, &lr.PatientName, &created, &lr.Started, &due, &taken); err != nil {
 			log.Printf("список рецептов: %v", err)
-			http.Error(rw, "Не удалось загрузить рецепты, попробуйте ещё раз", http.StatusInternalServerError)
+			http.Error(rw, tr(r, "Не удалось загрузить рецепты, попробуйте ещё раз"), http.StatusInternalServerError)
 			return
 		}
 		lr.Date = created.In(time.Local).Format("02.01.2006")
@@ -424,7 +426,7 @@ func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 	}
 	if err := rows.Err(); err != nil {
 		log.Printf("список рецептов: %v", err)
-		http.Error(rw, "Не удалось загрузить рецепты, попробуйте ещё раз", http.StatusInternalServerError)
+		http.Error(rw, tr(r, "Не удалось загрузить рецепты, попробуйте ещё раз"), http.StatusInternalServerError)
 		return
 	}
 	w.render(rw, r, "doctor_list", map[string]any{"Rows": list})
