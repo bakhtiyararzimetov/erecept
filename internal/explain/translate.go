@@ -115,3 +115,24 @@ func (s *Service) backfillEN(ctx context.Context) {
 		}
 	}
 }
+
+// ServeJSONEN — ServeJSON для английской памятки (правила ApplyRulesEN).
+func ServeJSONEN(raw json.RawMessage, substance string) json.RawMessage {
+	if len(raw) == 0 {
+		return nil
+	}
+	var ex Explanation
+	if err := json.Unmarshal(raw, &ex); err != nil {
+		return nil
+	}
+	before := ex
+	ApplyRulesEN(&ex, IsHighRisk(substance, ""))
+	if ex.HighRisk == before.HighRisk && ex.MissedDose == before.MissedDose {
+		return raw
+	}
+	out, err := json.Marshal(ex)
+	if err != nil {
+		return nil
+	}
+	return out
+}

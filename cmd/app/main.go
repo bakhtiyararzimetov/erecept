@@ -18,6 +18,7 @@ import (
 	"erecept/internal/db"
 	"erecept/internal/dictate"
 	"erecept/internal/explain"
+	"erecept/internal/i18n"
 	"erecept/internal/leaflet"
 	"erecept/internal/notifier"
 	"erecept/internal/seed"
@@ -71,7 +72,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	a := &api.API{DB: pool}
-	r.Mount("/api", a.Routes())
+	r.Mount("/api", i18n.Middleware(a.Routes()))
 	r.Mount("/", webApp.Routes())
 
 	go keepAwake()
