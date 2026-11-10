@@ -93,3 +93,10 @@ func TestParseErrors(t *testing.T) {
 		t.Error("не-JSON должен давать ошибку")
 	}
 }
+
+// Английская диктовка: модель просят писать дозировку и комментарий на языке диктовки.
+func TestPromptKeepsDictationLanguage(t *testing.T) {
+	if !strings.Contains(systemPrompt, "на языке диктовки") || !strings.Contains(systemPrompt, "1 tablet 850 mg") {
+		t.Error("в подсказке модели нет правила о языке диктовки")
+	}
+}
