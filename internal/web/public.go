@@ -128,7 +128,7 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	}
 	v.Birth = p.PatientBirth.Format("02.01.2006")
 	v.Date = p.CreatedAt.In(time.Local).Format("02.01.2006")
-	expl := w.explanations(ctx, p.Items)
+	expl := w.explanations(ctx, l, p.Items)
 	names := w.englishNames(ctx, l, p.Items)
 	for _, it := range p.Items {
 		name := it.MedicineName
@@ -151,7 +151,7 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 
 // explanations — памятки к лекарствам рецепта по medicine_id. Памятка необязательна:
 // при ошибке страница показывается без неё.
-func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem) map[int64]*explain.Explanation {
+func (w *Web) explanations(ctx context.Context, l i18n.Lang, items []models.PrescriptionItem) map[int64]*explain.Explanation {
 	var ids []int64
 	for _, it := range items {
 		if it.MedicineID != nil {
@@ -161,7 +161,12 @@ func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem)
 	if len(ids) == 0 {
 		return nil
 	}
-	rows, err := w.DB.Query(ctx, `SELECT e.medicine_id, e.data, m.active_substance
+	// На английском — перевод, если он уже готов; иначе русская памятка.
+	col := "e.data"
+	if l == i18n.EN {
+		col = "COALESCE(e.data_en, e.data)"
+	}
+	rows, err := w.DB.Query(ctx, `SELECT e.medicine_id, `+col+`, e.data_en IS NOT NULL, m.active_substance
 		FROM medicine_explanations e JOIN medicines m ON m.id = e.medicine_id WHERE e.medicine_id = ANY($1)`, ids)
 	if err != nil {
 		log.Printf("памятки рецепта: %v", err)
@@ -173,11 +178,16 @@ func (w *Web) explanations(ctx context.Context, items []models.PrescriptionItem)
 		var id int64
 		var ex explain.Explanation
 		var substance string
-		if err := rows.Scan(&id, &ex, &substance); err != nil {
+		var hasEN bool
+		if err := rows.Scan(&id, &ex, &hasEN, &substance); err != nil {
 			log.Printf("памятки рецепта: %v", err)
 			continue
 		}
-		explain.ApplyRules(&ex, explain.IsHighRisk(substance, ""))
+		if l == i18n.EN && hasEN {
+			explain.ApplyRulesEN(&ex, explain.IsHighRisk(substance, ""))
+		} else {
+			explain.ApplyRules(&ex, explain.IsHighRisk(substance, ""))
+		}
 		out[id] = &ex
 	}
 	if err := rows.Err(); err != nil {

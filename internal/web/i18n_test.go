@@ -96,3 +96,22 @@ func TestDoctorEnglishNameLinksCatalog(t *testing.T) {
 		t.Errorf("medicine_id %d, нужно %d", got, want)
 	}
 }
+
+func TestEnglishExplanationShown(t *testing.T) {
+	w := dictateEnv(t, nil)
+	h := w.Routes()
+	_, code := createRx(t, w.DB, h, doctorCookies(t, h, "doctor1"))
+	_, err := w.DB.Exec(context.Background(), `INSERT INTO medicine_explanations (medicine_id, data, data_en)
+		SELECT id, '{"purpose":"Снижает температуру.","how_to_take":"После еды.","missed_dose":"Выпейте.","if_stopped_early":"Можно."}',
+		           '{"purpose":"Lowers fever.","how_to_take":"After meals.","missed_dose":"Take it.","if_stopped_early":"You can stop."}'
+		FROM medicines WHERE name = 'Парацетамол'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body := getLang(h, "/r/"+code+"?lang=en", nil); !strings.Contains(body, "Lowers fever.") || strings.Contains(body, "Снижает температуру.") {
+		t.Error("на английской странице нет английской памятки")
+	}
+	if body := getLang(h, "/r/"+code+"?lang=ru", nil); !strings.Contains(body, "Снижает температуру.") {
+		t.Error("на русской странице должна быть русская памятка")
+	}
+}

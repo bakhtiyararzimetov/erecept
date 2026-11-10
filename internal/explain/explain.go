@@ -358,6 +358,7 @@ func (s *Service) pending(ctx context.Context) ([]medicine, error) {
 func (s *Service) BackfillLoop(ctx context.Context) {
 	for {
 		s.backfill(ctx)
+		s.backfillEN(ctx)
 		select {
 		case <-ctx.Done():
 			return
