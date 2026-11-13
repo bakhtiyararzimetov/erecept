@@ -2,7 +2,9 @@ import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@e
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
+import { AppState, Platform } from "react-native";
+import { API_URL } from "../lib/api";
 import { flushMarks } from "../lib/sync";
 import { rescheduleAll, setupNotifications } from "../lib/notifications";
 import { getRole, markRoleCommitted, onRoleChange } from "../lib/storage";
@@ -11,6 +13,11 @@ import { colors } from "../lib/theme";
 import { initLang, onLangChange, type Lang } from "../lib/i18n";
 
 SplashScreen.preventAutoHideAsync();
+// В браузере проверка связи по адресу Google не проходит (CORS) и приложение думает, что интернета нет.
+// Проверяем доступность своего сервера.
+if (Platform.OS === "web") {
+  NetInfo.configure({ reachabilityUrl: API_URL + "/api/health", reachabilityTest: async (r) => r.status === 200 });
+}
 setupNotifications(); // на верхнем уровне: фоновые кнопки на Android требуют слушателя при загрузке модуля
 
 export default function RootLayout() {
