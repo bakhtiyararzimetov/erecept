@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"erecept/internal/i18n"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -17,6 +19,7 @@ type MedicineDTO struct {
 	Name            string `json:"name"`
 	ActiveSubstance string `json:"active_substance"`
 	Form            string `json:"form"`
+	Image           string `json:"image"` // картинка упаковки (иллюстрация), /static/meds/…
 }
 
 type PharmacyDTO struct {
@@ -71,20 +74,21 @@ func (a *API) searchMedicines(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	rows, err := a.DB.Query(r.Context(), `SELECT id, name, active_substance, form FROM medicines
-		WHERE name ILIKE $1 ORDER BY name LIMIT 20`, "%"+likeEscaper.Replace(q)+"%")
+	l := i18n.FromContext(r.Context())
+	rows, err := a.DB.Query(r.Context(), `SELECT `+medCols+` FROM medicines
+		WHERE name ILIKE $1 OR name_en ILIKE $1 ORDER BY name LIMIT 20`, "%"+likeEscaper.Replace(q)+"%")
 	if err != nil {
 		serverError(w, "поиск лекарств", err)
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var m MedicineDTO
-		if err := rows.Scan(&m.ID, &m.Name, &m.ActiveSubstance, &m.Form); err != nil {
+		var m medRow
+		if err := rows.Scan(m.dest()...); err != nil {
 			serverError(w, "поиск лекарств", err)
 			return
 		}
-		out = append(out, m)
+		out = append(out, m.finish(l))
 	}
 	if err := rows.Err(); err != nil {
 		serverError(w, "поиск лекарств", err)
@@ -96,15 +100,19 @@ func (a *API) searchMedicines(w http.ResponseWriter, r *http.Request) {
 func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	qs := r.URL.Query()
+	l := i18n.FromContext(ctx)
 	res := OffersDTO{Offers: []OfferDTO{}, Analogs: []AnalogDTO{}, AnalogNote: analogNote}
+	if l == i18n.EN {
+		res.AnalogNote = analogNoteEN
+	}
 
-	// Лекарство: по id, иначе точное имя, иначе первое «имя%».
-	const cols = `SELECT id, name, active_substance, form FROM medicines `
-	var m MedicineDTO
+	// Лекарство: по id, иначе точное имя (русское или английское), иначе первое «имя%».
+	const cols = `SELECT ` + medCols + ` FROM medicines `
+	var row medRow
 	var found bool
 	var err error
 	scan := func(sql string, args ...any) bool {
-		e := a.DB.QueryRow(ctx, sql, args...).Scan(&m.ID, &m.Name, &m.ActiveSubstance, &m.Form)
+		e := a.DB.QueryRow(ctx, sql, args...).Scan(row.dest()...)
 		if e != nil && !errors.Is(e, pgx.ErrNoRows) {
 			err = e
 		}
@@ -114,9 +122,9 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 		found = scan(cols+`WHERE id = $1`, id)
 	}
 	if name := strings.TrimSpace(qs.Get("name")); !found && err == nil && name != "" {
-		found = scan(cols+`WHERE lower(name) = lower($1)`, name)
+		found = scan(cols+`WHERE lower(name) = lower($1) OR lower(name_en) = lower($1) ORDER BY lower(name) = lower($1) DESC LIMIT 1`, name)
 		if !found && err == nil {
-			found = scan(cols+`WHERE name ILIKE $1 ORDER BY name LIMIT 1`, likeEscaper.Replace(name)+"%")
+			found = scan(cols+`WHERE name ILIKE $1 OR name_en ILIKE $1 ORDER BY name LIMIT 1`, likeEscaper.Replace(name)+"%")
 		}
 	}
 	if err != nil {
@@ -127,6 +135,8 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, res)
 		return
 	}
+	m := row.finish(l)
+	m.ActiveSubstance = row.ActiveSubstance // для поиска аналогов — русское МНН справочника
 	res.Medicine = &m
 
 	lat, errLat := strconv.ParseFloat(qs.Get("lat"), 64)
@@ -150,6 +160,9 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		o.InStock = true
+		if l == i18n.EN {
+			pharmacyEN(p)
+		}
 		o.UpdatedAt = upd.In(time.Local).Format(time.RFC3339)
 		if hasPos {
 			d := math.Round(distanceKm(lat, lng, p.Lat, p.Lng)*10) / 10
@@ -173,7 +186,7 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 		return x.Pharmacy.Name < y.Pharmacy.Name
 	})
 
-	arows, err := a.DB.Query(ctx, `SELECT m.id, m.name, m.active_substance, m.form, MIN(pi.price), COUNT(DISTINCT pi.pharmacy_id)
+	arows, err := a.DB.Query(ctx, `SELECT m.id, m.name, m.active_substance, m.form, m.name_en, m.substance_en, MIN(pi.price), COUNT(DISTINCT pi.pharmacy_id)
 		FROM medicines m JOIN pharmacy_items pi ON pi.medicine_id = m.id AND pi.in_stock
 		WHERE m.id <> $1 AND $2 <> '' AND lower(m.active_substance) = lower($2)
 		GROUP BY m.id ORDER BY MIN(pi.price), m.name`, m.ID, m.ActiveSubstance)
@@ -184,16 +197,20 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 	defer arows.Close()
 	for arows.Next() {
 		var an AnalogDTO
-		md := &an.Medicine
-		if err := arows.Scan(&md.ID, &md.Name, &md.ActiveSubstance, &md.Form, &an.MinPrice, &an.PharmaciesCount); err != nil {
+		var mr medRow
+		if err := arows.Scan(append(mr.dest(), &an.MinPrice, &an.PharmaciesCount)...); err != nil {
 			serverError(w, "аналоги", err)
 			return
 		}
+		an.Medicine = mr.finish(l)
 		res.Analogs = append(res.Analogs, an)
 	}
 	if err := arows.Err(); err != nil {
 		serverError(w, "аналоги", err)
 		return
+	}
+	if l == i18n.EN {
+		res.Medicine.ActiveSubstance = row.finish(l).ActiveSubstance
 	}
 	writeJSON(w, http.StatusOK, res)
 }

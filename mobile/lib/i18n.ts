@@ -61,6 +61,8 @@ export function locale(): string {
 }
 
 export const en: Record<string, string> = {
+  "еРецепт": "eRecept",
+  "Фото упаковки — иллюстрация": "Pack photo is an illustration",
   "Язык": "Language",
   " Разрешите доступ в настройках телефона или введите код вручную ниже.": " Allow access in the phone settings or enter the code below.",
   ", рег. №": ", reg. no.",

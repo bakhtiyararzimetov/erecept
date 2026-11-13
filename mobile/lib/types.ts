@@ -27,6 +27,7 @@ export type Item = {
   meal_label: string;
   times: string[]; // "HH:MM"
   photo_url: string;
+  image?: string; // картинка упаковки (иллюстрация), путь на сервере
   explanation?: Explanation | null; // в старых сохранённых курсах поля нет
 };
 
@@ -62,6 +63,7 @@ export type MedicineRef = {
   name: string;
   active_substance: string;
   form: string;
+  image?: string; // картинка упаковки (иллюстрация)
 };
 
 export type Pharmacy = {

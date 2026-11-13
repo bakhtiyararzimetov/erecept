@@ -13,6 +13,7 @@ import (
 type ItemDTO struct {
 	ID           int64    `json:"id"`
 	MedicineName string   `json:"medicine_name"`
+	Image        string   `json:"image"` // картинка упаковки из справочника (иллюстрация); пусто — нет
 	MedicineID   *int64   `json:"medicine_id"`
 	Dosage       string   `json:"dosage"`
 	TimesPerDay  int      `json:"times_per_day"`
@@ -79,7 +80,7 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 	if l == i18n.EN {
 		name, data = "COALESCE(NULLIF(m.name_en, ''), i.medicine_name)", "COALESCE(e.data_en, e.data)"
 	}
-	rows, err := a.DB.Query(ctx, `SELECT i.id, `+name+`, i.medicine_id, i.dosage, i.times_per_day, i.days, i.meal, i.times, i.photo_url, `+data+`, e.data_en IS NOT NULL, COALESCE(m.active_substance, '')
+	rows, err := a.DB.Query(ctx, `SELECT i.id, `+name+`, i.medicine_id, i.dosage, i.times_per_day, i.days, i.meal, i.times, i.photo_url, `+data+`, e.data_en IS NOT NULL, COALESCE(m.active_substance, ''), COALESCE(m.name_en, '')
 		FROM prescription_items i LEFT JOIN medicine_explanations e ON e.medicine_id = i.medicine_id
 		LEFT JOIN medicines m ON m.id = i.medicine_id
 		WHERE i.prescription_id = $1 ORDER BY i.position, i.id`, p.ID)
@@ -92,9 +93,13 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 		var it ItemDTO
 		var substance string
 		var hasEN bool
+		var nameEN string
 		if err := rows.Scan(&it.ID, &it.MedicineName, &it.MedicineID, &it.Dosage, &it.TimesPerDay,
-			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation, &hasEN, &substance); err != nil {
+			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation, &hasEN, &substance, &nameEN); err != nil {
 			return nil, err
+		}
+		if nameEN != "" {
+			it.Image = "/static/meds/" + slug(nameEN) + ".png"
 		}
 		if l == i18n.EN && hasEN {
 			it.Explanation = explain.ServeJSONEN(it.Explanation, substance)

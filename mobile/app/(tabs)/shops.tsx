@@ -1,10 +1,10 @@
 import * as Location from "expo-location";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
-import { ApiError, api } from "../../lib/api";
+import { API_URL, ApiError, api } from "../../lib/api";
 import { formatKm, formatPrice } from "../../lib/format";
 import { loadCourses } from "../../lib/storage";
 import { colors, radius, sizes } from "../../lib/theme";
@@ -171,6 +171,14 @@ export default function Shops() {
           <Text style={styles.body}>{t("Такое лекарство не найдено. Проверьте название")}</Text>
         </Card>
       )}
+      {data && data.medicine && !loading && (
+        <Card style={{ gap: 8, alignItems: "flex-start" }}>
+          {data.medicine.image ? <Image source={{ uri: API_URL + data.medicine.image }} style={styles.packBig} accessibilityLabel={data.medicine.name} /> : null}
+          <Text style={styles.name}>{data.medicine.name}</Text>
+          <Text style={styles.body}>{[data.medicine.active_substance, data.medicine.form].filter(Boolean).join(", ")}</Text>
+          <Text style={styles.illustration}>{t("Фото упаковки — иллюстрация")}</Text>
+        </Card>
+      )}
       {data && data.medicine && data.offers.length === 0 && !loading && (
         <Card>
           <Text style={styles.body}>{t("Сейчас нет в наличии ни в одной аптеке")}</Text>
@@ -206,6 +214,7 @@ export default function Shops() {
           </View>
           {data.analogs.map((a) => (
             <Card key={a.medicine.id} style={{ gap: 4 }}>
+              {a.medicine.image ? <Image source={{ uri: API_URL + a.medicine.image }} style={styles.packSmall} accessibilityLabel={a.medicine.name} /> : null}
               <Text style={styles.name}>{a.medicine.name}</Text>
               <Text style={styles.body}>
                 {[a.medicine.active_substance, a.medicine.form].filter(Boolean).join(", ")}
@@ -222,6 +231,9 @@ export default function Shops() {
 }
 
 const styles = StyleSheet.create({
+  packBig: { width: 300, height: 190, borderRadius: 12 },
+  packSmall: { width: 150, height: 95, borderRadius: 8 },
+  illustration: { fontSize: 13, color: colors.muted },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingTop: 56, gap: 16 },
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },

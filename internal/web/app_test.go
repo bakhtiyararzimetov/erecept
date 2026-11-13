@@ -30,3 +30,10 @@ func TestPublicPageOpensWebApp(t *testing.T) {
 		t.Error("нет кнопки «Open in the app»")
 	}
 }
+
+func TestMedicinePackImages(t *testing.T) {
+	h := newTestServer(t)
+	if w := get(h, "/static/meds/glucophage.png", nil); w.Code != http.StatusOK || w.Header().Get("Content-Type") != "image/png" {
+		t.Errorf("картинка упаковки: код %d %q", w.Code, w.Header().Get("Content-Type"))
+	}
+}

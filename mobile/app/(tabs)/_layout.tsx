@@ -1,12 +1,19 @@
 import { Tabs } from "expo-router";
 import { colors } from "../../lib/theme";
-import { locale, t, tf } from "../../lib/i18n";
+import { t } from "../../lib/i18n";
+import { LangSwitch } from "../../components/LangSwitch";
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        // Шапка: название приложения и переключатель языка RU · EN
+        headerShown: true,
+        headerTitle: t("еРецепт"),
+        headerTitleStyle: { fontFamily: "Inter_700Bold", fontSize: 20, color: colors.text },
+        headerStyle: { backgroundColor: colors.card },
+        headerShadowVisible: false,
+        headerRight: () => <LangSwitch />,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontSize: 17, fontFamily: "Inter_400Regular", paddingHorizontal: 0, marginHorizontal: 0 },

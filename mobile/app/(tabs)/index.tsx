@@ -1,7 +1,8 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { API_URL } from "../../lib/api";
 import { Button } from "../../components/Button";
 import { SosButton } from "../../components/SosButton";
 import { Card } from "../../components/Card";
@@ -127,7 +128,10 @@ export default function Today() {
                   <Text style={styles.time}>{timeOf(dose.scheduled_at)}</Text>
                   {badge && <Text style={[styles.badge, { color: badge.color, borderColor: colors.border, backgroundColor: status === "taken" ? "#F3F4F6" : colors.card }]}>{t(badge.label)}</Text>}
                 </View>
-                <Text style={styles.name}>{item.medicine_name}</Text>
+                <View style={styles.medRow}>
+                  {item.image ? <Image source={{ uri: API_URL + item.image }} style={styles.pack} accessibilityLabel={item.medicine_name} /> : null}
+                  <Text style={[styles.name, { flex: 1 }]}>{item.medicine_name}</Text>
+                </View>
                 <Text style={styles.body}>
                   {item.dosage}, {item.meal_label}
                 </Text>
@@ -157,6 +161,8 @@ export default function Today() {
 }
 
 const styles = StyleSheet.create({
+  medRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  pack: { width: 96, height: 61, borderRadius: 8 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingTop: 56, gap: 16 },
   offline: { backgroundColor: "#E5E7EB", borderRadius: radius.control, padding: 12 },
