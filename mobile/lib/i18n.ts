@@ -66,7 +66,7 @@ export const en: Record<string, string> = {
   "Язык": "Language",
   " Разрешите доступ в настройках телефона или введите код вручную ниже.": " Allow access in the phone settings or enter the code below.",
   ", рег. №": ", reg. no.",
-  "112 — единая служба · 9103 — скорая в Алматы": "112 — emergency line · 9103 — ambulance in Almaty",
+  "112 — единая служба · 103 — скорая помощь": "112 — emergency line · 103 — ambulance",
   "Push недоступен: нужна сборка с EAS (см. README)": "Push is not available: an EAS build is needed (see README)",
   "Аналоги": "Analogs",
   "Аптеки": "Pharmacies",

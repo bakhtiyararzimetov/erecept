@@ -35,7 +35,7 @@ export function SosButton() {
       >
         <Text style={styles.text}>{t("Мне плохо")}</Text>
       </Pressable>
-      <Text style={styles.hint}>{t("112 — единая служба · 9103 — скорая в Алматы")}</Text>
+      <Text style={styles.hint}>{t("112 — единая служба · 103 — скорая помощь")}</Text>
     </View>
   );
 }
