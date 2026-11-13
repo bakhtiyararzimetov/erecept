@@ -16,7 +16,7 @@ SplashScreen.preventAutoHideAsync();
 // В браузере проверка связи по адресу Google не проходит (CORS) и приложение думает, что интернета нет.
 // Проверяем доступность своего сервера.
 if (Platform.OS === "web") {
-  NetInfo.configure({ reachabilityUrl: API_URL + "/api/health", reachabilityTest: async (r) => r.status === 200 });
+  NetInfo.configure({ reachabilityUrl: API_URL + "/api/health", reachabilityMethod: "GET", reachabilityTest: async (r) => r.status === 200 });
 }
 setupNotifications(); // на верхнем уровне: фоновые кнопки на Android требуют слушателя при загрузке модуля
 
