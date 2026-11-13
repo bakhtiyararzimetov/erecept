@@ -16,6 +16,12 @@ export function getLang(): Lang {
 }
 
 export async function initLang(): Promise<Lang> {
+  // Веб-версия: ссылка с ?lang=en|ru выбирает язык и запоминает его.
+  const q = typeof location !== "undefined" ? new URLSearchParams(location.search).get("lang") : null;
+  if (q === "ru" || q === "en") {
+    await setLang(q).catch(() => undefined);
+    return lang;
+  }
   try {
     const saved = await storage().getItem(KEY);
     if (saved === "ru" || saved === "en") {

@@ -2,8 +2,9 @@ package i18n
 
 // en — английские строки интерфейса; ключ — русский текст из шаблона или кода.
 var en = map[string]string{
-	"+ Добавить лекарство": "+ Add medicine",
-	"Печать":               "Print",
+	"📱 Открыть в приложении":            "📱 Open in the app",
+	"+ Добавить лекарство":              "+ Add medicine",
+	"Печать":                            "Print",
 	"Отсканируйте в приложении еРецепт": "Scan it in the eRecept app",
 	"Подпись врача:":                    "Doctor's signature:",
 	"Лекарство":                         "Medicine",

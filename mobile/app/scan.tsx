@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -19,6 +19,12 @@ export default function Scan() {
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState("");
   const lock = useRef(false); // камера выдаёт один и тот же QR много раз подряд
+  // Ссылка со страницы рецепта (/app/scan?code=…) — рецепт загружается сразу, без камеры.
+  const { code: linkCode } = useLocalSearchParams<{ code?: string }>();
+  useEffect(() => {
+    if (linkCode) submit(String(linkCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkCode]);
 
   async function submit(raw: string) {
     if (lock.current) return;
@@ -34,7 +40,8 @@ export default function Scan() {
       await claimAndStore(code);
       await ensureNotificationPermission(); // отказ не блокирует
       registerPush().catch((e) => console.warn("push: регистрация после скана", e));
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace("/");
     } catch (e) {
       console.warn("scan: не удалось загрузить рецепт", e);
       setError(e instanceof ApiError ? e.message : t("Не удалось загрузить рецепт"));

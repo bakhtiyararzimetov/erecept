@@ -70,6 +70,9 @@ func (w *Web) Routes() http.Handler {
 	r.Post("/login", w.loginSubmit)
 	r.Post("/logout", w.logout)
 
+	app := patientApp()
+	r.Handle("/app", app)
+	r.Handle("/app/*", app)
 	r.Get("/r/{code}", w.publicPage)
 	r.Post("/r/{code}/check", w.boxCheck)
 	r.Get("/qr/{file}", w.qrPNG)

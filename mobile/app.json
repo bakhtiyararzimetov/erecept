@@ -21,7 +21,8 @@
       "package": "kz.erecept.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "eRecept"
     },
     "plugins": [
       "expo-router",
@@ -46,6 +47,9 @@
         }
       ]
     ],
-    "scheme": "erecept"
+    "scheme": "erecept",
+    "experiments": {
+      "baseUrl": "/app"
+    }
   }
 }
