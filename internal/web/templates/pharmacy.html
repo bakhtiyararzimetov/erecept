@@ -1,48 +1,77 @@
-{{define "title"}}Мои лекарства{{end}}
+{{define "title"}}{{t "Мои лекарства"}}{{end}}
 {{define "content"}}
-<h1>Мои лекарства</h1>
-<div class="card">
-  <h2>{{.Pharmacy.Name}}</h2>
-  <p>{{if .Pharmacy.Address}}{{.Pharmacy.Address}}{{else}}<span class="muted">Адрес не указан</span>{{end}}</p>
-  <p class="muted">{{if .Pharmacy.WorkHours}}Часы работы: {{.Pharmacy.WorkHours}}{{else}}Часы работы не указаны{{end}}{{if .Pharmacy.Phone}} · {{.Pharmacy.Phone}}{{end}}</p>
-  <p class="muted">Позиций в прайсе: {{.Total}}</p>
+<div class="ph-head">
+  <div class="ph-title">
+    <h1>{{t "Мои лекарства"}}</h1>
+    <p class="ph-name">{{.Pharmacy.Name}}</p>
+    <p class="ph-meta muted">
+      <span>{{if .Pharmacy.Address}}{{.Pharmacy.Address}}{{else}}{{t "Адрес не указан"}}{{end}}</span>
+      <span>{{if .Pharmacy.WorkHours}}{{.Pharmacy.WorkHours}}{{else}}{{t "Часы работы не указаны"}}{{end}}</span>
+      {{if .Pharmacy.Phone}}<span>{{.Pharmacy.Phone}}</span>{{end}}
+    </p>
+  </div>
+  <a class="btn btn-primary" href="#add">{{t "+ Добавить лекарство"}}</a>
 </div>
-{{if .Notice}}<div class="card" role="status"><p>{{.Notice}}</p></div>{{end}}
+
+<div class="ph-stats">
+  <div class="stat-card">
+    <span class="stat-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+    <span class="stat-body"><span class="stat-value" id="stat-total">{{.Stats.Total}}</span><span class="stat-label">{{t "Всего позиций"}}</span></span>
+  </div>
+  <div class="stat-card stat-ok">
+    <span class="stat-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg></span>
+    <span class="stat-body"><span class="stat-value" id="stat-in">{{.Stats.InStock}}</span><span class="stat-label">{{t "В наличии"}}</span></span>
+  </div>
+  <div class="stat-card stat-out">
+    <span class="stat-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>
+    <span class="stat-body"><span class="stat-value" id="stat-out">{{.Stats.OutOfStock}}</span><span class="stat-label">{{t "Нет в наличии"}}</span></span>
+  </div>
+</div>
+
+{{if .Notice}}<div class="card notice" role="status"><p>{{.Notice}}</p></div>{{end}}
 {{if .Errors}}<div class="card" role="alert"><p class="error">{{.FormTitle}}</p><ul class="error-list">{{range .Errors}}<li class="error">{{.}}</li>{{end}}</ul></div>{{end}}
-{{if .CSVDone}}<div class="card" role="status"><h2>Загружено {{.CSVOK}}, ошибок {{.CSVTotalErrors}}</h2>
-  {{if .CSVErrors}}<ul class="error-list">{{range .CSVErrors}}<li class="error">{{.}}</li>{{end}}</ul>{{if gt .CSVMoreErrors 0}}<p class="muted">…и ещё {{.CSVMoreErrors}}</p>{{end}}{{end}}
+{{if .CSVDone}}<div class="card notice" role="status"><h2>{{tf "Загружено %d, ошибок %d" .CSVOK .CSVTotalErrors}}</h2>
+  {{if .CSVErrors}}<ul class="error-list">{{range .CSVErrors}}<li class="error">{{.}}</li>{{end}}</ul>{{if gt .CSVMoreErrors 0}}<p class="muted">{{tf "…и ещё %d" .CSVMoreErrors}}</p>{{end}}{{end}}
 </div>{{end}}
 
+<section class="ph-list">
+  <div class="ph-list-head">
+    <h2>{{t "Прайс-лист"}}</h2>
+    <form class="ph-search" method="get" action="/pharmacy" role="search">
+      <label for="q" class="sr-only">{{t "Поиск по названию"}}</label>
+      <input id="q" name="q" type="search" value="{{.Q}}" placeholder="{{t "Поиск по названию"}}" autocomplete="off" hx-get="/pharmacy" hx-trigger="input changed delay:300ms, search" hx-target="#items-body" hx-select="#items-body" hx-swap="outerHTML" hx-push-url="false">
+    </form>
+  </div>
+  <table class="table ph-table">
+    <thead><tr><th>{{t "Лекарство"}}</th><th>{{t "Цена, ₸"}}</th><th>{{t "Наличие"}}</th><th><span class="sr-only">{{t "Действия"}}</span></th></tr></thead>
+    <tbody id="items-body">{{range .Items}}{{template "pharmacy_row" .}}{{else}}<tr><td colspan="4" class="muted ph-empty">{{if .Q}}{{t "Ничего не найдено"}}{{else}}{{t "Пока нет позиций. Добавьте лекарство или загрузите CSV."}}{{end}}</td></tr>{{end}}</tbody>
+  </table>
+</section>
+
 <datalist id="medicines">{{range .Medicines}}<option value="{{.}}">{{end}}</datalist>
-<div class="grid-2">
+<div class="grid-2 ph-forms" id="add">
   <form class="card" method="post" action="/pharmacy/items">
-    <h2>Добавить лекарство</h2>
-    <div class="field{{if .Form.BadName}} has-error{{end}}"><label for="name">Название</label><input id="name" name="name" list="medicines" value="{{.Form.Name}}" autocomplete="off" required></div>
-    <div class="field"><label for="substance">Действующее вещество</label><input id="substance" name="substance" value="{{.Form.Substance}}"></div>
-    <div class="field"><label for="form">Форма</label><input id="form" name="form" value="{{.Form.Form}}" placeholder="таблетки 500 мг"></div>
-    <div class="field{{if .Form.BadPrice}} has-error{{end}}"><label for="price">Цена, ₸</label><input id="price" name="price" value="{{.Form.Price}}" inputmode="numeric" required></div>
-    <div class="field"><label class="check-label"><input type="checkbox" name="in_stock" value="1"{{if .Form.InStock}} checked{{end}}> В наличии</label></div>
-    <button class="btn btn-primary" type="submit">Сохранить</button>
-    <p class="muted">Если такое лекарство уже есть в вашем прайсе, цена и наличие обновятся.</p>
+    <h2>{{t "Добавить лекарство"}}</h2>
+    <div class="field{{if .Form.BadName}} has-error{{end}}"><label for="name">{{t "Название"}}</label><input id="name" name="name" list="medicines" value="{{.Form.Name}}" autocomplete="off" required></div>
+    <div class="ph-form-row">
+      <div class="field"><label for="substance">{{t "Действующее вещество"}}</label><input id="substance" name="substance" value="{{.Form.Substance}}"></div>
+      <div class="field"><label for="form">{{t "Форма"}}</label><input id="form" name="form" value="{{.Form.Form}}" placeholder="{{t "таблетки 500 мг"}}"></div>
+    </div>
+    <div class="ph-form-row">
+      <div class="field{{if .Form.BadPrice}} has-error{{end}}"><label for="price">{{t "Цена, ₸"}}</label><input id="price" name="price" value="{{.Form.Price}}" inputmode="numeric" required></div>
+      <div class="field ph-form-stock"><label class="switch"><input type="checkbox" name="in_stock" value="1"{{if .Form.InStock}} checked{{end}}><span class="switch-track" aria-hidden="true"></span><span>{{t "В наличии"}}</span></label></div>
+    </div>
+    <button class="btn btn-primary" type="submit">{{t "Сохранить"}}</button>
+    <p class="muted ph-note">{{t "Если такое лекарство уже есть в вашем прайсе, цена и наличие обновятся."}}</p>
   </form>
   <form class="card" method="post" action="/pharmacy/csv" enctype="multipart/form-data">
-    <h2>Загрузить CSV</h2>
-    <p class="muted">Первая строка — заголовок. Обязательные колонки: название и цена. Разделитель «;» или «,». Цена может быть «1 250» или «1250 ₸». Наличие: да или нет (пусто — в наличии).</p>
-    <pre class="muted">название;действующее вещество;форма;цена;наличие
-Парацетамол;парацетамол;таблетки 500 мг;350;да</pre>
-    <p><a href="/pharmacy/sample.csv">Скачать пример файла</a></p>
-    <div class="field"><label for="file">Файл CSV (до 2 МБ, до 5000 строк)</label><input id="file" name="file" type="file" accept=".csv,text/csv" required></div>
-    <button class="btn btn-primary" type="submit">Загрузить</button>
+    <h2>{{t "Загрузить CSV"}}</h2>
+    <p class="muted">{{t "Первая строка — заголовок. Обязательные колонки: название и цена. Разделитель «;» или «,». Цена может быть «1 250» или «1250 ₸». Наличие: да или нет (пусто — в наличии)."}}</p>
+    <pre class="muted">{{t "название;действующее вещество;форма;цена;наличие"}}
+{{t "Парацетамол;парацетамол;таблетки 500 мг;350;да"}}</pre>
+    <p><a href="/pharmacy/sample.csv">{{t "Скачать пример файла"}}</a></p>
+    <div class="field"><label for="file">{{t "Файл CSV (до 2 МБ, до 5000 строк)"}}</label><input id="file" name="file" type="file" accept=".csv,text/csv" required></div>
+    <button class="btn btn-primary" type="submit">{{t "Загрузить"}}</button>
   </form>
 </div>
-
-<h2>Позиции</h2>
-<form class="field" method="get" action="/pharmacy" role="search">
-  <label for="q">Поиск по названию</label>
-  <input id="q" name="q" type="search" value="{{.Q}}" autocomplete="off" hx-get="/pharmacy" hx-trigger="input changed delay:300ms, search" hx-target="#items-body" hx-select="#items-body" hx-swap="outerHTML" hx-push-url="false">
-</form>
-<table class="table">
-  <thead><tr><th>Лекарство</th><th>Форма</th><th>Цена, ₸</th><th>В наличии</th><th>Действия</th></tr></thead>
-  <tbody id="items-body">{{range .Items}}{{template "pharmacy_row" .}}{{else}}<tr><td colspan="5" class="muted">{{if .Q}}Ничего не найдено{{else}}Пока нет позиций. Добавьте лекарство или загрузите CSV.{{end}}</td></tr>{{end}}</tbody>
-</table>
 {{end}}

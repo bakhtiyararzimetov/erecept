@@ -123,16 +123,13 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 			return fmt.Errorf("сид аптек: %w", err)
 		}
 
-		// В аптеке 18, 21 или 24 лекарства, набор сдвигается от аптеки к аптеке.
-		n := 18 + (i*3)%9
-		for j := 0; j < n; j++ {
-			m := medicines[(i*3+j)%len(medicines)]
-			spread := float64((i*7+j*13)%11-5) / 100 // от -5% до +5%
-			price := int(math.Round(float64(m.price)*p.coef*(1+spread)/10)) * 10
-			inStock := !(j == 3 || (i%2 == 0 && j == 11))
+		for k, m := range medicines {
+			if !inAssortment(i, k) {
+				continue
+			}
 			_, err := tx.Exec(ctx, `INSERT INTO pharmacy_items (pharmacy_id, medicine_id, price, in_stock)
 				VALUES ($1, $2, $3, $4) ON CONFLICT (pharmacy_id, medicine_id) DO NOTHING`,
-				pharmacyID, ids[m.name], price, inStock)
+				pharmacyID, ids[m.name], itemPrice(m.price, p.coef, i, k), itemInStock(i, k))
 			if err != nil {
 				return fmt.Errorf("сид цен: %w", err)
 			}
@@ -143,6 +140,45 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	return nil
 }
+
+// popular — ходовые лекарства (жаропонижающие, давление, диабет, желудок, аллергия,
+// антибиотики, кашель): они есть в каждой демо-аптеке. Тот же список и те же формулы
+// цены и наличия — в миграции 010_demo_assortment.sql для уже заполненной базы.
+var popular = map[string]bool{
+	"Парацетамол": true, "Ибупрофен": true, "Нурофен": true, "Амоксициллин": true, "Азитромицин": true,
+	"Омепразол": true, "Метформин": true, "Глюкофаж": true, "Лизиноприл": true, "Амлодипин": true,
+	"Аторвастатин": true, "Цетиризин": true, "Амброксол": true, "Ацетилцистеин": true, "Дротаверин": true,
+	"Но-шпа": true, "Панкреатин": true, "Лоперамид": true, "Диклофенак": true, "Бисопролол": true,
+}
+
+// inAssortment: ходовые есть везде, плюс 2–4 остальных, набор сдвигается от аптеки к аптеке.
+// i — номер аптеки, k — номер лекарства в medicines.
+func inAssortment(i, k int) bool {
+	if popular[medicines[k].name] {
+		return true
+	}
+	var others []int
+	for j, m := range medicines {
+		if !popular[m.name] {
+			others = append(others, j)
+		}
+	}
+	for e := 0; e < 2+i%3; e++ {
+		if others[(i*3+e)%len(others)] == k {
+			return true
+		}
+	}
+	return false
+}
+
+// itemPrice: базовая цена × множитель аптеки ± 5%, округлено до 10 ₸.
+func itemPrice(base int, coef float64, i, k int) int {
+	spread := float64((i*7+k*13)%11-5) / 100
+	return int(math.Round(float64(base)*coef*(1+spread)/10)) * 10
+}
+
+// itemInStock: в каждой аптеке 1–3 позиции «нет в наличии».
+func itemInStock(i, k int) bool { return (i*5+k*3+4)%11 != 0 }
 
 func hash(password string) (string, error) {
 	h, err := bcrypt.GenerateFromPassword([]byte(password), 10)

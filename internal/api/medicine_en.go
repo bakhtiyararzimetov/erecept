@@ -48,26 +48,12 @@ func slug(s string) string {
 	return strings.Trim(slugRe.ReplaceAllString(strings.ToLower(s), "-"), "-")
 }
 
-var (
-	countRe  = regexp.MustCompile(`\s*№\s*(\d+)`)
-	formRepl = strings.NewReplacer("шипучие таблетки", "effervescent tablets", "таблетки", "tablets", "капсулы", "capsules", "сироп", "syrup",
-		" мг", " mg", " мл", " ml", " ЕД", " U", "мл ", "ml ")
-)
-
 // formEN: «таблетки 850 мг №60» → «tablets 850 mg, 60 pcs».
-func formEN(s string) string {
-	s = formRepl.Replace(s)
-	s = strings.ReplaceAll(s, "/5 мл", "/5 ml")
-	return countRe.ReplaceAllString(s, ", $1 pcs")
-}
-
-var placeRepl = strings.NewReplacer("Аптека ", "Pharmacy ", "Шымкент", "Shymkent", "Алматы", "Almaty", "мкр.", "mcr.", "ул.", "st.", "пр.", "ave.")
+func formEN(s string) string { return i18n.FormEN(s) }
 
 // pharmacyEN — название и адрес тестовой аптеки по-английски (имена собственные остаются).
 func pharmacyEN(p *PharmacyDTO) {
-	p.Name = placeRepl.Replace(p.Name)
-	p.Address = placeRepl.Replace(p.Address)
-	if p.WorkHours == "Круглосуточно" {
-		p.WorkHours = "24 hours"
-	}
+	p.Name = i18n.PlaceEN(p.Name)
+	p.Address = i18n.PlaceEN(p.Address)
+	p.WorkHours = i18n.HoursEN(p.WorkHours)
 }
