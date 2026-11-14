@@ -213,4 +213,5 @@ export const en: Record<string, string> = {
   "Осталось": "Left",
   "Курс только начался — пропусков нет": "The course has just started — nothing missed",
   "{0}% приёмов выпито вовремя": "{0}% of doses taken",
+  "Часто покупают": "Popular medicines",
 };

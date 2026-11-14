@@ -8,7 +8,7 @@ import { API_URL, ApiError, api } from "../../lib/api";
 import { formatKm, formatPrice, openStatus } from "../../lib/format";
 import { loadCourses } from "../../lib/storage";
 import { colors, radius, sizes } from "../../lib/theme";
-import type { OffersResponse } from "../../lib/types";
+import type { Analog, OffersResponse } from "../../lib/types";
 import { locale, t, tf } from "../../lib/i18n";
 
 type Sort = "price" | "distance";
@@ -27,6 +27,18 @@ export default function Shops() {
   const [loading, setLoading] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
   const reqId = useRef(0);
+  // Без выбранного лекарства показываем ходовые: то, что есть в большинстве аптек.
+  const [popular, setPopular] = useState<Analog[] | null>(null);
+  useEffect(() => {
+    api.popular().then(setPopular).catch((e) => {
+      console.warn("shops: популярные", e);
+      setPopular([]);
+    });
+  }, []);
+  const choose = (n: string) => {
+    setName(n);
+    setQuery(n);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -140,7 +152,24 @@ export default function Shops() {
         </Pressable>
       </View>
 
-      {!name && <Text style={styles.body}>{t("Выберите лекарство или введите название")}</Text>}
+      {!name && (
+        <>
+          <Text style={styles.body}>{t("Выберите лекарство или введите название")}</Text>
+          {popular && popular.length > 0 && <Text style={styles.title}>{t("Часто покупают")}</Text>}
+          {popular?.map((a) => (
+            <Pressable key={a.medicine.id} accessibilityRole="button" onPress={() => choose(a.medicine.name)}>
+              <Card style={styles.analog}>
+                {a.medicine.image ? <Image source={{ uri: API_URL + a.medicine.image }} style={styles.packSmall} accessibilityLabel={a.medicine.name} /> : null}
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.pharmacy}>{a.medicine.name}</Text>
+                  <Text style={styles.small}>{[a.medicine.active_substance, a.medicine.form].filter(Boolean).join(" · ")}</Text>
+                  <Text style={styles.analogPrice}>{tf("от {0}, аптек: {1}", formatPrice(a.min_price), a.pharmacies_count)}</Text>
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </>
+      )}
       {loading && <Text style={styles.body}>{t("Загрузка...")}</Text>}
       {error && (
         <Card style={{ gap: 12 }}>

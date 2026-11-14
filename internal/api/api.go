@@ -47,6 +47,7 @@ func (a *API) Routes() http.Handler {
 	r.Get("/health", a.health)
 	r.Get("/photos/{id}", a.getPhoto)
 	r.Get("/medicines/search", a.searchMedicines)
+	r.Get("/medicines/popular", a.popularMedicines)
 	r.Get("/offers", a.offers)
 
 	r.Group(func(r chi.Router) {

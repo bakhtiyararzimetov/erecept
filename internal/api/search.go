@@ -214,3 +214,34 @@ func (a *API) offers(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, res)
 }
+
+// popularMedicines — лекарства, которые есть в наличии в большинстве аптек (спрос), с ценой «от».
+// Показываются на пустой вкладке «Аптеки», чтобы было что выбрать без рецепта.
+func (a *API) popularMedicines(w http.ResponseWriter, r *http.Request) {
+	l := i18n.FromContext(r.Context())
+	rows, err := a.DB.Query(r.Context(), `SELECT m.id, m.name, m.active_substance, m.form, m.name_en, m.substance_en,
+			min(pi.price), count(DISTINCT pi.pharmacy_id)
+		FROM medicines m JOIN pharmacy_items pi ON pi.medicine_id = m.id AND pi.in_stock
+		GROUP BY m.id ORDER BY count(DISTINCT pi.pharmacy_id) DESC, min(pi.price), m.name LIMIT 10`)
+	if err != nil {
+		serverError(w, "популярные лекарства", err)
+		return
+	}
+	defer rows.Close()
+	out := []AnalogDTO{}
+	for rows.Next() {
+		var m medRow
+		var d AnalogDTO
+		if err := rows.Scan(append(m.dest(), &d.MinPrice, &d.PharmaciesCount)...); err != nil {
+			serverError(w, "популярные лекарства", err)
+			return
+		}
+		d.Medicine = m.finish(l)
+		out = append(out, d)
+	}
+	if err := rows.Err(); err != nil {
+		serverError(w, "популярные лекарства", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}

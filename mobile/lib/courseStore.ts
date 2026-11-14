@@ -25,7 +25,7 @@ export async function refreshCourses(): Promise<Course[]> {
     const remote = await api.myPrescriptions();
     const merged = mergeCourses(await loadCourses(), remote, await getPendingMarks());
     await saveCourses(merged);
-    await rescheduleAll();
+    rescheduleAll().catch((e) => console.warn("courses: не удалось обновить напоминания", e));
     return merged;
   } catch (e) {
     console.warn("courses: не удалось обновить, показываем сохранённые", e);

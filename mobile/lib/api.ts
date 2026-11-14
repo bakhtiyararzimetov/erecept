@@ -5,6 +5,7 @@ import type {
   OffersParams,
   OffersResponse,
   RelativeOverview,
+  Analog,
 } from "./types";
 import { getLang, t } from "./i18n";
 
@@ -63,6 +64,7 @@ export const api = {
       (r: any) => ({ prescription: r.prescription, doses: r.doses }) as Course,
     ),
   myPrescriptions: () => request<Course[]>("GET", "/api/me/prescriptions"),
+  popular: () => request<Analog[]>("GET", "/api/medicines/popular"),
   sync: (marks: Mark[]) => request<{ updated: number }>("POST", "/api/doses/sync", { marks }),
   pushToken: (token: string) => request<{ ok: boolean }>("POST", "/api/push-token", { token }),
   sos: () => request<{ notified: number; throttled?: boolean }>("POST", "/api/sos"),

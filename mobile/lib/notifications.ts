@@ -71,6 +71,7 @@ export function rescheduleAll(): Promise<void> {
 }
 
 async function rescheduleNow(): Promise<void> {
+  if (Platform.OS === "web") return; // в браузере локальных напоминаний нет
   const now = new Date();
   await channelReady;
   const courses = await loadCourses();
