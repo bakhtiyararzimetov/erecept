@@ -1,6 +1,19 @@
 {{define "title"}}{{t "Вход"}}{{end}}
 {{define "content"}}
-<div class="login-wrap">
+<div class="login-split">
+  <section class="login-hero">
+    <div>
+      <div class="kick">{{t "ДЛЯ ВРАЧЕЙ И АПТЕК"}}</div>
+      <h1>{{t "Рецепт, который действительно выполняют"}}</h1>
+      <p>{{t "Врач диктует — ИИ заполняет рецепт. Пациент получает QR, напоминания и понятные памятки, семья видит пропуски."}}</p>
+      <ul>
+        <li>{{t "ИИ заполняет рецепт по голосу"}}</li>
+        <li>{{t "QR-код и напоминания пациенту"}}</li>
+        <li>{{t "Проверка упаковки по фото"}}</li>
+      </ul>
+    </div>
+  </section>
+  <div>
   <div class="card login-card">
     <h1>{{t "Вход для врачей и аптек"}}</h1>
     {{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
@@ -23,6 +36,7 @@
        <span class="muted">{{t "также doctor2 / doctor123"}}</span></p>
     <p><strong>{{t "Аптека:"}}</strong> <code>apteka1</code> / <code>apteka123</code><br>
        <span class="muted">{{t "аптеки apteka1 … apteka8, пароль тот же"}}</span></p>
+  </div>
   </div>
 </div>
 {{end}}

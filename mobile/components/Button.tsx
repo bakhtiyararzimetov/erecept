@@ -21,7 +21,7 @@ export function Button({ title, onPress, variant = "primary", disabled }: Props)
         (pressed || disabled) && { opacity: 0.7 },
       ]}
     >
-      <Text style={[styles.text, { color: primary ? "#FFFFFF" : colors.text }]}>{title}</Text>
+      <Text style={[styles.text, { color: primary ? "#FFFFFF" : colors.accentDark }]}>{title}</Text>
     </Pressable>
   );
 }
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  primary: { backgroundColor: colors.accent },
-  secondary: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  primary: { backgroundColor: colors.accent, boxShadow: "0px 6px 14px -6px rgba(15, 118, 110, 0.6)" },
+  secondary: { backgroundColor: colors.accentSoft },
   text: { fontSize: sizes.text, fontFamily: "Inter_600SemiBold" },
 });

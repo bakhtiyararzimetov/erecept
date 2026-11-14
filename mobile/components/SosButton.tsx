@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../lib/api";
 import { colors, radius, sizes } from "../lib/theme";
@@ -33,6 +34,7 @@ export function SosButton() {
           ])
         }
       >
+        <Ionicons name="call" size={20} color={colors.error} />
         <Text style={styles.text}>{t("Мне плохо")}</Text>
       </Pressable>
       <Text style={styles.hint}>{t("112 — единая служба · 103 — скорая помощь")}</Text>
@@ -45,13 +47,13 @@ const styles = StyleSheet.create({
   btn: {
     minHeight: sizes.button,
     borderRadius: radius.control,
-    borderWidth: 2,
-    borderColor: colors.error,
-    backgroundColor: colors.card,
+    backgroundColor: colors.errorSoft,
+    flexDirection: "row",
+    gap: 8,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
   },
   text: { fontSize: sizes.text, fontFamily: "Inter_600SemiBold", color: colors.error },
-  hint: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted, textAlign: "center" },
+  hint: { fontSize: 14, fontFamily: "Inter_400Regular", color: colors.muted, textAlign: "center" },
 });

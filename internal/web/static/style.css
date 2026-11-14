@@ -1,4 +1,5 @@
-/* еРецепт: общий стиль веба. Без теней, градиентов и анимаций. */
+/* еРецепт: общий стиль веба. Внизу — слой «v2» (2026-11-14): цвета, шрифты, тени и формы
+   по принципам NHS / Medisafe / Oscar и shadcn / Primer / Stripe. */
 :root {
   --bg: #F6F8FA;
   --card: #FFFFFF;
@@ -205,3 +206,84 @@ pre.muted { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; bac
 .box-verdict { font-weight: 600; font-size: 17px; }
 .lang-switch { margin-left: auto; font-size: 14px; color: var(--muted); white-space: nowrap; }
 .lang-switch a { color: var(--accent); text-decoration: none; }
+
+/* ===== v2 ===== */
+:root {
+  --bg: #F3F6F5;
+  --card: #FFFFFF;
+  --border: #E2E9E7;
+  --text: #17302D;
+  --muted: #4A5F5C;
+  --accent: #0F766E;
+  --accent-700: #115E59;
+  --accent-50: #E6F2F0;
+  --accent-25: #F2F8F7;
+  --input-border: #C5D3D0;
+  --error: #C4291C;
+  --shadow-sm: 0 1px 2px rgb(15 50 45 / .06), 0 1px 3px rgb(15 50 45 / .08);
+  --shadow-md: 0 6px 16px -4px rgb(15 50 45 / .10), 0 2px 4px -2px rgb(15 50 45 / .06);
+}
+body { background: var(--bg); color: var(--text); font-size: 16px; }
+h1, h2, h3, .logo { font-family: "Manrope", "Inter", sans-serif; }
+h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 24px; }
+h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+.muted { color: var(--muted); }
+
+.topbar { height: 68px; background: rgba(255,255,255,.92); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 10; }
+.logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/18px no-repeat; box-shadow: 0 4px 10px -2px rgb(15 118 110 / .45); }
+.menu a { font-weight: 500; color: var(--muted); border-radius: 10px; }
+.menu a:hover { background: var(--accent-25); color: var(--accent-700); }
+.lang-switch { background: var(--accent-25); padding: 6px 12px; border-radius: 999px; font-weight: 600; }
+
+.container { max-width: 1160px; padding: 32px 24px 64px; }
+.card { border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+.card:hover { box-shadow: var(--shadow-md); transition: box-shadow .2s; }
+
+.btn { min-height: 46px; padding: 0 22px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: background .15s, box-shadow .15s, transform .05s; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); border-color: var(--accent); box-shadow: 0 6px 14px -6px rgb(15 118 110 / .6); }
+.btn-primary:hover { background: var(--accent-700); }
+.btn-secondary { background: var(--accent-50); border-color: transparent; color: var(--accent-700); }
+.btn-secondary:hover { background: #D5EAE6; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; box-shadow: 0 0 0 4px rgb(15 118 110 / .22); border-color: var(--accent); }
+
+.field label, .rx-f label { font-size: 14px; font-weight: 600; color: var(--muted); }
+.field input, .field select, .field textarea, .rx-f input, .rx-f select, .price-input { min-height: 46px; border: 1px solid var(--input-border); border-radius: 12px; font-size: 16px; padding: 0 14px; background: #fff; box-shadow: 0 1px 2px rgb(15 50 45 / .04); }
+.field textarea { padding: 12px 14px; }
+.field.has-error input, .field.has-error select, .rx-row.has-error input, .rx-row.has-error select { border-color: var(--error); }
+.rx-row { border: 1px solid var(--border); border-radius: 14px; background: var(--accent-25); padding: 16px; }
+
+/* ИИ-диктовка — главная функция формы: выделенный блок */
+.ai-box { background: linear-gradient(135deg, #E6F2F0 0%, #F2F8F7 100%); border: 1px solid #CCE7E3; border-radius: 16px; padding: 20px; margin: -4px -4px 24px; }
+.ai-box h2 { display: flex; align-items: center; gap: 10px; }
+.ai-tag { font: 700 11px/1 Inter, sans-serif; letter-spacing: .08em; color: #fff; background: var(--accent); padding: 5px 8px; border-radius: 999px; }
+.ai-box .btn-secondary { background: #fff; }
+/* Заголовки разделов формы с иконкой */
+.sec { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.sec .ico { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-50); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.sec .ico svg { width: 20px; height: 20px; stroke: var(--accent-700); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.table { border-collapse: separate; border-spacing: 0; width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.table th { background: var(--accent-25); color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.table td { padding: 14px 18px; border-bottom: 1px solid #EEF2F1; font-variant-numeric: tabular-nums; }
+.table tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: var(--accent-25); }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #EEF2F1; color: var(--muted); border: 0; }
+.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .7; }
+.badge-accent { background: #DDF3E7; color: #0A7D45; }
+
+/* Вход: слева панель с идеей продукта, справа форма */
+.login-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 40px; align-items: center; max-width: 1040px; margin: 24px auto 0; }
+.login-hero { background: #12302D; color: #fff; border-radius: 24px; padding: 48px; min-height: 460px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+.login-hero::after { content: ""; position: absolute; right: -80px; bottom: -80px; width: 320px; height: 320px; border-radius: 50%; border: 48px solid rgb(127 209 199 / .12); }
+.login-hero h1 { font-size: 40px; line-height: 1.1; color: #fff; margin: 16px 0; }
+.login-hero p { color: #CDEBE7; font-size: 17px; max-width: 420px; }
+.login-hero ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 12px; }
+.login-hero li { display: flex; gap: 10px; align-items: center; color: #E1F2EF; font-weight: 500; }
+.login-hero li::before { content: ""; width: 22px; height: 22px; border-radius: 50%; background: rgb(127 209 199 / .25) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237FD1C7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/13px no-repeat; flex: none; }
+.login-hero .kick { font-size: 13px; font-weight: 700; letter-spacing: .1em; color: #7FD1C7; }
+.login-split .login-card h1 { font-size: 26px; }
+@media (max-width: 900px) { .login-split { grid-template-columns: minmax(0, 1fr); } .login-hero { min-height: 0; padding: 32px; } .login-hero h1 { font-size: 30px; } }
+@media (max-width: 640px) { .card { padding: 18px; } h1 { font-size: 26px; } }

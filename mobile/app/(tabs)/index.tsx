@@ -11,16 +11,26 @@ import { rescheduleAll } from "../../lib/notifications";
 import { todayList, type DoseStatus } from "../../lib/schedule";
 import { loadCourses } from "../../lib/storage";
 import { flushMarks, markTaken } from "../../lib/sync";
-import { colors, radius } from "../../lib/theme";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors, fonts, radius, shadow } from "../../lib/theme";
 import type { Course } from "../../lib/types";
 import { locale, t, tf } from "../../lib/i18n";
 
-const STATUS: Record<DoseStatus, { label: string; color: string } | null> = {
-  taken: { label: "Выпито", color: colors.muted },
-  missed: { label: "Пропущено", color: colors.error },
-  due: { label: "Пора принять", color: colors.text },
+// Статус приёма: спокойные цвета — опоздание не красное, а янтарное (как у Round Health).
+const STATUS: Record<DoseStatus, { label: string; color: string; bg: string } | null> = {
+  taken: { label: "Выпито", color: colors.success, bg: colors.successSoft },
+  missed: { label: "Пропущено", color: colors.warning, bg: colors.warningSoft },
+  due: { label: "Пора принять", color: colors.accentDark, bg: colors.accentSoft },
   upcoming: null,
 };
+
+function greeting(d: Date): string {
+  const h = d.getHours();
+  if (h < 5) return t("Доброй ночи");
+  if (h < 12) return t("Доброе утро");
+  if (h < 18) return t("Добрый день");
+  return t("Добрый вечер");
+}
 
 function dateTitle(d: Date): string {
   return new Intl.DateTimeFormat(locale(), { weekday: "long", day: "numeric", month: "long" }).format(d);
@@ -92,6 +102,15 @@ export default function Today() {
   const entries = todayList(courses, now);
   
 
+  const taken = entries.filter((e) => e.status === "taken").length;
+  const groups: { time: string; list: typeof entries }[] = [];
+  for (const e of entries) {
+    const tm = timeOf(e.dose.scheduled_at);
+    const g = groups[groups.length - 1];
+    if (g && g.time === tm) g.list.push(e);
+    else groups.push({ time: tm, list: [e] });
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {!online && (
@@ -104,86 +123,143 @@ export default function Today() {
           <Text style={[styles.offlineText, { color: colors.error }]}>{actionError}</Text>
         </View>
       )}
-      <SosButton />
+
       {courses.length === 0 ? (
-        <Card style={{ gap: 16 }}>
-          <Text style={styles.title}>{t("Сегодня")}</Text>
-          <Text style={styles.body}>{t("Отсканируйте QR-код с рецепта врача")}</Text>
+        <View style={styles.empty}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="qr-code-outline" size={44} color={colors.accent} />
+          </View>
+          <Text style={styles.hello}>{greeting(now)}</Text>
+          <Text style={styles.emptyText}>{t("Отсканируйте QR-код с рецепта врача")}</Text>
           <Button title={t("Сканировать рецепт")} onPress={() => router.push("/scan")} />
-        </Card>
+        </View>
       ) : (
         <>
-          <Text style={styles.date}>{dateTitle(now)}</Text>
-          <Button title={t("Сканировать ещё рецепт")} variant="secondary" onPress={() => router.push("/scan")} />
+          <View style={styles.hero}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroHello}>{greeting(now)}</Text>
+              <Text style={styles.heroDate}>{dateTitle(now)}</Text>
+            </View>
+            {entries.length > 0 && (
+              <View style={styles.heroCount}>
+                <Text style={styles.heroNum}>{taken}/{entries.length}</Text>
+                <Text style={styles.heroLabel}>{t("принято")}</Text>
+              </View>
+            )}
+          </View>
+          {entries.length > 0 && (
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${Math.round((taken * 100) / entries.length)}%` }]} />
+            </View>
+          )}
+
           {entries.length === 0 && (
             <Card>
               <Text style={styles.body}>{t("На сегодня приёмов нет")}</Text>
             </Card>
           )}
-          {entries.map(({ dose, item, status }) => {
-            const badge = STATUS[status];
-            return (
-              <Card key={dose.id} style={{ gap: 8 }}>
-                <View style={styles.row}>
-                  <Text style={styles.time}>{timeOf(dose.scheduled_at)}</Text>
-                  {badge && <Text style={[styles.badge, { color: badge.color, borderColor: colors.border, backgroundColor: status === "taken" ? "#F3F4F6" : colors.card }]}>{t(badge.label)}</Text>}
-                </View>
-                <View style={styles.medRow}>
-                  {item.image ? <Image source={{ uri: API_URL + item.image }} style={styles.pack} accessibilityLabel={item.medicine_name} /> : null}
-                  <Text style={[styles.name, { flex: 1 }]}>{item.medicine_name}</Text>
-                </View>
-                <Text style={styles.body}>
-                  {item.dosage}, {item.meal_label}
-                </Text>
-                <Text style={styles.body}>
-                  {tf("день {0} из {1}", dose.day_number, dose.total_days)}
-                </Text>
-                {status !== "taken" && <Button title={t("Выпил")} onPress={() => onTaken(dose.id)} />}
-                <View style={styles.links}>
-                  {item.explanation && (
-                    <Pressable
-                      accessibilityRole="button"
-                      style={styles.link}
-                      onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
-                    >
-                      <Text style={styles.linkText}>{t("О лекарстве")}</Text>
-                    </Pressable>
-                  )}
-                  <Pressable
-                    accessibilityRole="button"
-                    style={styles.link}
-                    onPress={() => router.push({ pathname: "/shops", params: { name: item.medicine_name } })}
-                  >
-                    <Text style={styles.linkText}>{t("Где купить")}</Text>
-                  </Pressable>
-                </View>
-              </Card>
-            );
-          })}
+
+          {groups.map((g) => (
+            <View key={g.time} style={{ gap: 10 }}>
+              <Text style={styles.groupTime}>{g.time}</Text>
+              {g.list.map(({ dose, item, status }) => {
+                const badge = STATUS[status];
+                const done = status === "taken";
+                return (
+                  <Card key={dose.id} style={done ? { ...styles.dose, opacity: 0.62 } : styles.dose}>
+                    <View style={styles.doseRow}>
+                      {item.image ? (
+                        <Image source={{ uri: API_URL + item.image }} style={styles.pack} accessibilityLabel={item.medicine_name} />
+                      ) : (
+                        <View style={[styles.pack, styles.packStub]}>
+                          <Ionicons name="medical-outline" size={26} color={colors.accent} />
+                        </View>
+                      )}
+                      <View style={{ flex: 1, gap: 4 }}>
+                        <Text style={styles.name}>{item.medicine_name}</Text>
+                        <Text style={styles.small}>
+                          {item.dosage} · {item.meal_label}
+                        </Text>
+                        <View style={styles.chips}>
+                          {badge && <Text style={[styles.chip, { color: badge.color, backgroundColor: badge.bg }]}>{t(badge.label)}</Text>}
+                          <Text style={[styles.chip, styles.chipMuted]}>{tf("день {0} из {1}", dose.day_number, dose.total_days)}</Text>
+                        </View>
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={done ? t("Выпито") : t("Выпил")}
+                        disabled={done}
+                        onPress={() => onTaken(dose.id)}
+                        style={({ pressed }) => [styles.check, done && styles.checkDone, pressed && { transform: [{ scale: 0.94 }] }]}
+                      >
+                        <Ionicons name="checkmark" size={28} color={done ? "#FFFFFF" : colors.accent} />
+                      </Pressable>
+                    </View>
+                    <View style={styles.links}>
+                      {item.explanation && (
+                        <Pressable
+                          accessibilityRole="button"
+                          style={styles.link}
+                          onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
+                        >
+                          <Ionicons name="information-circle-outline" size={18} color={colors.accentDark} />
+                          <Text style={styles.linkText}>{t("О лекарстве")}</Text>
+                        </Pressable>
+                      )}
+                      <Pressable
+                        accessibilityRole="button"
+                        style={styles.link}
+                        onPress={() => router.push({ pathname: "/shops", params: { name: item.medicine_name } })}
+                      >
+                        <Ionicons name="storefront-outline" size={18} color={colors.accentDark} />
+                        <Text style={styles.linkText}>{t("Где купить")}</Text>
+                      </Pressable>
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
+          ))}
+
+          <Button title={t("Сканировать ещё рецепт")} variant="secondary" onPress={() => router.push("/scan")} />
         </>
       )}
+      <SosButton />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  links: { flexDirection: "row", gap: 8 },
-  link: { flex: 1, minHeight: 48, borderRadius: radius.control, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", backgroundColor: colors.card },
-  linkText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: colors.accent },
-  medRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  pack: { width: 110, height: 70, borderRadius: 8 },
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, paddingTop: 16, gap: 16 },
-  offline: { backgroundColor: "#E5E7EB", borderRadius: radius.control, padding: 12 },
-  offlineText: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
-  title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
-  date: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, textTransform: "capitalize" },
+  content: { padding: 16, paddingTop: 20, gap: 16, paddingBottom: 32 },
+  offline: { backgroundColor: colors.warningSoft, borderRadius: radius.control, padding: 12 },
+  offlineText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: colors.warning },
+  hero: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroHello: { fontSize: 28, fontFamily: fonts.title, color: colors.text, letterSpacing: -0.6 },
+  heroDate: { fontSize: 16, fontFamily: "Inter_400Regular", color: colors.muted, marginTop: 2, textTransform: "capitalize" },
+  heroCount: { alignItems: "center", backgroundColor: colors.card, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 16, ...shadow },
+  heroNum: { fontSize: 24, fontFamily: fonts.title, color: colors.accent },
+  heroLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.muted },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.accentSoft, overflow: "hidden", marginTop: -4 },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  groupTime: { fontSize: 14, fontFamily: "Inter_700Bold", color: colors.muted, letterSpacing: 1, marginTop: 4 },
+  dose: { gap: 14, padding: 16 },
+  doseRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  pack: { width: 72, height: 46, borderRadius: 8 },
+  packStub: { backgroundColor: colors.accentSoft, alignItems: "center", justifyContent: "center" },
+  name: { fontSize: 19, fontFamily: fonts.heading, color: colors.text },
+  small: { fontSize: 15, fontFamily: "Inter_400Regular", color: colors.muted },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 },
+  chip: { fontSize: 13, fontFamily: "Inter_600SemiBold", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, overflow: "hidden" },
+  chipMuted: { color: colors.muted, backgroundColor: colors.accentFaint },
+  check: { width: 54, height: 54, borderRadius: 27, borderWidth: 2.5, borderColor: colors.accent, alignItems: "center", justifyContent: "center", backgroundColor: colors.card },
+  checkDone: { backgroundColor: colors.success, borderColor: colors.success },
+  links: { flexDirection: "row", gap: 8 },
+  link: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.accentFaint, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
+  linkText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.accentDark },
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  time: { fontSize: 22, fontFamily: "Inter_700Bold", color: colors.text },
-  badge: {
-    fontSize: 17, fontFamily: "Inter_600SemiBold", borderWidth: 1, borderRadius: radius.control,
-    paddingHorizontal: 10, paddingVertical: 4,
-  },
-  name: { fontSize: 20, fontFamily: "Inter_600SemiBold", color: colors.text },
+  empty: { alignItems: "stretch", gap: 14, backgroundColor: colors.card, borderRadius: radius.card, padding: 24, ...shadow },
+  emptyIcon: { width: 88, height: 88, borderRadius: 24, backgroundColor: colors.accentSoft, alignItems: "center", justifyContent: "center", alignSelf: "center" },
+  hello: { fontSize: 26, fontFamily: fonts.title, color: colors.text, textAlign: "center", letterSpacing: -0.5 },
+  emptyText: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted, textAlign: "center" },
 });

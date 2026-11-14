@@ -1,4 +1,5 @@
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
+import { Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ if (Platform.OS === "web") {
 setupNotifications(); // на верхнем уровне: фоновые кнопки на Android требуют слушателя при загрузке модуля
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
+  const [loaded, error] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold, Manrope_700Bold, Manrope_800ExtraBold });
   // undefined — роль ещё читается; пока не прочитана, ничего не рисуем (заставка остаётся)
   const [role, setRoleState] = useState<Role | null | undefined>(undefined);
   // язык читается до первого кадра; при смене всё дерево перерисовывается заново (key)

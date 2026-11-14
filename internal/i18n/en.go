@@ -2,6 +2,12 @@ package i18n
 
 // en — английские строки интерфейса; ключ — русский текст из шаблона или кода.
 var en = map[string]string{
+	"ДЛЯ ВРАЧЕЙ И АПТЕК":                      "FOR DOCTORS AND PHARMACIES",
+	"Рецепт, который действительно выполняют": "The prescription that is actually followed",
+	"Врач диктует — ИИ заполняет рецепт. Пациент получает QR, напоминания и понятные памятки, семья видит пропуски.": "The doctor speaks, AI fills in the prescription. The patient gets a QR code, reminders and plain-language summaries, and the family sees missed doses.",
+	"ИИ заполняет рецепт по голосу":     "AI fills in the prescription from voice",
+	"QR-код и напоминания пациенту":     "QR code and reminders for the patient",
+	"Проверка упаковки по фото":         "Box check from a photo",
 	"📱 Открыть в приложении":            "📱 Open in the app",
 	"+ Добавить лекарство":              "+ Add medicine",
 	"Печать":                            "Print",
@@ -22,8 +28,8 @@ var en = map[string]string{
 	"%d %s в день, %s, %s":              "%d %s a day, %s, %s",
 	", рег. №":                          ", reg. no.",
 	"1 таблетка 500 мг":                 "1 tablet 500 mg",
-	"QR появится после сохранения.":                      "The QR code appears after saving.",
-	"QR-код рецепта":                                     "Prescription QR code",
+	"QR появится после сохранения.":     "The QR code appears after saving.",
+	"QR-код рецепта":                    "Prescription QR code",
 	"«%s» — время нужно в формате ЧЧ:ММ, например 08:00": "“%s”: use HH:MM, for example 08:00",
 	"Аптека:": "Pharmacy:",
 	"В диктовке не нашлось ни пациента, ни лекарств. Скажите, например: «Иванова Галина, амлодипин 5 мг утром после еды, 30 дней».": "No patient or medicine found in the dictation. Say, for example: “Galina Ivanova, amlodipine 5 mg in the morning after meals, 30 days”.",

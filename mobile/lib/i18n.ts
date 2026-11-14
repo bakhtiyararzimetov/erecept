@@ -61,6 +61,11 @@ export function locale(): string {
 }
 
 export const en: Record<string, string> = {
+  "Доброй ночи": "Good night",
+  "Доброе утро": "Good morning",
+  "Добрый день": "Good afternoon",
+  "Добрый вечер": "Good evening",
+  "принято": "taken",
   "Врач: {0}": "Doctor: {0}",
   "{0}% по плану": "{0}% on track",
   "О лекарстве": "About",
