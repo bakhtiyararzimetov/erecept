@@ -12,6 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
+
+	"erecept/internal/i18n"
 )
 
 const (
@@ -65,6 +67,9 @@ func (w *Web) userByToken(ctx context.Context, token string) *SessionUser {
 	if err := w.DB.QueryRow(ctx, q, id).Scan(&u.Name); err != nil {
 		log.Printf("поиск пользователя сессии: %v", err)
 		return nil
+	}
+	if role == rolePharmacy {
+		u.Name = i18n.FromContext(ctx).Place(u.Name)
 	}
 	return u
 }

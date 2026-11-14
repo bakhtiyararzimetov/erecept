@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"golang.org/x/text/encoding/charmap"
+
+	"erecept/internal/i18n"
 )
 
 func TestParseCSV(t *testing.T) {
@@ -87,7 +89,7 @@ func TestParseCSVWindows1251AndOddInput(t *testing.T) {
 	if len(rows) != 1 || len(errs) != 1 || !strings.Contains(errs[0], "строка 2: недопустимые символы") {
 		t.Fatalf("NUL: %+v %v", rows, errs)
 	}
-	if _, _, fatal := parseCSV(strings.NewReader("название;форма\nА;б\n")); !errors.Is(fatal, ErrCSVHeader) {
+	if _, _, fatal := parseCSV(strings.NewReader("название;форма\nА;б\n"), i18n.RU); !errors.Is(fatal, ErrCSVHeader) {
 		t.Fatalf("ждали ErrCSVHeader, получили %v", fatal)
 	}
 }
