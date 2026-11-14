@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../lib/api";
 import { colors, radius, sizes } from "../lib/theme";
-import { t, tf } from "../lib/i18n";
+import { t } from "../lib/i18n";
+import { confirm, notify } from "../lib/confirm";
 
 let lastSos = 0;
 
@@ -15,9 +16,13 @@ function call() {
       console.warn("sos: не отправлено", e);
     }); // без сети звонок всё равно работает
   }
+  if (Platform.OS === "web") {
+    window.location.href = "tel:103"; // на телефоне браузер откроет набор номера
+    return;
+  }
   Linking.openURL("tel:103").catch((e) => {
     console.warn("sos: не открылся набор номера", e);
-    Alert.alert(t("Не удалось позвонить"), t("Наберите 103 вручную"));
+    notify(t("Не удалось позвонить"), t("Наберите 103 вручную"));
   });
 }
 
@@ -27,12 +32,9 @@ export function SosButton() {
       <Pressable
         accessibilityRole="button"
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
-        onPress={() =>
-          Alert.alert(t("Позвонить в скорую 103?"), undefined, [
-            { text: t("Отмена"), style: "cancel" },
-            { text: t("Позвонить"), onPress: call },
-          ])
-        }
+        onPress={async () => {
+          if (await confirm(t("Позвонить в скорую 103?"), t("Позвонить"), t("Отмена"))) call();
+        }}
       >
         <Ionicons name="call" size={20} color={colors.error} />
         <Text style={styles.text}>{t("Мне плохо")}</Text>
@@ -43,7 +45,7 @@ export function SosButton() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 6 },
+  wrap: { gap: 6, marginTop: 24 }, // отступ от списка — меньше случайных нажатий
   btn: {
     minHeight: sizes.button,
     borderRadius: radius.control,

@@ -232,3 +232,15 @@ test("responseKey различает повторную доставку тог�
   expect(responseKey("snooze-1", "SNOOZE", 100)).toBe(responseKey("snooze-1", "SNOOZE", 100));
   expect(responseKey("snooze-1", "SNOOZE", 100)).not.toBe(responseKey("snooze-1", "SNOOZE", 200));
 });
+
+describe("isEarly", () => {
+  const { isEarly } = require("../schedule");
+  const dose = (at: string) => ({ id: 1, item_id: 1, scheduled_at: at, taken_at: null, day_number: 1, total_days: 5 });
+  it("раньше чем за 30 минут до приёма — рано", () => {
+    expect(isEarly(dose("2026-11-14T20:00:00"), new Date("2026-11-14T08:00:00"))).toBe(true);
+  });
+  it("за 30 минут и позже — не рано", () => {
+    expect(isEarly(dose("2026-11-14T20:00:00"), new Date("2026-11-14T19:30:00"))).toBe(false);
+    expect(isEarly(dose("2026-11-14T20:00:00"), new Date("2026-11-14T21:00:00"))).toBe(false);
+  });
+});

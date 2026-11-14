@@ -125,6 +125,11 @@ export function upcomingNotifications(courses: Course[], now: Date, limit = 60):
   return out.slice(0, limit);
 }
 
+// Отметка раньше окна «Пора принять» — переспрашиваем пациента (защита от случайного тапа).
+export function isEarly(dose: Dose, now: Date): boolean {
+  return doseStatus(dose, now) === "upcoming";
+}
+
 export function doseStatus(dose: Dose, now: Date): DoseStatus {
   if (dose.taken_at) return "taken";
   const diffMin = (now.getTime() - new Date(dose.scheduled_at).getTime()) / MIN;

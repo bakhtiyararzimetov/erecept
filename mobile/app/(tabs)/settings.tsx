@@ -102,7 +102,7 @@ export default function Settings() {
             }}
           />
         )}
-        {!pushAvailable && <Text style={styles.body}>{t("Push недоступен: нужна сборка с EAS (см. README)")}</Text>}
+        {!pushAvailable && <Text style={styles.body}>{t("Напоминания приходят в установленном приложении")}</Text>}
       </Card>
 
       <Text style={styles.small}>{tf("Сервер: {0}", API_URL)}</Text>

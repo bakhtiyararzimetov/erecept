@@ -8,7 +8,8 @@ import { SosButton } from "../../components/SosButton";
 import { Card } from "../../components/Card";
 import { refreshCourses } from "../../lib/courseStore";
 import { rescheduleAll } from "../../lib/notifications";
-import { todayList, type DoseStatus } from "../../lib/schedule";
+import { isEarly, todayList, type DoseStatus } from "../../lib/schedule";
+import { confirm } from "../../lib/confirm";
 import { loadCourses } from "../../lib/storage";
 import { flushMarks, markTaken } from "../../lib/sync";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -48,6 +49,42 @@ export default function Today() {
   const [now, setNow] = useState(new Date());
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlight = useRef(new Set<number>());
+  // «Выпил» сохраняется не сразу: 5 секунд можно нажать «Отменить» (ошибочная отметка уходит врачу).
+  const [undo, setUndo] = useState<{ doseId: number; name: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoRef = useRef<{ doseId: number; name: string } | null>(null);
+
+  function commitUndo() {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = null;
+    const u = undoRef.current;
+    undoRef.current = null;
+    setUndo(null);
+    if (u) onTaken(u.doseId);
+  }
+
+  async function onCheck(doseId: number, name: string, scheduledEarly: boolean, time: string) {
+    if (scheduledEarly) {
+      const ok = await confirm(tf("Ещё не время: приём в {0}. Отметить сейчас?", time), t("Отметить"), t("Отмена"));
+      if (!ok) return;
+    }
+    if (undoRef.current) commitUndo(); // предыдущую отметку сохраняем сразу
+    undoRef.current = { doseId, name };
+    setUndo(undoRef.current);
+    undoTimer.current = setTimeout(commitUndo, 5000);
+  }
+
+  function cancelUndo() {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = null;
+    undoRef.current = null;
+    setUndo(null);
+  }
+
+  // уход с экрана — отметку не теряем
+  useEffect(() => () => {
+    if (undoRef.current) commitUndo();
+  }, []);
 
   const refresh = useCallback(async () => {
     setCourses(await loadCourses()); // сразу показываем сохранённое
@@ -102,7 +139,7 @@ export default function Today() {
   const entries = todayList(courses, now);
   
 
-  const taken = entries.filter((e) => e.status === "taken").length;
+  const taken = entries.filter((e) => e.status === "taken" || e.dose.id === undo?.doseId).length;
   const groups: { time: string; list: typeof entries }[] = [];
   for (const e of entries) {
     const tm = timeOf(e.dose.scheduled_at);
@@ -112,6 +149,7 @@ export default function Today() {
   }
 
   return (
+    <View style={styles.screen}>
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {!online && (
         <View style={styles.offline}>
@@ -163,8 +201,10 @@ export default function Today() {
             <View key={g.time} style={{ gap: 10 }}>
               <Text style={styles.groupTime}>{g.time}</Text>
               {g.list.map(({ dose, item, status }) => {
-                const badge = STATUS[status];
-                const done = status === "taken";
+                const pendingTaken = undo?.doseId === dose.id;
+                const shown: DoseStatus = pendingTaken ? "taken" : status;
+                const badge = STATUS[shown];
+                const done = shown === "taken";
                 return (
                   <Card key={dose.id} style={done ? { ...styles.dose, opacity: 0.62 } : styles.dose}>
                     <View style={styles.doseRow}>
@@ -189,7 +229,7 @@ export default function Today() {
                         accessibilityRole="button"
                         accessibilityLabel={done ? t("Выпито") : t("Выпил")}
                         disabled={done}
-                        onPress={() => onTaken(dose.id)}
+                        onPress={() => onCheck(dose.id, item.medicine_name, isEarly(dose, new Date()), timeOf(dose.scheduled_at))}
                         style={({ pressed }) => [styles.check, done && styles.checkDone, pressed && { transform: [{ scale: 0.94 }] }]}
                       >
                         <Ionicons name="checkmark" size={28} color={done ? "#FFFFFF" : colors.accent} />
@@ -226,6 +266,16 @@ export default function Today() {
       )}
       <SosButton />
     </ScrollView>
+    {undo && (
+      <View style={styles.snack} accessibilityLiveRegion="polite">
+        <Ionicons name="checkmark-circle" size={22} color="#7EE0C3" />
+        <Text style={styles.snackText} numberOfLines={2}>{tf("{0}: отмечено «Выпито»", undo.name)}</Text>
+        <Pressable accessibilityRole="button" onPress={cancelUndo} style={styles.snackBtn}>
+          <Text style={styles.snackBtnText}>{t("Отменить")}</Text>
+        </Pressable>
+      </View>
+    )}
+    </View>
   );
 }
 
@@ -257,6 +307,10 @@ const styles = StyleSheet.create({
   links: { flexDirection: "row", gap: 8 },
   link: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.accentFaint, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   linkText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.accentDark },
+  snack: { position: "absolute", left: 16, right: 16, bottom: 16, backgroundColor: "#17302D", borderRadius: 14, paddingLeft: 14, paddingRight: 6, minHeight: 56, flexDirection: "row", alignItems: "center", gap: 10, ...shadow },
+  snackText: { flex: 1, color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  snackBtn: { minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 10 },
+  snackBtnText: { color: "#7EE0C3", fontSize: 16, fontFamily: "Inter_700Bold" },
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
   empty: { alignItems: "stretch", gap: 14, backgroundColor: colors.card, borderRadius: radius.card, padding: 24, ...shadow },
   emptyIcon: { width: 88, height: 88, borderRadius: 24, backgroundColor: colors.accentSoft, alignItems: "center", justifyContent: "center", alignSelf: "center" },
