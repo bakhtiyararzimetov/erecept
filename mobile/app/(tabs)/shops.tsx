@@ -133,7 +133,7 @@ export default function Shops() {
           returnKeyType="search"
           placeholder={t("Название лекарства")}
           placeholderTextColor={colors.muted}
-          style={[styles.input, { flex: 1 }]}
+          style={[styles.input, { flex: 1, minWidth: 0, width: 0 }]}
         />
         <Pressable accessibilityRole="button" onPress={search} style={styles.searchBtn}>
           <Text style={[styles.chipText, { color: colors.card }]}>{t("Найти")}</Text>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   summaryPrice: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.accent },
   summaryText: { fontSize: 16, fontFamily: "Inter_400Regular", color: colors.muted },
   searchRow: { flexDirection: "row", gap: 8 },
-  searchBtn: { minHeight: 56, paddingHorizontal: 18, borderRadius: radius.control, backgroundColor: colors.accent, justifyContent: "center" },
+  searchBtn: { minHeight: 56, paddingHorizontal: 18, flexShrink: 0, borderRadius: radius.control, backgroundColor: colors.accent, justifyContent: "center" },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   filter: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
   filterActive: { backgroundColor: colors.accent, borderColor: colors.accent },
