@@ -100,9 +100,10 @@ export default function CourseScreen() {
         const left = pr.total - pr.taken - pr.missed;
         return (
           <Card key={c.prescription.id} style={{ gap: 12 }}>
-            <Text style={styles.name}>{c.prescription.doctor_name}</Text>
+            <Text style={styles.name}>{c.prescription.items.map((i) => i.medicine_name).join(" + ")}</Text>
+            <Text style={styles.body}>{tf("Врач: {0}", c.prescription.doctor_name)}</Text>
             <Text style={styles.body}>{period(c)}</Text>
-            <Text style={styles.percent}>{pr.percent}%</Text>
+            <Text style={styles.percent}>{tf("{0}% по плану", pr.percent)}</Text>
             <View style={styles.track}>
               <View style={[styles.fill, { width: `${pr.percent}%` }]} />
             </View>
@@ -167,13 +168,13 @@ export default function CourseScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, paddingTop: 56, gap: 16 },
+  content: { padding: 16, paddingTop: 16, gap: 16 },
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
   name: { fontSize: 20, fontFamily: "Inter_600SemiBold", color: colors.text },
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
   text: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.text },
   label: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
-  percent: { fontSize: 48, fontFamily: "Inter_700Bold", color: colors.text },
+  percent: { fontSize: 28, fontFamily: "Inter_700Bold", color: colors.text },
   track: { height: 12, borderRadius: 6, backgroundColor: colors.border, overflow: "hidden" },
   fill: { height: 12, backgroundColor: colors.accent },
   stats: { gap: 4 },

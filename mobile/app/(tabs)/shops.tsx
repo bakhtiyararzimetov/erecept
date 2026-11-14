@@ -5,7 +5,7 @@ import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, Vie
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { API_URL, ApiError, api } from "../../lib/api";
-import { formatKm, formatPrice } from "../../lib/format";
+import { formatKm, formatPrice, openStatus } from "../../lib/format";
 import { loadCourses } from "../../lib/storage";
 import { colors, radius, sizes } from "../../lib/theme";
 import type { OffersResponse } from "../../lib/types";
@@ -25,6 +25,7 @@ export default function Shops() {
   const [data, setData] = useState<OffersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [openOnly, setOpenOnly] = useState(false);
   const reqId = useRef(0);
 
   useFocusEffect(
@@ -95,6 +96,10 @@ export default function Shops() {
     if (q) setName(q);
   }
 
+  const now = new Date();
+  const offers = (data?.offers ?? []).filter((o) => !openOnly || openStatus(o.pharmacy.work_hours, now) !== "closed");
+  const minPrice = data && data.offers.length > 0 ? Math.min(...data.offers.map((o) => o.price)) : null;
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>{t("Где купить")}</Text>
@@ -120,42 +125,20 @@ export default function Shops() {
         </View>
       )}
 
-      <TextInput
-        value={query}
-        onChangeText={setQuery}
-        onSubmitEditing={search}
-        returnKeyType="search"
-        placeholder={t("Название лекарства")}
-        placeholderTextColor={colors.muted}
-        style={styles.input}
-      />
-      <Button title={t("Найти")} variant="secondary" onPress={search} />
-
-      <View style={styles.segments}>
-        {(["price", "distance"] as Sort[]).map((s) => {
-          const active = sort === s;
-          return (
-            <Pressable
-              key={s}
-              accessibilityRole="button"
-              onPress={() => chooseSort(s)}
-              style={[styles.segment, active && styles.segmentActive]}
-            >
-              <Text style={[styles.chipText, active && { color: colors.card }]}>
-                {s === "price" ? t("По цене") : t("По расстоянию")}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.searchRow}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={search}
+          returnKeyType="search"
+          placeholder={t("Название лекарства")}
+          placeholderTextColor={colors.muted}
+          style={[styles.input, { flex: 1 }]}
+        />
+        <Pressable accessibilityRole="button" onPress={search} style={styles.searchBtn}>
+          <Text style={[styles.chipText, { color: colors.card }]}>{t("Найти")}</Text>
+        </Pressable>
       </View>
-      {sort === "price" && !coords && !denied && (
-        <Text style={styles.body}>{t("Для сортировки по расстоянию приложению нужна ваша геопозиция. Она нигде не сохраняется")}</Text>
-      )}
-      {denied && (
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>{t("Разрешите геолокацию, чтобы видеть ближайшие")}</Text>
-        </View>
-      )}
 
       {!name && <Text style={styles.body}>{t("Выберите лекарство или введите название")}</Text>}
       {loading && <Text style={styles.body}>{t("Загрузка...")}</Text>}
@@ -171,58 +154,114 @@ export default function Shops() {
           <Text style={styles.body}>{t("Такое лекарство не найдено. Проверьте название")}</Text>
         </Card>
       )}
+
       {data && data.medicine && !loading && (
-        <Card style={{ gap: 8, alignItems: "flex-start" }}>
+        <Card style={styles.medCard}>
           {data.medicine.image ? <Image source={{ uri: API_URL + data.medicine.image }} style={styles.packBig} accessibilityLabel={data.medicine.name} /> : null}
-          <Text style={styles.name}>{data.medicine.name}</Text>
-          <Text style={styles.body}>{[data.medicine.active_substance, data.medicine.form].filter(Boolean).join(", ")}</Text>
+          <Text style={styles.medName}>{data.medicine.name}</Text>
+          <Text style={styles.body}>{[data.medicine.active_substance, data.medicine.form].filter(Boolean).join(" · ")}</Text>
+          {minPrice !== null && (
+            <View style={styles.summary}>
+              <Text style={styles.summaryPrice}>{tf("от {0}", formatPrice(minPrice))}</Text>
+              <Text style={styles.summaryText}>{tf("в {0} аптеках", data.offers.length)}</Text>
+            </View>
+          )}
           <Text style={styles.illustration}>{t("Фото упаковки — иллюстрация")}</Text>
         </Card>
       )}
+
+      {data && data.medicine && !loading && data.offers.length > 0 && (
+        <View style={styles.filters}>
+          {(["price", "distance"] as Sort[]).map((sv) => {
+            const active = sort === sv;
+            return (
+              <Pressable key={sv} accessibilityRole="button" onPress={() => chooseSort(sv)} style={[styles.filter, active && styles.filterActive]}>
+                <Text style={[styles.filterText, active && { color: colors.card }]}>{sv === "price" ? t("Дешевле") : t("Ближе")}</Text>
+              </Pressable>
+            );
+          })}
+          <Pressable accessibilityRole="button" onPress={() => setOpenOnly(!openOnly)} style={[styles.filter, openOnly && styles.filterActive]}>
+            <Text style={[styles.filterText, openOnly && { color: colors.card }]}>{t("Открыто сейчас")}</Text>
+          </Pressable>
+        </View>
+      )}
+      {denied && (
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>{t("Разрешите геолокацию, чтобы видеть ближайшие")}</Text>
+        </View>
+      )}
+
       {data && data.medicine && data.offers.length === 0 && !loading && (
         <Card>
           <Text style={styles.body}>{t("Сейчас нет в наличии ни в одной аптеке")}</Text>
         </Card>
       )}
-      {data?.offers.map((o) => (
-        <Card key={o.pharmacy.id} style={{ gap: 8 }}>
-          <Text style={styles.name}>{o.pharmacy.name}</Text>
-          <Text style={styles.price}>{formatPrice(o.price)}</Text>
-          <Text style={styles.body}>{o.pharmacy.address}</Text>
-          <Text style={styles.body}>{o.pharmacy.work_hours}</Text>
-          {o.distance_km !== null && <Text style={styles.body}>{formatKm(o.distance_km)}</Text>}
-          <Button
-            title={t("На карте")}
-            variant="secondary"
-            onPress={() => Linking.openURL(`https://maps.google.com/?q=${o.pharmacy.lat},${o.pharmacy.lng}`).catch(() => undefined)}
-          />
-          {!!o.pharmacy.phone && (
-            <Button
-              title={t("Позвонить")}
-              variant="secondary"
-              onPress={() => Linking.openURL(`tel:${o.pharmacy.phone.replace(/[^\d+]/g, "")}`).catch(() => undefined)}
-            />
-          )}
-        </Card>
-      ))}
+      {!loading &&
+        offers.map((o) => {
+          const st = openStatus(o.pharmacy.work_hours, now);
+          const cheapest = o.price === minPrice;
+          return (
+            <Card key={o.pharmacy.id} style={cheapest ? { ...styles.row, ...styles.rowBest } : styles.row}>
+              <View style={styles.rowTop}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={styles.pharmacy}>{o.pharmacy.name}</Text>
+                  <View style={styles.tags}>
+                    {st && <Text style={[styles.tag, st === "open" ? styles.tagOpen : styles.tagClosed]}>{st === "open" ? t("Открыто") : t("Закрыто")}</Text>}
+                    {cheapest && <Text style={[styles.tag, styles.tagBest]}>{t("Дешевле всего")}</Text>}
+                  </View>
+                </View>
+                <Text style={styles.price}>{formatPrice(o.price)}</Text>
+              </View>
+              <Text style={styles.small}>{o.pharmacy.address}</Text>
+              <Text style={styles.small}>
+                {[o.pharmacy.work_hours, o.distance_km !== null ? formatKm(o.distance_km) : null].filter(Boolean).join(" · ")}
+              </Text>
+              <View style={styles.actions}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.action}
+                  onPress={() => Linking.openURL(`https://maps.google.com/?q=${o.pharmacy.lat},${o.pharmacy.lng}`).catch(() => undefined)}
+                >
+                  <Text style={styles.actionText}>{t("Маршрут")}</Text>
+                </Pressable>
+                {!!o.pharmacy.phone && (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.action}
+                    onPress={() => Linking.openURL(`tel:${o.pharmacy.phone.replace(/[^\d+]/g, "")}`).catch(() => undefined)}
+                  >
+                    <Text style={styles.actionText}>{t("Позвонить")}</Text>
+                  </Pressable>
+                )}
+              </View>
+            </Card>
+          );
+        })}
 
-      {data && data.analogs.length > 0 && (
+      {data && data.analogs.length > 0 && !loading && (
         <>
           <Text style={styles.title}>{t("Аналоги")}</Text>
           <View style={styles.notice}>
             <Text style={styles.noticeText}>{data.analog_note}</Text>
           </View>
           {data.analogs.map((a) => (
-            <Card key={a.medicine.id} style={{ gap: 4 }}>
-              {a.medicine.image ? <Image source={{ uri: API_URL + a.medicine.image }} style={styles.packSmall} accessibilityLabel={a.medicine.name} /> : null}
-              <Text style={styles.name}>{a.medicine.name}</Text>
-              <Text style={styles.body}>
-                {[a.medicine.active_substance, a.medicine.form].filter(Boolean).join(", ")}
-              </Text>
-              <Text style={styles.text}>
-                {tf("от {0}, аптек: {1}", formatPrice(a.min_price), a.pharmacies_count)}
-              </Text>
-            </Card>
+            <Pressable
+              key={a.medicine.id}
+              accessibilityRole="button"
+              onPress={() => {
+                setName(a.medicine.name);
+                setQuery(a.medicine.name);
+              }}
+            >
+              <Card style={styles.analog}>
+                {a.medicine.image ? <Image source={{ uri: API_URL + a.medicine.image }} style={styles.packSmall} accessibilityLabel={a.medicine.name} /> : null}
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.pharmacy}>{a.medicine.name}</Text>
+                  <Text style={styles.small}>{[a.medicine.active_substance, a.medicine.form].filter(Boolean).join(" · ")}</Text>
+                  <Text style={styles.analogPrice}>{tf("от {0}, аптек: {1}", formatPrice(a.min_price), a.pharmacies_count)}</Text>
+                </View>
+              </Card>
+            </Pressable>
           ))}
         </>
       )}
@@ -231,14 +270,40 @@ export default function Shops() {
 }
 
 const styles = StyleSheet.create({
-  packBig: { width: 300, height: 190, borderRadius: 12 },
-  packSmall: { width: 150, height: 95, borderRadius: 8 },
+  packBig: { width: "100%", aspectRatio: 600 / 380, borderRadius: 12 },
+  packSmall: { width: 96, height: 61, borderRadius: 8 },
   illustration: { fontSize: 13, color: colors.muted },
+  medCard: { gap: 6 },
+  medName: { fontSize: 26, fontFamily: "Inter_700Bold", color: colors.text, marginTop: 4 },
+  summary: { flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 },
+  summaryPrice: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.accent },
+  summaryText: { fontSize: 16, fontFamily: "Inter_400Regular", color: colors.muted },
+  searchRow: { flexDirection: "row", gap: 8 },
+  searchBtn: { minHeight: 56, paddingHorizontal: 18, borderRadius: radius.control, backgroundColor: colors.accent, justifyContent: "center" },
+  filters: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  filter: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
+  filterActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  filterText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text },
+  row: { gap: 6 },
+  rowBest: { borderColor: colors.accent, borderWidth: 2 },
+  rowTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  pharmacy: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: colors.text },
+  tags: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
+  tag: { fontSize: 13, fontFamily: "Inter_600SemiBold", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: "hidden" },
+  tagOpen: { color: "#166534", backgroundColor: "#DCFCE7" },
+  tagClosed: { color: colors.muted, backgroundColor: colors.border },
+  tagBest: { color: colors.card, backgroundColor: colors.accent },
+  small: { fontSize: 15, fontFamily: "Inter_400Regular", color: colors.muted },
+  actions: { flexDirection: "row", gap: 8, marginTop: 6 },
+  action: { flex: 1, minHeight: 44, borderRadius: radius.control, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  actionText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.accent },
+  analog: { flexDirection: "row", alignItems: "center", gap: 12 },
+  analogPrice: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text },
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, paddingTop: 56, gap: 16 },
+  content: { padding: 16, paddingTop: 16, gap: 14 },
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
   name: { fontSize: 20, fontFamily: "Inter_600SemiBold", color: colors.text },
-  price: { fontSize: 28, fontFamily: "Inter_700Bold", color: colors.text },
+  price: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
   text: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
   errorText: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.error },

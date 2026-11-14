@@ -112,7 +112,7 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, paddingTop: 56, gap: 16 },
+  content: { padding: 16, paddingTop: 16, gap: 16 },
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
   name: { fontSize: 20, fontFamily: "Inter_600SemiBold", color: colors.text },
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },

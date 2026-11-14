@@ -1,7 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { API_URL } from "../../lib/api";
 import { Button } from "../../components/Button";
 import { SosButton } from "../../components/SosButton";
@@ -139,18 +139,24 @@ export default function Today() {
                   {tf("день {0} из {1}", dose.day_number, dose.total_days)}
                 </Text>
                 {status !== "taken" && <Button title={t("Выпил")} onPress={() => onTaken(dose.id)} />}
-                {item.explanation && (
-                  <Button
-                    title={t("Коротко о лекарстве")}
-                    variant="secondary"
-                    onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
-                  />
-                )}
-                <Button
-                  title={t("Где купить")}
-                  variant="secondary"
-                  onPress={() => router.push({ pathname: "/shops", params: { name: item.medicine_name } })}
-                />
+                <View style={styles.links}>
+                  {item.explanation && (
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.link}
+                      onPress={() => router.push({ pathname: "/explain", params: { itemId: String(item.id) } })}
+                    >
+                      <Text style={styles.linkText}>{t("О лекарстве")}</Text>
+                    </Pressable>
+                  )}
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.link}
+                    onPress={() => router.push({ pathname: "/shops", params: { name: item.medicine_name } })}
+                  >
+                    <Text style={styles.linkText}>{t("Где купить")}</Text>
+                  </Pressable>
+                </View>
               </Card>
             );
           })}
@@ -161,10 +167,13 @@ export default function Today() {
 }
 
 const styles = StyleSheet.create({
+  links: { flexDirection: "row", gap: 8 },
+  link: { flex: 1, minHeight: 48, borderRadius: radius.control, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", backgroundColor: colors.card },
+  linkText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: colors.accent },
   medRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  pack: { width: 96, height: 61, borderRadius: 8 },
+  pack: { width: 110, height: 70, borderRadius: 8 },
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, paddingTop: 56, gap: 16 },
+  content: { padding: 16, paddingTop: 16, gap: 16 },
   offline: { backgroundColor: "#E5E7EB", borderRadius: radius.control, padding: 12 },
   offlineText: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
   title: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },

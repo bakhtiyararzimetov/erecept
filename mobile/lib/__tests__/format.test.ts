@@ -1,3 +1,4 @@
+import { openStatus } from "../format";
 import { formatKm, formatPrice } from "../format";
 
 describe("formatPrice", () => {
@@ -20,5 +21,23 @@ describe("formatKm", () => {
     expect(formatKm(3)).toBe("3,0 км");
     expect(formatKm(0.04)).toBe("0,0 км");
     expect(formatKm(12.36)).toBe("12,4 км");
+  });
+});
+
+describe("openStatus", () => {
+  const at = (h: number, m = 0) => new Date(2026, 10, 14, h, m);
+  test("в часы работы — open, вне — closed", () => {
+    expect(openStatus("08:00–22:00", at(9))).toBe("open");
+    expect(openStatus("08:00–22:00", at(22, 30))).toBe("closed");
+    expect(openStatus("08:30-22:00", at(8, 15))).toBe("closed");
+  });
+  test("круглосуточно и через полночь", () => {
+    expect(openStatus("Круглосуточно", at(3))).toBe("open");
+    expect(openStatus("24 hours", at(3))).toBe("open");
+    expect(openStatus("20:00–02:00", at(1))).toBe("open");
+    expect(openStatus("20:00–02:00", at(12))).toBe("closed");
+  });
+  test("непонятный формат — null", () => {
+    expect(openStatus("по записи", at(9))).toBeNull();
   });
 });

@@ -61,6 +61,18 @@ export function locale(): string {
 }
 
 export const en: Record<string, string> = {
+  "Врач: {0}": "Doctor: {0}",
+  "{0}% по плану": "{0}% on track",
+  "О лекарстве": "About",
+  "от {0}": "from {0}",
+  "в {0} аптеках": "in {0} pharmacies",
+  "Дешевле": "Cheapest first",
+  "Ближе": "Nearest",
+  "Открыто сейчас": "Open now",
+  "Открыто": "Open",
+  "Закрыто": "Closed",
+  "Дешевле всего": "Best price",
+  "Маршрут": "Route",
   "еРецепт": "eRecept",
   "Фото упаковки — иллюстрация": "Pack photo is an illustration",
   "Язык": "Language",
@@ -69,7 +81,7 @@ export const en: Record<string, string> = {
   "112 — единая служба · 103 — скорая помощь": "112 — emergency line · 103 — ambulance",
   "Push недоступен: нужна сборка с EAS (см. README)": "Push is not available: an EAS build is needed (see README)",
   "Аналоги": "Analogs",
-  "Аптеки": "Pharmacies",
+  "Аптеки": "Pharmacy",
   "Близкие": "Family",
   "Ваше имя": "Your name",
   "Введите ваше имя": "Enter your name",
