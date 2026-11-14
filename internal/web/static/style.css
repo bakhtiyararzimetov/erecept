@@ -287,3 +287,84 @@ h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
 .login-split .login-card h1 { font-size: 26px; }
 @media (max-width: 900px) { .login-split { grid-template-columns: minmax(0, 1fr); } .login-hero { min-height: 0; padding: 32px; } .login-hero h1 { font-size: 30px; } }
 @media (max-width: 640px) { .card { padding: 18px; } h1 { font-size: 26px; } }
+
+/* ===== v3 (2026-11-14): по разбору стиля и 8 правилам ===== */
+/* Переключатель языка — сегменты, как в приложении */
+.lang-switch { display: inline-flex; padding: 3px; gap: 2px; background: var(--accent-25); border: 1px solid var(--border); border-radius: 999px; font-size: 14px; font-weight: 600; }
+.lang-switch a, .lang-switch b { min-width: 40px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 0 10px; }
+.lang-switch b { background: var(--accent); color: #fff; }
+.lang-switch a { color: var(--muted); }
+.lang-switch a:hover { color: var(--accent-700); background: #fff; }
+
+/* Заголовок страницы рецепта: подпись, имя, действия справа */
+.page-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
+.page-head h1 { margin: 0; }
+.page-head form { margin: 0; }
+.kick { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kick code { text-transform: none; letter-spacing: 0; }
+.btn-danger { background: #fff; border-color: #F1C9C4; color: var(--error); }
+.btn-danger:hover { background: #FDF1EF; }
+.notice-error { border-left: 3px solid var(--error); background: #FDF6F5; }
+
+/* Данные рецепта сеткой «поле — значение» */
+.kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin: 0; }
+.kv > div { min-width: 0; }
+.kv dt { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.kv dd { margin: 0; font-size: 16px; font-weight: 500; }
+.kv .kv-wide { grid-column: 1 / -1; padding-top: 14px; border-top: 1px solid #EEF2F1; }
+@media (max-width: 340px) { .kv { grid-template-columns: minmax(0, 1fr); } }
+
+/* Таблица внутри карточки — без второй рамки */
+.card-flush { padding: 0; overflow: hidden; }
+.card-flush > .card-title { padding: 22px 28px 14px; margin: 0; }
+.table-flat { border: 0; border-radius: 0; box-shadow: none; }
+.table-flat th:first-child, .table-flat td:first-child { padding-left: 28px; }
+#adherence .table-flat { border: 1px solid var(--border); border-radius: 12px; }
+@media (max-width: 640px) {
+  .card-flush > .card-title { padding: 16px 16px 8px; }
+  .card-flush .table-flat { padding: 0 12px 4px; }
+}
+.qr-link { overflow-wrap: anywhere; font-size: 14px; }
+
+/* Список рецептов: строка целиком ведёт в рецепт */
+.table-click tbody tr { cursor: pointer; }
+.row-link { color: var(--text); font-weight: 600; text-decoration: none; }
+.row-link::after { content: ""; position: absolute; inset: 0; }
+.table-click tbody tr { position: relative; }
+.row-link:hover { color: var(--accent-700); }
+.go-cell { width: 48px; text-align: right; }
+.go { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 50%; color: var(--accent-700); background: var(--accent-50); font-size: 22px; line-height: 1; text-decoration: none; }
+@media (max-width: 640px) { .go-cell { display: none !important; } }
+
+/* Форма: «С / До» в одну строку, свои стрелки у списков, закреплённая кнопка */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field select, .rx-f select { appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23115E59' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") right 12px center / 18px no-repeat; }
+.field select:hover, .rx-f select:hover, .field input:hover, .rx-f input:hover { border-color: #A9BEBA; }
+.save-bar { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 12px; align-items: center; margin: 24px -28px -28px; padding: 16px 28px; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-top: 1px solid var(--border); border-radius: 0 0 16px 16px; }
+.save-bar .btn-primary { min-width: 220px; }
+@media (max-width: 640px) { .save-bar { margin: 20px -18px -18px; padding: 12px 18px; } .save-bar .btn { flex: 1; min-width: 0; } }
+.rx-form.card:hover { box-shadow: var(--shadow-sm); }
+
+/* Дата рождения: поле + кнопка календаря */
+.date-wrap { position: relative; }
+.date-wrap input[type=text] { padding-right: 52px; }
+.date-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border: 0; border-radius: 9px; background: var(--accent-50); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.date-btn:hover { background: #D5EAE6; }
+.date-btn svg { width: 20px; height: 20px; fill: none; stroke: var(--accent-700); stroke-width: 1.9; stroke-linecap: round; }
+.date-hidden { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
+
+/* Поля, заполненные ИИ: подсветка до первой правки врача */
+.ai-filled { background: #FFF9E8 !important; border-color: #E8C76A !important; }
+.ai-legend { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #8A6500; background: #FFF9E8; border: 1px solid #E8C76A; border-radius: 999px; padding: 2px 10px; margin-left: 4px; white-space: nowrap; }
+
+/* Проверка упаковки: следующий шаг — фармацевт */
+.box-next { font-weight: 600; padding: 10px 12px; border-radius: 10px; background: var(--accent-25); }
+.box-result.warn .box-next { background: #FDF1EF; color: var(--error); }
+@media print { .page-head .row, .save-bar { display: none !important; } }
+.nowrap { white-space: nowrap; }
+.badge-error { background: #FDECEA; color: var(--error); }
+.card > .save-bar { margin-bottom: -28px; }
+@media (max-width: 640px) { .card > .save-bar { margin-bottom: -18px; } }
+.row-removed { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 1px dashed var(--input-border); border-radius: 14px; padding: 10px 16px; margin-bottom: 12px; color: var(--muted); }
+.row-removed button { border: 0; background: none; color: var(--accent-700); font: 600 15px Inter, sans-serif; cursor: pointer; min-height: 40px; padding: 0 8px; }

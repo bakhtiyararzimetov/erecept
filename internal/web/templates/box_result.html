@@ -4,6 +4,7 @@
   {{else}}{{with .Res}}
   <p class="box-verdict">{{.Message}}</p>
   {{if or .Box.Brand .Box.Substance}}<p class="muted">{{t "На упаковке:"}} {{if .Box.Brand}}{{.Box.Brand}}{{end}}{{if and (eq lang "en") .Box.SubstanceEN}} · {{.Box.SubstanceEN}}{{else if .Box.Substance}} · {{.Box.Substance}}{{end}}{{if and (eq lang "en") .Box.StrengthEN}} · {{.Box.StrengthEN}}{{else if .Box.Strength}} · {{.Box.Strength}}{{end}}{{if and (eq lang "en") .Box.FormEN}} · {{.Box.FormEN}}{{else if .Box.Form}} · {{.Box.Form}}{{end}}</p>{{end}}
+  <p class="box-next">{{if eq $.Kind "warn"}}{{t "Не принимайте это лекарство, пока не покажете упаковку и рецепт фармацевту или врачу."}}{{else}}{{t "Если сомневаетесь, покажите упаковку и рецепт фармацевту перед первым приёмом."}}{{end}}</p>
   {{end}}
   <p class="muted">{{$.Footer}}</p>
   {{end}}

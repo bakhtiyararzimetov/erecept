@@ -1,6 +1,6 @@
-{{define "title"}}{{t "Новый рецепт"}}{{end}}
+{{define "title"}}{{if .EditID}}{{t "Изменить рецепт"}}{{else}}{{t "Новый рецепт"}}{{end}}{{end}}
 {{define "content"}}
-<h1>{{t "Новый рецепт"}}</h1>
+<h1>{{if .EditID}}{{t "Изменить рецепт"}}{{else}}{{t "Новый рецепт"}}{{end}}</h1>
 {{if .Errors}}
 <div class="card" role="alert">
   <p class="error">{{t "Рецепт не сохранён. Исправьте:"}}</p>
@@ -9,11 +9,11 @@
 {{end}}
 {{if .Dictated}}
 <div class="card notice" role="status">
-  <p><strong>{{t "ИИ заполнил форму по диктовке."}}</strong> {{t "Проверьте каждое поле и нажмите «Сохранить рецепт»."}}</p>
+  <p><strong>{{t "ИИ заполнил форму по диктовке."}}</strong> {{t "Проверьте каждое поле и нажмите «Сохранить рецепт»."}} <span class="ai-legend">{{t "Заполнено ИИ"}}</span></p>
 </div>
 {{end}}
 <div class="grid-2">
-  <form class="card" method="post" action="/doctor/prescriptions">
+  <form class="card rx-form{{if .Dictated}} dictated{{end}}" method="post" action="{{if .EditID}}/doctor/prescriptions/{{.EditID}}{{else}}/doctor/prescriptions{{end}}">
     {{if .CanDictate}}
     <div class="ai-box">
     <h2>{{t "Надиктовать рецепт (ИИ)"}} <span class="ai-tag">AI</span></h2>
@@ -35,13 +35,17 @@
     </div>
     <div class="field{{if .Form.BadFields.patient_birth}} has-error{{end}}">
       <label for="patient_birth">{{t "Дата рождения"}}</label>
-      <input id="patient_birth" name="patient_birth" type="text" value="{{.Form.PatientBirth}}" placeholder="{{t "ДД.ММ.ГГГГ"}}" inputmode="numeric" autocomplete="off" required>
+      <div class="date-wrap">
+        <input id="patient_birth" name="patient_birth" type="text" value="{{.Form.PatientBirth}}" placeholder="{{t "ДД.ММ.ГГГГ"}}" inputmode="numeric" autocomplete="off" required>
+        <button type="button" class="date-btn" id="birth-cal" aria-label="{{t "Выбрать дату в календаре"}}" title="{{t "Выбрать дату в календаре"}}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+        <input type="date" id="birth-picker" class="date-hidden" tabindex="-1" aria-hidden="true" min="1900-01-01">
+      </div>
     </div>
 
     <h2 class="sec"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-45 12 12)"/><path d="M9.5 9.5l5 5"/></svg></span>{{t "Лекарства"}}</h2>
     <datalist id="medicines">{{range .Medicines}}<option value="{{.}}">{{end}}</datalist>
     <div id="rows" class="rx-list">{{range .Form.Items}}{{template "item_row" .}}{{end}}</div>
-    <p><button type="button" class="btn btn-secondary" hx-get="/doctor/item-row" hx-vals='js:{i: window.rowN++}' hx-target="#rows" hx-swap="beforeend" hx-on::before-request="if (document.querySelectorAll('.rx-row').length >= 20) { event.preventDefault(); alert(this.dataset.maxMsg); }" data-max-msg="{{t "Не больше 20 лекарств в одном рецепте"}}">{{t "+ Добавить лекарство"}}</button></p>
+    <p><button type="button" class="btn btn-secondary" hx-get="/doctor/item-row" hx-vals='js:{i: window.rowN++}' hx-target="#rows" hx-swap="beforeend" hx-on::before-request="if (document.querySelectorAll('.rx-row:not([hidden])').length >= 20) { event.preventDefault(); alert(this.dataset.maxMsg); }" data-max-msg="{{t "Не больше 20 лекарств в одном рецепте"}}">{{t "+ Добавить лекарство"}}</button></p>
 
     <h2 class="sec"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg></span>{{t "Напоминание о воде"}}</h2>
     <div class="field{{if .Form.BadFields.water_every_hours}} has-error{{end}}">
@@ -54,6 +58,7 @@
         <option value="4"{{if eq .Form.WaterEvery 4}} selected{{end}}>{{t "Каждые 4 часа"}}</option>
       </select>
     </div>
+    <div class="field-row">
     <div class="field{{if .Form.BadFields.water_from}} has-error{{end}}">
       <label for="water_from">{{t "С"}}</label>
       <input id="water_from" name="water_from" type="text" value="{{.Form.WaterFrom}}" placeholder="09:00" inputmode="numeric" pattern="[0-2][0-9]:[0-5][0-9]">
@@ -62,12 +67,16 @@
       <label for="water_to">{{t "До"}}</label>
       <input id="water_to" name="water_to" type="text" value="{{.Form.WaterTo}}" placeholder="21:00" inputmode="numeric" pattern="[0-2][0-9]:[0-5][0-9]">
     </div>
+    </div>
 
     <div class="field">
       <label for="comment">{{t "Комментарий врача"}}</label>
       <textarea id="comment" name="comment">{{.Form.Comment}}</textarea>
     </div>
-    <button class="btn btn-primary" type="submit">{{t "Сохранить рецепт"}}</button>
+    <div class="save-bar">
+      <button class="btn btn-primary" type="submit">{{if .EditID}}{{t "Сохранить изменения"}}{{else}}{{t "Сохранить рецепт"}}{{end}}</button>
+      {{if .EditID}}<a class="btn btn-secondary" href="/doctor/prescriptions/{{.EditID}}">{{t "Отмена"}}</a>{{end}}
+    </div>
   </form>
   <aside class="card">
     <h2>{{t "QR-код рецепта"}}</h2>
@@ -77,6 +86,28 @@
 </div>
 <script>
 window.rowN = {{.Form.NextIndex}};
+// «Удалить» строку лекарства можно отменить: строка прячется, поля не отправляются, есть «Вернуть».
+function rxRemove(btn) {
+  var row = btn.closest(".rx-row");
+  var name = (row.querySelector(".rx-name input") || {}).value || "";
+  row.hidden = true;
+  row.querySelectorAll("input, select").forEach(function (el) { el.disabled = true; });
+  var bar = document.createElement("div");
+  bar.className = "row-removed";
+  bar.setAttribute("role", "status");
+  var text = document.createElement("span");
+  text.textContent = btn.dataset.removed + (name ? ": " + name : "");
+  var undo = document.createElement("button");
+  undo.type = "button";
+  undo.textContent = btn.dataset.undo;
+  undo.addEventListener("click", function () {
+    row.querySelectorAll("input, select").forEach(function (el) { el.disabled = false; });
+    row.hidden = false;
+    bar.remove();
+  });
+  bar.append(text, undo);
+  row.after(bar);
+}
 (function () {
   var defaults = {1: "08:00", 2: "08:00, 20:00", 3: "08:00, 14:00, 20:00", 4: "08:00, 12:00, 16:00, 20:00", 5: "08:00, 11:00, 14:00, 17:00, 20:00", 6: "08:00, 10:00, 12:00, 14:00, 16:00, 20:00"};
   document.addEventListener("change", function (e) {
@@ -112,6 +143,33 @@ window.rowN = {{.Form.NextIndex}};
       rec.onend = function () { rec = null; mic.textContent = {{t "🎤 Говорить"}}; };
       rec.start();
       mic.textContent = {{t "⏹ Остановить"}};
+    });
+  }
+  // Дата рождения из календаря: пишем в поле как ДД.ММ.ГГГГ (врач может и печатать).
+  var birth = document.getElementById("patient_birth");
+  var picker = document.getElementById("birth-picker");
+  var cal = document.getElementById("birth-cal");
+  if (birth && picker && cal) {
+    picker.max = new Date().toISOString().slice(0, 10);
+    cal.addEventListener("click", function () {
+      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(birth.value.trim());
+      if (m) picker.value = m[3] + "-" + m[2] + "-" + m[1];
+      if (picker.showPicker) { try { picker.showPicker(); return; } catch (e) {} }
+      picker.focus(); picker.click();
+    });
+    picker.addEventListener("change", function () {
+      var p = picker.value.split("-");
+      if (p.length === 3) { birth.value = p[2] + "." + p[1] + "." + p[0]; birth.dispatchEvent(new Event("input", { bubbles: true })); }
+    });
+  }
+  // После диктовки поля, заполненные ИИ, подсвечены, пока врач их не поправит.
+  var rxForm = document.querySelector(".rx-form.dictated");
+  if (rxForm) {
+    rxForm.querySelectorAll("input:not([type=hidden]):not([type=date]), select, textarea").forEach(function (el) {
+      if (el.id === "dictation" || !el.value) return;
+      el.classList.add("ai-filled");
+      el.addEventListener("input", function () { el.classList.remove("ai-filled"); }, { once: true });
+      el.addEventListener("change", function () { el.classList.remove("ai-filled"); }, { once: true });
     });
   }
   var form = box && box.form;

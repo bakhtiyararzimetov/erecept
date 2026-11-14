@@ -43,7 +43,7 @@ async function request<T>(method: string, path: string, body?: unknown, form?: F
   }
   if (!res.ok) {
     throw new ApiError(
-      (data && typeof data.error === "string" && data.error) || t("Нет связи с сервером"),
+      (data && typeof data.error === "string" && t(data.error)) || t("Нет связи с сервером"),
       res.status,
     );
   }

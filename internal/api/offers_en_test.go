@@ -39,13 +39,13 @@ func TestOffersEnglish(t *testing.T) {
 	if d.Medicine == nil || d.Medicine.Name != "Glucophage" || d.Medicine.ActiveSubstance != "metformin" || d.Medicine.Form != "tablets 850 mg, 60 pcs" {
 		t.Fatalf("лекарство: %+v", d.Medicine)
 	}
-	if d.Medicine.Image != "/static/meds/glucophage.png" {
+	if d.Medicine.Image != "/static/meds/en/glucophage.png" {
 		t.Errorf("картинка: %q", d.Medicine.Image)
 	}
 	if len(d.Offers) == 0 || !strings.HasPrefix(d.Offers[0].Pharmacy.Address, "Shymkent, ") || !strings.HasPrefix(d.Offers[0].Pharmacy.Name, "Pharmacy «") {
 		t.Errorf("аптеки: %+v", d.Offers)
 	}
-	if len(d.Analogs) == 0 || d.Analogs[0].Medicine.Name != "Metformin" || d.Analogs[0].Medicine.Image != "/static/meds/metformin.png" {
+	if len(d.Analogs) == 0 || d.Analogs[0].Medicine.Name != "Metformin" || d.Analogs[0].Medicine.Image != "/static/meds/en/metformin.png" {
 		t.Errorf("аналоги: %+v", d.Analogs)
 	}
 	if strings.ContainsAny(d.AnalogNote, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя") {

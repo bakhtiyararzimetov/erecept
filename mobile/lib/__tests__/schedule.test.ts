@@ -244,3 +244,27 @@ describe("isEarly", () => {
     expect(isEarly(dose("2026-11-14T20:00:00"), new Date("2026-11-14T21:00:00"))).toBe(false);
   });
 });
+
+import { activeCourses, lateTakenAt } from "../schedule";
+
+describe("отменённый врачом рецепт", () => {
+  const now = new Date("2026-11-01T07:00:00+05:00");
+  const c = course([dose(1, "2026-11-01T08:00:00+05:00")], presc({ cancelled: true }));
+  it("нет приёмов на сегодня и напоминаний", () => {
+    expect(todayList([c], now)).toEqual([]);
+    expect(upcomingNotifications([c], now)).toEqual([]);
+  });
+  it("activeCourses убирает отменённые", () => {
+    const ok = course([dose(2, "2026-11-01T08:00:00+05:00")], presc({ id: 2 }));
+    expect(activeCourses([c, ok]).map((x) => x.prescription.id)).toEqual([2]);
+  });
+});
+
+describe("lateTakenAt", () => {
+  it("«вовремя» — время по расписанию, «сейчас» — now", () => {
+    const d = dose(1, "2026-11-01T08:00:00+05:00");
+    const now = new Date("2026-11-01T11:00:00+05:00");
+    expect(lateTakenAt(d, "on_time", now).toISOString()).toBe(new Date("2026-11-01T08:00:00+05:00").toISOString());
+    expect(lateTakenAt(d, "now", now)).toBe(now);
+  });
+});

@@ -5,16 +5,16 @@
   <a class="btn btn-primary" href="/doctor">{{t "Новый рецепт"}}</a>
 </div>
 {{if .Rows}}
-<table class="table">
+<table class="table table-click">
   <thead><tr><th>{{t "Пациент"}}</th><th>{{t "Дата"}}</th><th>{{t "Статус"}}</th><th>{{t "Выполнено"}}</th><th></th></tr></thead>
   <tbody>
   {{range .Rows}}
   <tr>
-    <td data-label="{{t "Пациент"}}">{{.PatientName}}</td>
+    <td data-label="{{t "Пациент"}}"><a class="row-link" href="/doctor/prescriptions/{{.ID}}">{{.PatientName}}</a></td>
     <td data-label="{{t "Дата"}}">{{.Date}}</td>
-    <td data-label="{{t "Статус"}}">{{if .Started}}<span class="badge badge-accent">{{t "Курс идёт"}}</span>{{else}}<span class="badge">{{t "Ожидает сканирования"}}</span>{{end}}</td>
+    <td data-label="{{t "Статус"}}">{{if .Cancelled}}<span class="badge badge-error">{{t "Отменён"}}</span>{{else if .Started}}<span class="badge badge-accent">{{t "Курс идёт"}}</span>{{else}}<span class="badge">{{t "Ожидает сканирования"}}</span>{{end}}</td>
     <td data-label="{{t "Выполнено"}}">{{.Percent}}</td>
-    <td><a class="btn btn-secondary" href="/doctor/prescriptions/{{.ID}}">{{t "Открыть"}}</a></td>
+    <td class="go-cell"><a class="go" href="/doctor/prescriptions/{{.ID}}" aria-label="{{t "Открыть"}}">›</a></td>
   </tr>
   {{end}}
   </tbody>

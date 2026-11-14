@@ -42,7 +42,7 @@ func New(pool *pgxpool.Pool) *Web {
 		if name == "layout" || name == "item_row" || name == "pharmacy_row" {
 			continue
 		}
-		t, err := template.New(name).Funcs(template.FuncMap{"money": money, "t": i18n.RU.T, "tf": i18n.RU.Tf, "lang": func() string { return "ru" }}).ParseFS(assets, "templates/layout.html", "templates/item_row.html", "templates/pharmacy_row.html", f)
+		t, err := template.New(name).Funcs(template.FuncMap{"money": money, "t": i18n.RU.T, "tf": i18n.RU.Tf, "lang": func() string { return "ru" }, "person": func(s string) string { return s }}).ParseFS(assets, "templates/layout.html", "templates/item_row.html", "templates/pharmacy_row.html", f)
 		if err != nil {
 			log.Fatalf("шаблон %s: %v", f, err)
 		}
@@ -86,6 +86,9 @@ func (w *Web) Routes() http.Handler {
 		r.Get("/prescriptions", w.prescriptionList)
 		r.Get("/prescriptions/{id}", w.prescriptionPage)
 		r.Get("/prescriptions/{id}/print", w.prescriptionPrint)
+		r.Get("/prescriptions/{id}/edit", w.editForm)
+		r.Post("/prescriptions/{id}", w.updatePrescription)
+		r.Post("/prescriptions/{id}/cancel", w.cancelPrescription)
 	})
 	r.Route("/pharmacy", func(r chi.Router) {
 		r.Use(requireRole(rolePharmacy))
@@ -159,7 +162,7 @@ func (w *Web) tpl(r *http.Request, page string) (*template.Template, bool) {
 		return nil, false
 	}
 	l := i18n.FromContext(r.Context())
-	return t.Funcs(template.FuncMap{"t": l.T, "tf": l.Tf, "lang": func() string { return string(l) }}), true
+	return t.Funcs(template.FuncMap{"t": l.T, "tf": l.Tf, "lang": func() string { return string(l) }, "person": func(s string) string { return i18n.Person(l, s) }}), true
 }
 
 // mustTpl — tpl для известных шаблонов (кусков страниц).

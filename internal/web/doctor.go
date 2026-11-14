@@ -109,6 +109,10 @@ func (w *Web) renderForm(rw http.ResponseWriter, r *http.Request, status int, f 
 }
 
 func (w *Web) doctorNew(rw http.ResponseWriter, r *http.Request) {
+	if f, ok := w.copyForm(r); ok {
+		w.renderForm(rw, r, http.StatusOK, f, nil)
+		return
+	}
 	w.renderForm(rw, r, http.StatusOK, emptyForm(), nil)
 }
 
@@ -326,16 +330,24 @@ func (w *Web) tryInsert(ctx context.Context, doctorID int64, f RxForm, birth tim
 	if err != nil {
 		return 0, err
 	}
+	if err := insertItems(ctx, tx, id, f); err != nil {
+		return 0, err
+	}
+	return id, tx.Commit(ctx)
+}
+
+// insertItems добавляет лекарства рецепта по порядку формы.
+func insertItems(ctx context.Context, tx pgx.Tx, id int64, f RxForm) error {
 	for pos, it := range f.Items {
 		days, _ := strconv.Atoi(it.Days)
-		_, err = tx.Exec(ctx, `INSERT INTO prescription_items (prescription_id, position, medicine_name, medicine_id, dosage, times_per_day, days, meal, times)
+		_, err := tx.Exec(ctx, `INSERT INTO prescription_items (prescription_id, position, medicine_name, medicine_id, dosage, times_per_day, days, meal, times)
 			VALUES ($1, $2, $3, (SELECT id FROM medicines WHERE lower(name) = lower($3) OR lower(name_en) = lower($3) ORDER BY lower(name) = lower($3) DESC LIMIT 1), $4, $5, $6, $7, $8)`,
 			id, pos, it.Name, it.Dosage, it.TimesPerDay, days, it.Meal, parseTimes(it.Times))
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return id, tx.Commit(ctx)
+	return nil
 }
 
 // ownRx загружает рецепт из URL и проверяет, что он принадлежит вошедшему врачу.
@@ -392,12 +404,13 @@ type listRow struct {
 	PatientName string
 	Date        string
 	Started     bool
+	Cancelled   bool
 	Percent     string // «80%» или «—»
 }
 
 func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 	rows, err := w.DB.Query(r.Context(), `
-		SELECT p.id, p.patient_name, p.created_at, p.start_date IS NOT NULL,
+		SELECT p.id, p.patient_name, p.created_at, p.start_date IS NOT NULL, p.cancelled_at IS NOT NULL,
 		       count(d.id) FILTER (WHERE d.taken_at IS NOT NULL OR d.scheduled_at <= now() - interval '60 minutes'),
 		       count(d.id) FILTER (WHERE d.taken_at IS NOT NULL)
 		FROM prescriptions p LEFT JOIN doses d ON d.prescription_id = p.id
@@ -414,11 +427,12 @@ func (w *Web) prescriptionList(rw http.ResponseWriter, r *http.Request) {
 		var lr listRow
 		var created time.Time
 		var due, taken int
-		if err := rows.Scan(&lr.ID, &lr.PatientName, &created, &lr.Started, &due, &taken); err != nil {
+		if err := rows.Scan(&lr.ID, &lr.PatientName, &created, &lr.Started, &lr.Cancelled, &due, &taken); err != nil {
 			log.Printf("список рецептов: %v", err)
 			http.Error(rw, tr(r, "Не удалось загрузить рецепты, попробуйте ещё раз"), http.StatusInternalServerError)
 			return
 		}
+		lr.PatientName = i18n.Person(i18n.FromContext(r.Context()), lr.PatientName)
 		lr.Date = created.In(time.Local).Format("02.01.2006")
 		lr.Percent = "—"
 		if lr.Started { // due = отмечено + пропущено

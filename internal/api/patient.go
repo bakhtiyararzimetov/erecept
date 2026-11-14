@@ -38,6 +38,20 @@ func (a *API) claim(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "пациент", err)
 		return
 	}
+	var cancelled bool
+	err = a.DB.QueryRow(ctx, `SELECT cancelled_at IS NOT NULL FROM prescriptions WHERE code = $1`, code).Scan(&cancelled)
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(w, http.StatusNotFound, "Рецепт не найден")
+		return
+	}
+	if err != nil {
+		serverError(w, "рецепт", err)
+		return
+	}
+	if cancelled {
+		writeError(w, http.StatusGone, "Рецепт отменён врачом")
+		return
+	}
 	tx, err := a.DB.Begin(ctx)
 	if err != nil {
 		serverError(w, "транзакция", err)

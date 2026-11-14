@@ -40,7 +40,7 @@ func TestEnglishPublicPage(t *testing.T) {
 	h := w.Routes()
 	_, code := createRx(t, w.DB, h, doctorCookies(t, h, "doctor1"))
 	body := getLang(h, "/r/"+code+"?lang=en", nil)
-	for _, want := range []string{"<h1>Prescription</h1>", "Doctor:", "Check the box", "2 times a day, 08:00 and 20:00, after meals", "Course: 5 days", `lang="en"`} {
+	for _, want := range []string{"<h1>Prescription</h1>", "<dt>Doctor</dt>", "Akhmetova Dinara", "Polyclinic No. 5", "Check the box", "2 times a day, 08:00 and 20:00, after meals", "Course: 5 days", `lang="en"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("нет %q", want)
 		}

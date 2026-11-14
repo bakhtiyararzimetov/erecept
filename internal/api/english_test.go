@@ -38,7 +38,7 @@ func TestPrescriptionDTOEnglish(t *testing.T) {
 	}
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	it := resp.Prescription.Items[0]
-	if it.Image != "/static/meds/paracetamol.png" {
+	if it.Image != "/static/meds/en/paracetamol.png" {
 		t.Errorf("картинка: %q", it.Image)
 	}
 	if it.MedicineName != "Paracetamol" || it.MealLabel != "after meals" || string(it.Explanation) != `{"purpose": "Lowers fever."}` && string(it.Explanation) != `{"purpose":"Lowers fever."}` {

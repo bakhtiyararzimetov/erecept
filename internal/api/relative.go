@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"erecept/internal/i18n"
 	"errors"
 	"math/big"
 	"net/http"
@@ -117,7 +118,7 @@ func patientName(ctx context.Context, q querier, pid int64) (string, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
-	return name, err
+	return i18n.Person(i18n.FromContext(ctx), name), err
 }
 
 type missedDTO struct {

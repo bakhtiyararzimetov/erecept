@@ -103,14 +103,19 @@ export default function CourseScreen() {
             <Text style={styles.name}>{c.prescription.items.map((i) => i.medicine_name).join(" + ")}</Text>
             <Text style={styles.body}>{tf("Врач: {0}", c.prescription.doctor_name)}</Text>
             <Text style={styles.body}>{period(c)}</Text>
-            <Text style={styles.percent}>{tf("{0}% по плану", pr.percent)}</Text>
+            {c.prescription.cancelled && <Text style={styles.cancelled}>{t("Отменён врачом")}</Text>}
+            {/* Пока ни один приём не прошёл, «0%» звучит как провал — пишем спокойно */}
+            <Text style={styles.percentLabel}>
+              {pr.taken + pr.missed === 0 ? t("Курс только начался — пропусков нет") : tf("{0}% приёмов выпито вовремя", pr.percent)}
+            </Text>
             <View style={styles.track}>
-              <View style={[styles.fill, { width: `${pr.percent}%` }]} />
+              <View style={[styles.fill, { width: `${Math.round(((pr.taken + pr.missed) * 100) / Math.max(1, pr.total))}%`, backgroundColor: colors.warning }]} />
+              <View style={[styles.fillTop, { width: `${Math.round((pr.taken * 100) / Math.max(1, pr.total))}%` }]} />
             </View>
             <View style={styles.stats}>
-              <Text style={styles.body}>{tf("Отмечено: {0}", pr.taken)}</Text>
-              <Text style={styles.body}>{tf("Пропущено: {0}", pr.missed)}</Text>
-              <Text style={styles.body}>{tf("Осталось: {0}", left)}</Text>
+              <View style={styles.stat}><Text style={[styles.statNum, { color: colors.success }]}>{pr.taken}</Text><Text style={styles.statLabel}>{t("Отмечено")}</Text></View>
+              <View style={styles.stat}><Text style={[styles.statNum, { color: pr.missed ? colors.warning : colors.text }]}>{pr.missed}</Text><Text style={styles.statLabel}>{t("Пропущено")}</Text></View>
+              <View style={styles.stat}><Text style={styles.statNum}>{left}</Text><Text style={styles.statLabel}>{t("Осталось")}</Text></View>
             </View>
             {!!c.prescription.comment && (
               <View style={styles.comment}>
@@ -174,10 +179,16 @@ const styles = StyleSheet.create({
   body: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.muted },
   text: { fontSize: 17, fontFamily: "Inter_400Regular", color: colors.text },
   label: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
-  percent: { fontSize: 28, fontFamily: "Inter_700Bold", color: colors.text },
-  track: { height: 12, borderRadius: 6, backgroundColor: colors.border, overflow: "hidden" },
-  fill: { height: 12, backgroundColor: colors.accent },
-  stats: { gap: 4 },
+  percentLabel: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text },
+  // Полоса курса: весь курс — фон, прошедшие приёмы — янтарь (пропуски), поверх — принятые зелёным
+  track: { height: 12, borderRadius: 6, backgroundColor: "#DCE6E4", overflow: "hidden" },
+  fill: { position: "absolute", left: 0, top: 0, height: 12 },
+  fillTop: { position: "absolute", left: 0, top: 0, height: 12, backgroundColor: colors.success },
+  stats: { flexDirection: "row", gap: 8 },
+  stat: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.control, paddingVertical: 10, alignItems: "center" },
+  statNum: { fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text },
+  statLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.muted },
+  cancelled: { alignSelf: "flex-start", fontSize: 14, fontFamily: "Inter_700Bold", color: colors.error, backgroundColor: "#FDF1EF", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: "hidden" },
   comment: { backgroundColor: colors.bg, borderRadius: radius.control, padding: 12, gap: 4 },
   item: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, gap: 8 },
   itemHead: { flexDirection: "row", gap: 8 },

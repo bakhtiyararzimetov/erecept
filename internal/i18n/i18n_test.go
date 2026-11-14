@@ -51,3 +51,50 @@ func TestMiddleware(t *testing.T) {
 		t.Errorf("по умолчанию: %s", l)
 	}
 }
+
+// Имена в английском режиме — латиницей, клиника — по-английски; на русском — как есть.
+func TestPersonAndClinicEN(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"Ахметова Динара Сериковна", "Akhmetova Dinara Serikovna"},
+		{"Ким Александр Петрович", "Kim Aleksandr Petrovich"},
+		{"Иванова Галина Петровна", "Ivanova Galina Petrovna"},
+		{"Жанна Щукина", "Zhanna Shchukina"},
+		{"Smith John", "Smith John"},
+	}
+	for _, c := range cases {
+		if got := Person(EN, c.in); got != c.want {
+			t.Errorf("Person(%q) = %q, want %q", c.in, got, c.want)
+		}
+		if got := Person(RU, c.in); got != c.in {
+			t.Errorf("RU Person(%q) = %q", c.in, got)
+		}
+	}
+	if got := Clinic(EN, "Поликлиника №5"); got != "Polyclinic No. 5" {
+		t.Errorf("clinic: %q", got)
+	}
+	if got := Clinic(EN, "Городская поликлиника №12"); got != "City Polyclinic No. 12" {
+		t.Errorf("clinic: %q", got)
+	}
+	if got := Clinic(RU, "Поликлиника №5"); got != "Поликлиника №5" {
+		t.Errorf("clinic RU: %q", got)
+	}
+}
+
+func TestDosageEN(t *testing.T) {
+	cases := map[string]string{
+		"1 таблетка 500 мг": "1 tablet 500 mg",
+		"2 таблетки":        "2 tablets",
+		"1 капсула 20 мг":   "1 capsule 20 mg",
+		"10 капель":         "10 drops",
+		"5 мл сиропа":       "5 ml of syrup",
+		"½ таблетки":        "½ tablet",
+	}
+	for in, want := range cases {
+		if got := Dosage(EN, in); got != want {
+			t.Errorf("Dosage(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if Dosage(RU, "1 таблетка") != "1 таблетка" {
+		t.Error("RU")
+	}
+}

@@ -26,9 +26,7 @@ func (m *medRow) dest() []any {
 // finish — картинка упаковки и английские поля для английского приложения.
 func (m *medRow) finish(l i18n.Lang) MedicineDTO {
 	d := m.MedicineDTO
-	if m.nameEN != "" {
-		d.Image = "/static/meds/" + slug(m.nameEN) + ".png"
-	}
+	d.Image = packImage(l, m.nameEN)
 	if l == i18n.EN {
 		if m.nameEN != "" {
 			d.Name = m.nameEN
@@ -39,6 +37,17 @@ func (m *medRow) finish(l i18n.Lang) MedicineDTO {
 		d.Form = formEN(d.Form)
 	}
 	return d
+}
+
+// packImage — картинка упаковки; в английском приложении — вариант без кириллицы (meds/en).
+func packImage(l i18n.Lang, nameEN string) string {
+	if nameEN == "" {
+		return ""
+	}
+	if l == i18n.EN {
+		return "/static/meds/en/" + slug(nameEN) + ".png"
+	}
+	return "/static/meds/" + slug(nameEN) + ".png"
 }
 
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)

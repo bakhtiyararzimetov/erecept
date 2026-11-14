@@ -42,6 +42,7 @@ export type Prescription = {
   water_from: string; // HH:MM
   water_to: string; // HH:MM
   start_date: string | null; // YYYY-MM-DD
+  cancelled?: boolean; // врач отменил рецепт: приёмов и напоминаний нет
   items: Item[];
 };
 

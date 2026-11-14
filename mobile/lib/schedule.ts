@@ -83,9 +83,14 @@ function itemOf(course: Course, dose: Dose): Item | undefined {
   return course.prescription.items.find((i) => i.id === dose.item_id);
 }
 
+// Курсы, которые идут: отменённые врачом не дают приёмов и напоминаний.
+export function activeCourses(courses: Course[]): Course[] {
+  return courses.filter((c) => !c.prescription.cancelled);
+}
+
 export function upcomingNotifications(courses: Course[], now: Date, limit = 60): PlannedNotification[] {
   const out: PlannedNotification[] = [];
-  for (const c of courses) {
+  for (const c of activeCourses(courses)) {
     for (const dose of c.doses) {
       if (dose.taken_at) continue;
       const at = new Date(dose.scheduled_at);
@@ -130,6 +135,11 @@ export function isEarly(dose: Dose, now: Date): boolean {
   return doseStatus(dose, now) === "upcoming";
 }
 
+// Пропущенный приём отмечают задним числом: «вовремя» — время по расписанию, «сейчас» — now.
+export function lateTakenAt(dose: Dose, when: "on_time" | "now", now: Date): Date {
+  return when === "on_time" ? new Date(dose.scheduled_at) : now;
+}
+
 export function doseStatus(dose: Dose, now: Date): DoseStatus {
   if (dose.taken_at) return "taken";
   const diffMin = (now.getTime() - new Date(dose.scheduled_at).getTime()) / MIN;
@@ -140,7 +150,7 @@ export function doseStatus(dose: Dose, now: Date): DoseStatus {
 
 export function todayList(courses: Course[], now: Date): TodayEntry[] {
   const out: TodayEntry[] = [];
-  for (const c of courses) {
+  for (const c of activeCourses(courses)) {
     for (const dose of c.doses) {
       if (!sameDay(new Date(dose.scheduled_at), now)) continue;
       const item = itemOf(c, dose);

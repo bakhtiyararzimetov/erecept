@@ -83,6 +83,7 @@ type Prescription struct {
 	WaterTo         string     `json:"water_to"`          // "21:00"
 	StartDate       *time.Time `json:"start_date"`        // nil, пока пациент не отсканировал
 	ClaimedAt       *time.Time `json:"-"`                 // когда рецепт привязан к телефону
+	CancelledAt     *time.Time `json:"-"`                 // врач отменил рецепт; nil — действует
 	CreatedAt       time.Time  `json:"created_at"`
 
 	Items []PrescriptionItem `json:"items"`

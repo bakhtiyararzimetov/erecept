@@ -14,7 +14,7 @@
 <header class="topbar">
   <div class="topbar-inner">
     <a class="logo" href="/"><span class="logo-mark"></span><span>{{t "еРецепт"}}</span></a>
-    <span class="lang-switch">{{if eq lang "en"}}<a href="?lang=ru">RU</a> · <b>EN</b>{{else}}<b>RU</b> · <a href="?lang=en">EN</a>{{end}}</span>
+    <span class="lang-switch" role="group" aria-label="Language">{{if eq lang "en"}}<a href="?lang=ru" lang="ru">RU</a><b aria-current="true">EN</b>{{else}}<b aria-current="true">RU</b><a href="?lang=en" lang="en">EN</a>{{end}}</span>
     {{if .User}}
     <nav class="menu">
       {{if eq .User.Role "doctor"}}
@@ -23,7 +23,7 @@
       {{else}}
       <a href="/pharmacy">{{t "Мои лекарства"}}</a>
       {{end}}
-      <span class="menu-user muted">{{.User.Name}}</span>
+      <span class="menu-user muted">{{if eq .User.Role "doctor"}}{{person .User.Name}}{{else}}{{.User.Name}}{{end}}</span>
       <form method="post" action="/logout"><button class="btn btn-secondary" type="submit">{{t "Выйти"}}</button></form>
     </nav>
     {{end}}

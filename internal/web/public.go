@@ -41,7 +41,7 @@ func newCode() string {
 }
 
 const prescriptionCols = `id, code, doctor_id, patient_name, patient_birth, comment,
-	water_every_hours, water_from, water_to, start_date, claimed_at, created_at`
+	water_every_hours, water_from, water_to, start_date, claimed_at, created_at, cancelled_at`
 
 func (w *Web) loadPrescription(ctx context.Context, id int64) (models.Prescription, error) {
 	return w.loadOne(ctx, `SELECT `+prescriptionCols+` FROM prescriptions WHERE id = $1`, id)
@@ -55,7 +55,7 @@ func (w *Web) loadPrescriptionByCode(ctx context.Context, code string) (models.P
 func (w *Web) loadOne(ctx context.Context, query string, arg any) (models.Prescription, error) {
 	var p models.Prescription
 	err := w.DB.QueryRow(ctx, query, arg).Scan(&p.ID, &p.Code, &p.DoctorID, &p.PatientName, &p.PatientBirth,
-		&p.Comment, &p.WaterEveryHours, &p.WaterFrom, &p.WaterTo, &p.StartDate, &p.ClaimedAt, &p.CreatedAt)
+		&p.Comment, &p.WaterEveryHours, &p.WaterFrom, &p.WaterTo, &p.StartDate, &p.ClaimedAt, &p.CreatedAt, &p.CancelledAt)
 	if err != nil {
 		return p, err
 	}
@@ -126,6 +126,8 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 	if err != nil {
 		return v, err
 	}
+	v.DoctorName, v.Clinic = i18n.Person(l, v.DoctorName), i18n.Clinic(l, v.Clinic)
+	v.PatientName = i18n.Person(l, p.PatientName)
 	v.Birth = p.PatientBirth.Format("02.01.2006")
 	v.Date = p.CreatedAt.In(time.Local).Format("02.01.2006")
 	expl := w.explanations(ctx, l, p.Items)
@@ -135,7 +137,7 @@ func (w *Web) rxView(ctx context.Context, r *http.Request, p models.Prescription
 		if it.MedicineID != nil && names[*it.MedicineID] != "" {
 			name = names[*it.MedicineID]
 		}
-		iv := ItemView{Medicine: name, Dosage: it.Dosage, How: howText(l, it), Days: it.Days}
+		iv := ItemView{Medicine: name, Dosage: i18n.Dosage(l, it.Dosage), How: howText(l, it), Days: it.Days}
 		if it.MedicineID != nil {
 			iv.Explanation = expl[*it.MedicineID]
 		}

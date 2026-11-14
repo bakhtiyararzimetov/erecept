@@ -37,6 +37,7 @@ type PrescriptionDTO struct {
 	WaterFrom       string    `json:"water_from"`
 	WaterTo         string    `json:"water_to"`
 	StartDate       *string   `json:"start_date"`
+	Cancelled       bool      `json:"cancelled"` // врач отменил рецепт: напоминания не нужны
 	Items           []ItemDTO `json:"items"`
 }
 
@@ -62,14 +63,16 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 	var birth time.Time
 	var start *time.Time
 	err := a.DB.QueryRow(ctx, `SELECT p.id, p.code, p.patient_name, p.patient_birth, d.full_name, p.comment,
-		p.water_every_hours, p.water_from, p.water_to, p.start_date
+		p.water_every_hours, p.water_from, p.water_to, p.start_date, p.cancelled_at IS NOT NULL
 		FROM prescriptions p JOIN doctors d ON d.id = p.doctor_id WHERE `+where, arg).
 		Scan(&p.ID, &p.Code, &p.PatientName, &birth, &p.DoctorName, &p.Comment,
-			&p.WaterEveryHours, &p.WaterFrom, &p.WaterTo, &start)
+			&p.WaterEveryHours, &p.WaterFrom, &p.WaterTo, &start, &p.Cancelled)
 	if err != nil {
 		return nil, err
 	}
 	p.PatientBirth = birth.Format("2006-01-02")
+	p.PatientName = i18n.Person(i18n.FromContext(ctx), p.PatientName)
+	p.DoctorName = i18n.Person(i18n.FromContext(ctx), p.DoctorName)
 	if start != nil {
 		s := start.Format("2006-01-02")
 		p.StartDate = &s
@@ -98,15 +101,14 @@ func (a *API) loadPrescription(ctx context.Context, where string, arg any) (*Pre
 			&it.Days, &it.Meal, &it.Times, &it.PhotoURL, &it.Explanation, &hasEN, &substance, &nameEN); err != nil {
 			return nil, err
 		}
-		if nameEN != "" {
-			it.Image = "/static/meds/" + slug(nameEN) + ".png"
-		}
+		it.Image = packImage(l, nameEN)
 		if l == i18n.EN && hasEN {
 			it.Explanation = explain.ServeJSONEN(it.Explanation, substance)
 		} else {
 			it.Explanation = explain.ServeJSON(it.Explanation, substance)
 		}
 		it.MealLabel = i18n.T(l, models.MealLabel(it.Meal))
+		it.Dosage = i18n.Dosage(l, it.Dosage)
 		p.Items = append(p.Items, it)
 	}
 	return &p, rows.Err()
